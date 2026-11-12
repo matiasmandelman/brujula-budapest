@@ -1005,8 +1005,8 @@ function makeAvatar(o){
   add(head,sph(.024),skin,.1,0,-.005).scale.set(.6,1,1);
   const nose=add(head,new THREE.ConeGeometry(.018,.045,8),skin,0,-.01,.112);nose.rotation.x=Math.PI/2;
   [-.038,.038].forEach(x=>{
-    add(head,sph(.017),M('#f6f3ee',.4),x,.02,.098).scale.set(1,.8,.6);   // blanco del ojo
-    add(head,sph(.011),M('#3b2618',.3),x,.02,.108);                        // iris
+    add(head,sph(.017),M('#f6f3ee',.4),x,.02,.098).scale.set(o.eyeX||1,o.eyeY||.8,.6);   // blanco del ojo
+    add(head,sph(.011),M('#3b2618',.3),x,.02,.108).scale.set(1,o.irisY||1,1);                        // iris
     add(head,sph(.004),M('#ffffff',.2),x+.004,.024,.118);                  // brillo
     const b=add(head,new THREE.BoxGeometry(.044,.011,.012),hairM,x,.05,.104);b.rotation.z=x<0?.12:-.12});
   const smile=add(head,new THREE.TorusGeometry(.026,.006,6,14,Math.PI),M('#9a4a40'),0,-.05,.104);smile.rotation.z=Math.PI;
@@ -1039,13 +1039,18 @@ function makeAvatar(o){
   /* brazos */
   const arms=[-1,1].map(sd=>{
     const sh=new THREE.Group();sh.position.set(sd*o.shW,1.49,0);sh.rotation.z=sd*.1;up.add(sh);
+    const holdsMate=o.style==='mati'&&o.mate&&sd<0;
     if(o.style==='mati'){
       add(sh,cyl(.072,.066,.15),M(o.top),0,-.07,0);                // manga corta
       add(sh,cap(.056,.16),skin,0,-.2,0);                          // bíceps
-      add(sh,cap(.046,.2),skin,0,-.43,0);                          // antebrazo
-      if(sd>0)add(sh,cyl(.05,.05,.035),dark,0,-.53,0);            // reloj (muñeca izquierda)
-      if(sd<0&&o.mate){                                           // mate verde militar con bombilla
-        const mate=new THREE.Group();mate.position.set(0,-.63,.05);sh.add(mate);
+      const elbow=new THREE.Group();elbow.position.y=-.31;sh.add(elbow);
+      if(holdsMate)elbow.rotation.x=-Math.PI/2;                    // codo a 90° sosteniendo el mate
+      add(elbow,sph(.05),skin,0,0,0);                              // codo
+      add(elbow,cap(.046,.2),skin,0,-.13,0);                       // antebrazo
+      if(sd>0)add(elbow,cyl(.05,.05,.035),dark,0,-.22,0);          // reloj (muñeca izquierda)
+      add(elbow,sph(.045),skin,0,-.29,0).scale.set(.8,1.15,.6);    // mano
+      if(holdsMate){                                               // mate verde militar con bombilla
+        const mate=new THREE.Group();mate.position.set(0,-.3,-.045);mate.rotation.x=Math.PI/2;elbow.add(mate);
         const gm=M('#4b5320',.55);
         add(mate,sph(.05),gm,0,0,0).scale.set(1,1.15,1);
         add(mate,cyl(.038,.044,.03),gm,0,.05,0);
@@ -1057,8 +1062,8 @@ function makeAvatar(o){
       }
     }else{
       add(sh,cap(.047,.46),M(o.top,.6),0,-.29,0);                  // manga larga
+      add(sh,sph(.045),skin,0,-.6,0).scale.set(.8,1.15,.6);         // mano
     }
-    add(sh,sph(.045),skin,0,-.6,0).scale.set(.8,1.15,.6);           // mano
     return sh;
   });
 
@@ -1070,8 +1075,8 @@ function makeAvatar(o){
 }
 function buildAvatars(){
   avatars=[
-    makeAvatar({name:'Mati',style:'mati',side:-1,h:1,skin:'#e5b593',hair:'#33241b',top:'#d7d9dc',bottoms:'#1d1d20',shoes:'#161616',tag:'#2f6fd6',hipW:.1,shW:.25,mate:true,armOffset:[-.45,0]}),
-    makeAvatar({name:'Paz',style:'paz',side:1,h:.93,skin:'#eec3a2',hair:'#3a271c',top:'#4a4d55',bottoms:'#ebe5d8',shoes:'#f4f4f4',tag:'#e05a6b',hipW:.095,shW:.2}),
+    makeAvatar({name:'Mati',style:'mati',side:-1,h:1,skin:'#e5b593',hair:'#33241b',top:'#d7d9dc',bottoms:'#1d1d20',shoes:'#161616',tag:'#2f6fd6',hipW:.1,shW:.25,mate:true,armOffset:[-.08,0]}),
+    makeAvatar({name:'Paz',style:'paz',side:1,h:.93,skin:'#e7b993',hair:'#3a271c',eyeX:1.12,eyeY:.66,irisY:.86,top:'#4a4d55',bottoms:'#ebe5d8',shoes:'#f4f4f4',tag:'#e05a6b',hipW:.095,shW:.2}),
   ];
 }
 function avatarTarget(){const p=toW(pos.lat,pos.lng);return {x:p.x,z:p.z,y:height(p.x,p.z)}}
