@@ -2039,6 +2039,11 @@ const ACTIONS={
     once(A,'g',()=>{A.gl=makeSunglasses();A.gl.scale.setScalar(.001);M.head.add(A.gl);A.props.push(A.gl)});
     const wg=Wt(t,0,1.5,.35,.4);La(M.group,camAng(M),Wt(t,0,1.4));poseArm(M,1,-2.5,.35,-2.1,wg);
     if(t>.8){A.gl.scale.setScalar(Math.min(1,(t-.8)*5));once(A,'cool',()=>{sfx('pop');bubble(M,'😎',1.4)})}
+    if(t>1.2&&mate&&mateHolder===M&&!A.mateDrop)once(A,'drop',()=>{A.mateDrop=mate.parent;scene.attach(mate);
+      const sd=new THREE.Vector3(Math.cos(M.group.rotation.y),0,-Math.sin(M.group.rotation.y));
+      mate.position.copy(M.group.position).addScaledVector(sd,-.55*avScale);mate.position.y=height(mate.position.x,mate.position.z)+.05;
+      mate.quaternion.setFromEuler(new THREE.Euler(0,M.group.rotation.y,0));sfx('pop')});
+    if(t>11.9)pickMate(A);
     // 2) frente a frente, bien pegados
     const wd=Wt(t,1.3,12.4,.7,.6);
     if(wd>0){
@@ -2073,7 +2078,7 @@ const ACTIONS={
     A.lights.forEach((g,i)=>{const a=el*1.4+i*2.1;g.position.set(A.mid.x+Math.cos(a)*2.4*avScale,A.mid.y+(2.1+Math.sin(el*3+i)*.4)*avScale,A.mid.z+Math.sin(a)*2.4*avScale);
       g.material.opacity=.38*wb*(.6+.4*Math.abs(Math.sin(el*4+i)));const k=(1.6+.5*Math.sin(el*8+i))*avScale;g.scale.set(k,k,1)});
   }},
-  pis:{dur:11.4,run(A,t,dt,el){
+  pis:{dur:20,run(A,t,dt,el){
     const M=A.mati,P=A.paz;
     if(!A.tree){   // un árbol aparece detrás de la pareja, del lado de Paz
       const away=new THREE.Vector3(A.mid.x-camera.position.x,0,A.mid.z-camera.position.z).normalize();
@@ -2082,9 +2087,11 @@ const ACTIONS={
       const tp=A.p0.clone().addScaledVector(away,1.6*avScale).addScaledVector(side,.15*avScale);tp.y=height(tp.x,tp.z);
       A.tree.position.copy(tp);scene.add(A.tree);A.props.push(A.tree);
       A.p1=tp.clone().addScaledVector(away,.7*avScale).addScaledVector(side,.45*avScale);A.p1.y=height(A.p1.x,A.p1.z)+.5;
+      A.m0=M.group.position.clone();A.m1=tp.clone().addScaledVector(away,-.2*avScale).addScaledVector(side,-.7*avScale);A.awayAng=Math.atan2(away.x,away.z);A.m1.y=height(A.m1.x,A.m1.z)+.5;A.treeP=tp;
     }
-    const gT=Math.min(ease(t/.7),1-ease((t-10.6)/.7));A.tree.scale.setScalar(avScale*Math.max(.001,gT));
+    const gT=Math.min(ease(t/.7),1-ease((t-19.2)/.7));A.tree.scale.setScalar(avScale*Math.max(.001,gT));
     const wf=Wt(t,0,4.1);La(M.group,faceAng(M,P),wf);La(P.group,faceAng(P,M),wf);
+    if(t>10.6&&t<11.6){La(M.group,faceAng(M,P),.2);La(P.group,faceAng(P,M),.2)}
     once(A,'pis',()=>{bubble(P,'Me hago pis 🙈',1.8);say('Me hago pis','Paz')});
     const wh=Wt(t,1.7,3.8,.3,.4);poseHandsHead(M,wh,el);
     if(t>1.8)once(A,'otra',()=>{bubble(M,'¿Otra vez? 🤦‍♂️',1.8);say('¿Otra vez?','Mati')});
@@ -2101,7 +2108,6 @@ const ACTIONS={
     if(wsq>0){La(P.group,camAng(P),wsq*.5);
       P.legs.forEach(l=>Lr(l.rotation,'x',-1.45,wsq));P.knees.forEach(kn=>Lr(kn.rotation,'x',2.0,wsq));
       P.group.position.y-=.47*avScale*P.h*wsq;poseArm(P,0,-.9,-.1,-.6,wsq);poseArm(P,1,-.9,.1,-.6,wsq);Lr(P.head.rotation,'x',.2,wsq);
-      once(A,'shh',()=>bubble(P,'¡No miréis! 🙈',2.2));
     }
     // Mati se muere de risa
     const wl=Wt(t,5.6,9.4,.4,.5);
@@ -2109,6 +2115,22 @@ const ACTIONS={
       poseArm(M,1,-.5,.35,-1.6,wl);
       once(A,'jaja',()=>{bubble(M,'😂😂😂',3.4);say('¡Jajajajaja!','Mati')})}
     if(t>10)once(A,'listo',()=>bubble(P,'Listo 😌',1.3));
+    // ahora le toca a Mati: va al árbol y se queda de espaldas
+    if(t>11)once(A,'yo',()=>{bubble(M,'Bueno, yo también 🤷‍♂️',1.8);say('Bueno, yo también','Mati')});
+    if(t>11.7){
+      const km=Math.max(0,Math.min(1,ease((t-11.7)/1.6)-ease((t-17.8)/1.6)));
+      M.group.position.lerpVectors(A.m0,A.m1,km);M.group.position.y=height(M.group.position.x,M.group.position.z)+.5;
+      const mw=(t<13.3)||(t>17.8&&t<19.4);
+      if(mw){const to=t<15?A.m1:A.m0,fr=t<15?A.m0:A.m1;La(M.group,Math.atan2(to.x-fr.x,to.z-fr.z),.35);
+        const sw=Math.sin(el*10)*.6;M.legs[0].rotation.x=sw;M.legs[1].rotation.x=-sw;M.knees[0].rotation.x=Math.max(0,sw)*1.1;M.knees[1].rotation.x=Math.max(0,-sw)*1.1}
+      const wp=Wt(t,13.2,17.8,.4,.3);
+      if(wp>0){La(M.group,A.awayAng,wp);   // de espaldas a la cámara, junto al árbol
+        poseArm(M,1,-.45,.25,-.7,wp);Lr(M.head.rotation,'x',.25,wp*(t<16.2?1:.2));
+        const look=Wt(t,16.2,17.7,.3,.3);if(look>0){Lr(M.head.rotation,'y',faceAng(M,P)-M.group.rotation.y>0?1.1:-1.1,look);Lr(M.head.rotation,'x',0,look)}}
+      if(t>13.3&&t<17.8)La(P.group,faceAng(P,M),.08);
+      if(t>13.9)once(A,'rio',()=>{bubble(P,'Ah, menos mal que no tenías ganas, un río… 🙄',2.4);say('Ah, menos mal que no tenías ganas, un río','Paz')});
+      if(t>16.3)once(A,'mira',()=>{bubble(M,'¿Qué mirás? 😒',1.6);say('¿Qué mirás?','Mati')});
+    }
   }},
   chipa:{dur:8,run(A,t,dt,el){
     const M=A.mati,P=A.paz;
@@ -2185,7 +2207,9 @@ const ACTIONS={
       if(t>4.6)once(A,'lol',()=>bubble(M,'😂',3.2))}
   }},
 };
+function pickMate(A){if(!A.mateDrop)return;A.mateDrop.add(mate);mate.position.copy(MATE_P);mate.quaternion.copy(MATE_Q);mate.scale.setScalar(1);A.mateDrop=null}
 function endAction(A){
+  pickMate(A);
   A.props.forEach(p=>p.parent&&p.parent.remove(p));
   [A.mati,A.paz].forEach(av=>{av.body.rotation.set(0,0,0);av.arms.forEach((a,i)=>{a.rotation.z=SIDE[i]*.1});av.legs.forEach(l=>{l.rotation.z=0});av.head.rotation.set(0,0,0);av.lastHop=undefined;av.group.rotation.x=0;av.group.rotation.z=0});
   if(!A.quiet)document.body.classList.remove('acting');
