@@ -51,6 +51,23 @@ select,input,textarea{background:var(--card2);border:1px solid var(--line);borde
 .tag.bad{color:var(--bad);border-color:#6a3530}
 .tag.unk{color:var(--info);border-color:#2f4a66}
 .tag.acc{color:var(--acc);border-color:#7a5522}
+.plancard{background:linear-gradient(135deg,#2a2013,#1e1a17);border:1px solid #6b5124;border-radius:14px;padding:12px 14px;margin-bottom:10px}
+.plancard .lbl{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
+.plancard .big{font-family:Fraunces,Georgia,serif;font-size:19px;margin:2px 0 4px}
+.plancard .cnt{color:var(--acc);font-weight:600;font-variant-numeric:tabular-nums}
+.plancard .sep{border-top:1px dashed #4a3b22;margin:10px 0}
+.star{color:#ffcf4a}
+.task{display:flex;gap:8px;align-items:flex-start;margin:6px 0;font-size:14px}
+.task input{width:auto;margin-top:3px}
+.step.isstar{background:#2a2112;border-radius:10px;padding:8px;border-bottom:none;margin:4px 0}
+.step.isstar b{color:#ffe7a6}
+.step.past{opacity:.45}
+.step.now{outline:2px solid var(--acc);border-radius:10px;padding:8px}
+.step.fest time{color:#c79bff}
+.plancard .acts,.step .acts{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+.plancard .acts a,.plancard .acts button,.step .acts a,.step .acts button{font-size:12px;padding:5px 9px;text-decoration:none;color:var(--tx);background:var(--card2);border:1px solid var(--line);border-radius:9px}
+.nowtag{font-size:11px;background:var(--acc);color:#1b130b;border-radius:999px;padding:1px 7px;margin-left:6px;font-weight:700}
+.mapchips button.plan{background:#2a2013;border-color:#b98a2e;color:#ffe7a6}
 .tag.paz{color:#ff8fb1;border-color:#7a3550;background:#2a1820}
 .why{font-size:14px;color:#e2d6c8;margin:4px 0 2px}
 .tip{font-size:13px;color:var(--mut)}
@@ -116,6 +133,7 @@ body.mapmode header{max-width:560px;margin:0 auto 8px}
 
   <!-- AHORA -->
   <section class="view on" id="v-now">
+    <div id="planCard"></div>
     <div class="chips" id="chips"></div>
     <div class="row" style="margin-bottom:10px;justify-content:space-between">
       <label class="muted"><input type="checkbox" id="showClosed" style="width:auto"> mostrar cerrados / hechos</label>
@@ -221,9 +239,13 @@ const POIS=[
  {id:'palacio',name:'Palacio de Buda (terrazas)',cat:'vistas',lat:47.4962,lng:19.0396,dur:40,best:'sunset',hours:ALL24,
   why:'Paseo por las terrazas del castillo con vistas al Puente de las Cadenas y Pest.',
   tip:'Las terrazas exteriores se pueden recorrer libremente; museos aparte.'},
- {id:'gellert',name:'Monte Gellért (mirador)',cat:'vistas',lat:47.4870,lng:19.0466,dur:60,best:'sunset',hours:ALL24,
+ {id:'gellert',must:true,name:'Citadella (Monte Gellért)',cat:'vistas',lat:47.4870,lng:19.0466,dur:60,best:'sunset',hours:ALL24,
   why:'La panorámica más alta de la ciudad, con los puentes en fila.',
-  tip:'Subida a pie de 20–25 min. El entorno de la Ciudadela ha estado en obras: comprobad el acceso en Maps.'},
+  tip:'Subida a pie de 20–30 min desde Szent Gellért tér. Para bajar de noche: bus 27 o linterna del móvil (caminos poco iluminados).'},
+ {id:'navidad',must:true,name:'Mercado de Navidad (Vörösmarty tér)',cat:'ciudad',lat:47.49690,lng:19.05095,dur:45,best:'any',
+  hours:{sat:[['11:00','21:00']],sun:[['11:00','21:00']]},
+  why:'El mercado navideño principal de Budapest: puestos, luces, vino caliente y kürtőskalács.',
+  tip:'Abierto de 11:00 a 21:00. Está al lado de Gerbeaud y a 5 min del Puente de las Cadenas.'},
  {id:'batthyany',name:'Batthyány tér (Parlamento iluminado)',cat:'vistas',lat:47.5063,lng:19.0389,dur:20,best:'night',hours:ALL24,
   why:'La foto del Parlamento iluminado reflejado en el Danubio, desde enfrente.',
   tip:'Desde Pest: M2 una parada desde Kossuth tér, o tranvía 19/41 por el lado de Buda.'},
@@ -421,12 +443,64 @@ const CATS=[
 ];
 const CATLABEL={comida:'Comer',cafe:'Café',vistas:'Vistas',ciudad:'Ciudad',historia:'Historia',ruin:'Ruin bar'};
 // Anclas: d = índice de día del viaje, m = minutos
-const ANCHORS=[
- {d:0,m:H('12:05'),label:'Aterrizaje (BUD)',hard:false},
- {d:0,m:H('21:30'),label:'Salir hacia el festival',hard:true},
- {d:1,m:H('22:30'),label:'A dormir (vuelo de madrugada)',hard:false},
- {d:2,m:H('3:45'),label:'Salir al aeropuerto',hard:true},
-];
+/* Cronograma real del viaje (⭐ = sí o sí). d: 0=sáb, 1=dom, 2=lun */
+const L=(lat,lng)=>({lat,lng});
+const PL={kalvin:L(47.48960,19.06140),mercado:L(47.48700,19.05870),gellertter:L(47.48400,19.05300),citadella:L(47.48680,19.04760),
+  hotel:L(47.5010,19.0663),szimpla:L(47.49700,19.06330),blaha:L(47.49650,19.07050),hungexpo:L(47.49300,19.12800),pillango:L(47.50190,19.10910),
+  dohany:L(47.49570,19.06080),voros:L(47.49690,19.05095),bastion:L(47.50210,19.03470),cadenas:L(47.49900,19.04360),pier:L(47.49500,19.04820),
+  basilica:L(47.50070,19.05400),opera:L(47.50250,19.05830)};
+const PLAN=[
+ {id:'land',d:0,t:'12:05',title:'Aterrizaje en Budapest',note:'Vuelo W62376. Salir del aeropuerto hacia las 12:45.'},
+ {id:'bus',d:0,t:'13:00',title:'Bus 100E hasta Kálvin tér',note:'40 min · 2.500 HUF por persona (billete especial, aparte).',loc:PL.kalvin},
+ {id:'mercado',d:0,t:'13:35',title:'Gran Mercado (Fővám tér)',note:'Lángos y gulash en la planta alta. Cierra de 15:00 a 16:00: salir antes de las 14:40.',loc:PL.mercado,poi:'mercado'},
+ {id:'libertad',d:0,t:'14:40',title:'Cruzar el Puente de la Libertad',note:'A pie hasta Szent Gellért tér.',loc:PL.gellertter,poi:'libertad'},
+ {id:'subida',d:0,t:'15:00',title:'Subir a Gellért Hill',note:'20–30 min andando.',loc:PL.citadella},
+ {id:'citadella',d:0,t:'15:30',star:true,anchor:true,title:'Citadella: atardecer',note:'Hora dorada desde ~15:20, sol ~16:07, hora azul hasta ~16:40.',loc:PL.citadella,poi:'gellert'},
+ {id:'bajar',d:0,t:'16:45',title:'Bajar de Gellért',note:'Bus 27, o andando con la linterna del móvil: los caminos están poco iluminados.'},
+ {id:'vuelta',d:0,t:'17:15',title:'Volver a A57',note:'Bus 27 + tranvía 4 o 6 hasta Oktogon.',loc:PL.hotel},
+ {id:'a57',d:0,t:'18:00',title:'A57: check-in, ducha y descanso',note:'Akácfa utca 57.',loc:PL.hotel},
+ {id:'szimpla',d:0,t:'19:45',title:'Szimpla Kert',note:'Entrada gratis: cerveza y paseo por todas las salas. Llegar antes de las 20:00 evita la cola.',loc:PL.szimpla,poi:'szimpla'},
+ {id:'salida',d:0,t:'21:30',star:true,anchor:true,title:'Salir hacia el festival',note:'M2 desde Blaha Lujza o Astoria hasta Pillangó utca + 15 min a pie.',loc:PL.blaha},
+ {id:'bonusz',d:0,t:'22:15',star:true,anchor:true,title:'Llegada al Bónusz',note:'Hungexpo, Albertirsai út 10, puerta 3. Canjear el justificante del pedido con documento con foto. Sin reentrada.',loc:PL.hungexpo},
+ {id:'aot',d:0,t:'22:30',fest:true,title:'Red Arena · Agents of Time'},
+ {id:'fideles',d:1,t:'0:00',fest:true,title:'Red Arena · Fideles'},
+ {id:'kdv',d:1,t:'1:30',fest:true,title:'Red Arena · Kevin de Vries'},
+ {id:'mathame',d:1,t:'3:00',fest:true,title:'Red Arena · Mathame (show A/V)'},
+ {id:'vueltafest',d:1,t:'4:30',title:'Vuelta en M2 desde Pillangó utca',note:'Puede haber autobuses especiales hasta el metro.',loc:PL.pillango},
+ {id:'dormir1',d:1,t:'8:00',title:'Vuelta a A57 y dormir',loc:PL.hotel},
+ {id:'brunch',d:1,t:'13:00',title:'Despertar y brunch cerca de A57'},
+ {id:'checkin',d:1,t:'13:00',star:true,task:true,title:'Check-in online de Wizz (W62375)',note:'Cierra el lunes a las 3:00.'},
+ {id:'llaves',d:1,t:'13:00',star:true,task:true,title:'Confirmar con el anfitrión de A57 cómo dejar las llaves',note:'Salida el lunes a las 3:30.'},
+ {id:'judio',d:1,t:'14:00',title:'Barrio judío: Gran Sinagoga por fuera y Kazinczy utca',loc:PL.dohany,poi:'dohany'},
+ {id:'navidad1',d:1,t:'14:30',star:true,anchor:true,title:'Mercado de Navidad (Vörösmarty tér)',note:'Primera visita. Abierto de 11:00 a 21:00. Después, al Puente de las Cadenas.',loc:PL.voros,poi:'navidad'},
+ {id:'castillo',d:1,t:'15:20',title:'Subir al Castillo',note:'Escaleras 10–15 min o bus 16.',loc:PL.bastion},
+ {id:'bastion',d:1,t:'15:55',star:true,anchor:true,title:'Bastión de los Pescadores: atardecer',note:'Sol ~16:07. Terraza inferior gratis; la superior, 1.700 HUF por persona hasta las 19:00.',loc:PL.bastion,poi:'bastion'},
+ {id:'cadenas',d:1,t:'16:45',title:'Bajar y cruzar el Puente de las Cadenas en la hora azul',loc:PL.cadenas,poi:'cadenas'},
+ {id:'navidad2',d:1,t:'17:10',star:true,anchor:true,title:'Mercado de Navidad: vino caliente y kürtőskalács',loc:PL.voros,poi:'navidad'},
+ {id:'muelle',d:1,t:'18:05',anchor:true,title:'Ir al muelle (Pier 7, Jane Haining rkp)',note:'Con el voucher electrónico. Llegar 20–30 min antes para elegir asiento.',loc:PL.pier},
+ {id:'crucero',d:1,t:'18:30',star:true,anchor:true,title:'Crucero nocturno (1 h, Civitatis)',note:'Sentarse dentro con calefacción y subir a cubierta al pasar el Parlamento.',loc:PL.pier},
+ {id:'fincrucero',d:1,t:'19:30',title:'Fin del crucero'},
+ {id:'basilica',d:1,t:'19:45',title:'Mercado de la Basílica y cena',note:'Luces en la fachada desde las 17:30.',loc:PL.basilica,poi:'basilica'},
+ {id:'andrassy',d:1,t:'21:00',title:'Paseo de vuelta por Andrássy út (Ópera) hasta A57',loc:PL.opera,poi:'andrassy'},
+ {id:'dormir2',d:1,t:'21:45',title:'A dormir',loc:PL.hotel},
+ {id:'despertar',d:2,t:'3:00',star:true,anchor:true,title:'Despertar'},
+ {id:'taxi',d:2,t:'3:30',star:true,anchor:true,title:'Taxi o Bolt al aeropuerto',note:'33–45 €. Pedirlo antes.'},
+ {id:'vuelo',d:2,t:'6:00',star:true,anchor:true,title:'Vuelo W62375 BUD → BCN',note:'Llegada a las 8:40.'},
+].map(p=>({...p,m:H(p.t)}));
+const ANCHORS=PLAN.filter(p=>p.anchor).map(p=>({d:p.d,m:p.m,label:p.title,hard:true,id:p.id}));
+function planNow(t){
+  const T=abs(t);let cur=null,next=null;
+  for(const p of PLAN){if(p.task)continue;if(abs(p)<=T)cur=p;else if(!next)next=p}
+  const nextStar=PLAN.find(p=>p.star&&abs(p)>T)||null;
+  return {cur,next,nextStar};
+}
+function findTarget(id){
+  if(!id)return null;
+  if(id.startsWith('plan:')){const p=PLAN.find(x=>x.id===id.slice(5));return p&&p.loc?{id,name:(p.star?'⭐ ':'')+p.title,lat:p.loc.lat,lng:p.loc.lng,plan:p}:null}
+  return POIS.find(p=>p.id===id)||null;
+}
+let tasks=null;const getTasks=()=>tasks||(tasks=new Set(store.get('tasks',[])));
+
 
 /* ================= ESTADO ================= */
 const store={get(k,d){try{const v=localStorage.getItem('brj_'+k);return v?JSON.parse(v):d}catch(e){return d}},
@@ -492,7 +566,7 @@ function nextAnchor(t,hardOnly){
 function score(p,t){
   const w=walkMin(pos,p);const st=openState(p,t);const nh=nextAnchor(t,true);
   const remaining=nh?abs(nh)-abs(t):9999;
-  const fits=w+p.dur+ (nh&&nh.label.includes('festival')? walkMin(p,HOTEL):0) <= remaining;
+  const np_=nh&&PLAN.find(x=>x.id===nh.id&&x.loc);const fits=w+p.dur+(np_?walkMin(p,np_.loc):0) <= remaining;
   const sun=SUNSET[t.d]??SUNSET[0];const toSun=sun-t.m;
   let s=100-w*1.6;const why=[];
   if(st.s==='closed'){s-=1000}
@@ -509,6 +583,9 @@ function score(p,t){
   if(p.cat==='ruin'&&t.m<H('16:00')){s-=20}
   if(p.must){s+=12}
   if(p.paz){s+=8;why.push('guardado por Paz')}
+  const pn=planNow(t);
+  if(pn.next&&pn.next.poi===p.id&&abs(pn.next)-abs(t)<120){s+=40;why.push('en vuestro plan')}
+  else if(pn.next&&pn.next.loc&&abs(pn.next)-abs(t)<150&&walkMin(p,pn.next.loc)<=6&&p.dur<=45){s+=10;why.push('de camino al plan')}
   if(done.has(p.id)){s-=500}
   return {s,w,st,fits,remaining,hint:why};
 }
@@ -539,10 +616,12 @@ function render(){
   const nh=nextAnchor(t,true);
   if(nh){const r=abs(nh)-abs(t);if(r<=120&&r>0){
     const back=walkMin(pos,HOTEL);
-    al.push(`<div class="banner warn">⚠️ <b>${nh.label}</b> en ${dur(r)}. Estáis a ${back} min a pie del alojamiento.${nh.label.includes('festival')?' Hungexpo está lejos del centro: contad ~30–40 min en transporte/taxi.':' Pedid el taxi/Bolt con margen.'}</div>`);
+    const np=PLAN.find(x=>x.id===nh.id);const tw=np&&np.loc?walkMin(pos,np.loc):back;
+    al.push(`<div class="banner warn">⭐ <b>${nh.label}</b> a las ${fmt(nh.m)} (en ${dur(r)}). ${np&&np.loc?`Estáis a ~${tw} min a pie${tw>35?' (mejor transporte)':''}.`:''} ${np&&np.note?esc(np.note):''}</div>`);
   }}
   $('alerts').innerHTML=al.join('');
 
+  renderPlanCard(t);if(currentView==='plan')renderPlan();
   // ubicación
   $('locLine').innerHTML=`📍 ${pos.src==='gps'?'GPS':'Ubicación manual'}: <b>${esc(pos.label||'')}</b> <button id="chLoc" style="padding:4px 8px;font-size:12px">Cambiar</button>`+(gpsFar?`<br>🛰️ GPS activo, pero estáis a ~${gpsFar} km de Budapest: modo prueba hasta que lleguéis.`:'');
   $('chLoc').onclick=openLoc;
@@ -581,48 +660,58 @@ function card(x,t){
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 
 /* ================= PLAN ================= */
+function stepActs(p){
+  if(!p.loc)return '';
+  return `<div class="acts"><a href="https://www.google.com/maps/dir/?api=1&destination=${p.loc.lat},${p.loc.lng}&travelmode=walking" target="_blank" rel="noopener">Cómo llegar · ${walkMin(pos,p.loc)} min</a><button data-mapgo="plan:${p.id}">🎯 En el mapa</button></div>`;
+}
+function bindPlanBtns(root){
+  root.querySelectorAll('[data-mapgo]').forEach(b=>b.onclick=()=>{go('map');setTimeout(()=>document.dispatchEvent(new CustomEvent('brj:dest',{detail:b.dataset.mapgo})),60)});
+  root.querySelectorAll('[data-task]').forEach(c=>c.onchange=()=>{const T=getTasks();c.checked?T.add(c.dataset.task):T.delete(c.dataset.task);store.set('tasks',[...T]);render()});
+}
+function taskHtml(p){return `<label class="task"><input type="checkbox" data-task="${p.id}" ${getTasks().has(p.id)?'checked':''}><span>⭐ <b>${esc(p.title)}</b>${p.note?`<br><span class="muted">${esc(p.note)}</span>`:''}</span></label>`}
+function renderPlanCard(t){
+  const {cur,next,nextStar}=planNow(t);const el=$('planCard');
+  const pending=PLAN.filter(p=>p.task&&!getTasks().has(p.id)&&abs(p)<=abs(t)+60);
+  let h='<div class="plancard">';
+  if(cur&&!cur.task)h+=`<div class="lbl">Ahora en el plan · desde las ${cur.t}</div><div class="big">${cur.star?'<span class="star">⭐</span> ':''}${esc(cur.title)}</div>${cur.note?`<div class="tip">${esc(cur.note)}</div>`:''}`;
+  else h+=`<div class="lbl">Vuestro plan</div><div class="big">${t.d===0&&t.m<H('12:05')?'Aún no habéis aterrizado':'Tiempo libre'}</div>`;
+  if(pending.length)h+='<div class="sep"></div><div class="lbl">Pendiente</div>'+pending.map(taskHtml).join('');
+  if(next){h+=`<div class="sep"></div><div class="lbl">Siguiente · ${next.t} · <span class="cnt">en ${dur(abs(next)-abs(t))}</span></div><div class="big">${next.star?'<span class="star">⭐</span> ':''}${esc(next.title)}</div>${next.note?`<div class="tip">${esc(next.note)}</div>`:''}${stepActs(next)}`}
+  if(nextStar&&nextStar!==next)h+=`<div class="sep"></div><div class="lbl">Próximo imprescindible · ${nextStar.t} · <span class="cnt">en ${dur(abs(nextStar)-abs(t))}</span></div><div><span class="star">⭐</span> <b>${esc(nextStar.title)}</b></div>`;
+  h+=`<div class="row" style="margin-top:8px"><button id="seePlan" style="font-size:13px;padding:6px 10px">Ver todo el cronograma</button></div></div>`;
+  el.innerHTML=h;bindPlanBtns(el);$('seePlan').onclick=()=>go('plan');
+}
+
+/* ================= PLAN ================= */
 function renderPlan(){
-  const s0=fmt(SUNSET[0]),s1=fmt(SUNSET[1]);
-  const day=(title,steps)=>`<h2>${title}</h2>`+steps.map(([t,a,b])=>`<div class="step"><time>${t}</time><div><b>${a}</b>${b?`<p>${b}</p>`:''}</div></div>`).join('');
-  $('v-plan').innerHTML=`
-  <div class="banner">Esto es un guion orientativo, no un tour: la pestaña <b>Ahora</b> os recoloca según dónde estéis y la hora.</div>
-  ${day('Sábado 14 · ciudad + atardecer + festival',[
-   ['12:05','Aterrizaje','Bus 100E al centro (Deák tér, ~40 min) o Bolt/taxi. A57 está a ~10 min a pie de Deák.'],
-   ['13:15','Dejar mochilas en A57',''],
-   ['13:30','Comida rápida en el barrio','💖 De la lista de Paz: Gasztro Ház Lángos o Langos Papi. Si hay hambre de verdad: 💖 Mama Goulash (Dob utca).'],
-   ['14:15','Basílica → Parlamento → Zapatos del Danubio','Todo a pie. Si os apetece, el Mercado Central cierra a media tarde el sábado.'],
-   ['15:15','Cruzar el Puente de las Cadenas y subir al Castillo','Funicular o a pie desde Clark Ádám tér. Café rápido en Ruszwurm.'],
-   [s0,'🌅 Atardecer en el Bastión de los Pescadores','Llegad 20–30 min antes. Después, Iglesia de Matías y bajada por las terrazas del Palacio.'],
-   ['17:30','Danubio de noche','Batthyány tér para la foto del Parlamento iluminado, o tranvía 2 por la orilla de Pest.'],
-   ['19:00','Cena en el barrio judío','💖 Mama Goulash o 💖 Restaurante Fuego (de la lista de Paz), o Mazel Tov. Paseo por Gozsdu.'],
-   ['20:30','Descanso / ducha en A57',''],
-   ['21:30','Salir hacia el Bónusz (Hungexpo)','Está en el distrito X, lejos del centro: shuttle del festival desde Deák (si lo hay) o Bolt. Guardad batería.'],
-  ])}
-  ${day('Domingo 15 · Pest a fondo + ruin bars',[
-   ['Mañana','Recuperarse del festival','Sin culpa: la app os recoloca a la hora que sea.'],
-   ['hasta 14:00','Brunch en el mercado de productores de Szimpla','Solo los domingos, a 5 min del alojamiento.'],
-   ['13:00','Gran Sinagoga Dohány','Cerrada el sábado: hoy es el día. Confirmad el horario.'],
-   ['14:30','Andrássy a pie → Ópera → Plaza de los Héroes → Vajdahunyad','Café en Művész o en el Book Café por el camino. Volved en el metro M1.'],
-   [s1,'🌅 Segundo atardecer','Opciones: Paseo del Danubio / Puente de la Libertad, cúpula de San Esteban o Monte Gellért (más lejos).'],
-   ['17:00','Café histórico','New York Café a última hora (menos cola) o Central Kávéház.'],
-   ['19:30','Cena de despedida','Mazel Tov, en vuestra calle (reservad).'],
-   ['21:00','Ruta corta de ruin bars','Szimpla → Kőleves → Instant-Fogas (pegado a A57).'],
-   ['22:30','A dormir','Despertador ~3:15.'],
-  ])}
-  ${day('Lunes 16 · vuelta',[
-   ['3:45','Bolt/taxi al aeropuerto','~25–30 min de noche. Vuelo a las 6:00 (Wizz, mochila).'],
-  ])}`;
+  const t=now();const T=abs(t);const {cur}=planNow(t);
+  const days=[['Sábado 14 de noviembre',0],['Domingo 15 de noviembre',1],['Lunes 16 de noviembre',2]];
+  let h=`<div class="banner">Vuestro cronograma. No hace falta seguirlo al pie de la letra: la pestaña <b>Ahora</b> y el mapa os recolocan según la hora y dónde estéis. <span class="star">⭐</span> = sí o sí.</div>`;
+  days.forEach(([name,d])=>{
+    h+=`<h2>${name}</h2>`;
+    PLAN.filter(p=>p.d===d).forEach(p=>{
+      const past=p.task?getTasks().has(p.id):(abs(p)<T&&p!==cur),isNow=p===cur;
+      const cls=['step',p.star?'isstar':'',past?'past':'',isNow?'now':'',p.fest?'fest':''].join(' ');
+      const body=p.task?taskHtml(p):`<b>${p.star?'<span class="star">⭐</span> ':''}${p.fest?'🎧 ':''}${esc(p.title)}</b>${isNow?'<span class="nowtag">AHORA</span>':''}${p.note?`<p>${esc(p.note)}</p>`:''}${past?'':stepActs(p)}`;
+      h+=`<div class="${cls}"><time>${p.t}</time><div>${body}</div></div>`;
+    });
+  });
+  h+=`<p class="muted" style="margin-top:14px">Ojo: la app calcula la puesta de sol a las ${fmt(SUNSET[0])} el sábado y a las ${fmt(SUNSET[1])} el domingo; el cronograma dice ~16:07. Llegando a la hora prevista, vais bien en ambos casos.</p>`;
+  $('v-plan').innerHTML=h;bindPlanBtns($('v-plan'));
+  const nowEl=$('v-plan').querySelector('.step.now');if(nowEl&&!renderPlan.scrolled){renderPlan.scrolled=true;setTimeout(()=>nowEl.scrollIntoView({block:'center'}),50)}
 }
 
 /* ================= BÁSICOS ================= */
 function renderInfo(){
   $('v-info').innerHTML=`
   <div class="card"><h3>Moverse</h3><ul class="tight">
-   <li>Aeropuerto ↔ centro: bus <b>100E</b> hasta Deák tér (~40 min, billete especial) o Bolt/taxi.</li>
+   <li>Aeropuerto → centro: bus <b>100E</b> hasta Kálvin tér (~40 min, 2.500 HUF por persona, billete especial aparte).</li>
+   <li>Vuelta al aeropuerto el lunes: taxi o Bolt a las 3:30 (33–45 €). Pedidlo con antelación.</li>
    <li>Pase de 24 h o 72 h de BKK: metro, tranvía y bus ilimitados. Validad el billete sencillo antes de subir.</li>
    <li><b>Tranvía 2</b>: recorre el Danubio por Pest, casi una visita panorámica.</li>
    <li><b>M1</b> (línea amarilla): metro histórico bajo Andrássy, hasta la Plaza de los Héroes.</li>
-   <li>Bónusz: Hungexpo, Albertirsai út 10 (distrito X).</li>
+   <li>Bónusz: Hungexpo, Albertirsai út 10, <b>puerta 3</b>. Ida: M2 desde Blaha Lujza o Astoria hasta Pillangó utca + 15 min a pie. Sin reentrada. Llevad el justificante y un documento con foto.</li>
+   <li>Gellért: bajar con el bus 27; de vuelta a A57, tranvía 4 o 6 hasta Oktogon.</li>
   </ul></div>
   <div class="card"><h3>Dinero</h3><ul class="tight">
    <li>Moneda: forinto (HUF). La tarjeta funciona casi en todas partes.</li>
@@ -716,14 +805,16 @@ function context(){
   const near=POIS.map(p=>({p,...score(p,t)})).sort((a,b)=>b.s-a.s).slice(0,14)
     .map(x=>`- ${x.p.name} [${CATLABEL[x.p.cat]}${x.p.paz?', guardado por Paz':''}] ${x.w} min a pie, ${x.st.s==='open'?'abierto':x.st.s==='closed'?'cerrado':'horario dudoso'}${done.has(x.p.id)?', YA VISITADO':''}. ${x.p.why}`).join('\n');
   return `Eres el guía de bolsillo de una pareja (Mati y Paz) en Budapest, de viaje solo el fin de semana (sáb 14 y dom 15 de noviembre de 2026). Les gusta: la ciudad en sí, vistas, atardeceres, comida, cafés, algo de historia y ruin bars. No tienen tiempo para termas. Se alojan en A57, Akácfa utca 57 (distrito VII, barrio judío, Pest).
-Cronograma fijo: sábado por la noche van al Bónusz Festival en Hungexpo (Albertirsai út 10, distrito X), salen hacia las 21:30. Lunes vuelo a las 6:00: salen al aeropuerto a las 3:45.
+Su cronograma (⭐ = imprescindible; es una guía, no obligatorio):
+${PLAN.map(p=>`${DAYNAME[p.d]} ${p.t}${p.star?' ⭐':''} ${p.title}`).join('\n')}
+Paso actual del plan: ${planNow(t).cur?planNow(t).cur.title:'ninguno'}; siguiente: ${planNow(t).next?planNow(t).next.t+' '+planNow(t).next.title:'ninguno'}.
 AHORA: ${DAYNAME[t.d]}, ${fmt(t.m)} (hora de Budapest). Atardecer hoy: ${fmt(sun)} (${sun-t.m>0?'faltan '+dur(sun-t.m):'ya ha anochecido'}). Próximo compromiso: ${na?na.label+' a las '+fmt(na.m)+' (en '+dur(abs(na)-abs(t))+')':'ninguno'}${nh&&nh!==na?'; próximo compromiso fijo: '+nh.label+' a las '+fmt(nh.m):''}.
 Ubicación: ${pos.label} (${pos.lat.toFixed(5)}, ${pos.lng.toFixed(5)}).
 Ya visitado: ${[...done].map(id=>POIS.find(p=>p.id===id)?.name).filter(Boolean).join(', ')||'nada aún'}.
 Mejores candidatos cercanos según la app:
 ${near}
 Los sitios marcados 'guardado por Paz' son de su lista de favoritos: dales preferencia cuando encajen.
-Reglas: responde en español, breve y práctico (máx. ~120 palabras), con 1–3 propuestas concretas y en orden, indicando el tiempo a pie. Respeta los horarios fijos. Puedes sugerir sitios que no estén en la lista si encajan, pero si no estás seguro de un horario o de que algo siga abierto, dilo y sugiere confirmarlo en Google Maps. No te inventes datos.`;
+Reglas: responde en español, breve y práctico (máx. ~120 palabras), con 1–3 propuestas concretas y en orden, indicando el tiempo a pie. Respeta el cronograma y sobre todo los ⭐: propón cosas que encajen en el hueco hasta el siguiente paso. Puedes sugerir sitios que no estén en la lista si encajan, pero si no estás seguro de un horario o de que algo siga abierto, dilo y sugiere confirmarlo en Google Maps. No te inventes datos.`;
 }
 let sampleFn=null;let history=[];
 (async()=>{try{if(window.claude&&window.claude.use){sampleFn=await window.claude.use('sample');}}catch(e){sampleFn=null}
@@ -758,7 +849,7 @@ $('copyQ').onclick=copyQ;
 
 /* ================= NAVEGACIÓN ================= */
 let currentView='now';
-function go(v){currentView=v;document.querySelectorAll('.view').forEach(s=>s.classList.toggle('on',s.id==='v-'+v));document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));document.body.classList.toggle('mapmode',v==='map');keepAwake(v==='map');window.scrollTo(0,0);document.dispatchEvent(new CustomEvent('brj:view',{detail:v}))}
+function go(v){currentView=v;if(v==='plan'){renderPlan.scrolled=false;setTimeout(renderPlan,0)}document.querySelectorAll('.view').forEach(s=>s.classList.toggle('on',s.id==='v-'+v));document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));document.body.classList.toggle('mapmode',v==='map');keepAwake(v==='map');window.scrollTo(0,0);document.dispatchEvent(new CustomEvent('brj:view',{detail:v}))}
 setTimeout(()=>{if(!window.map3dLoaded){const l=document.getElementById('mapLoading');if(l)l.textContent='No se pudo cargar el motor 3D (¿sin conexión?). La pestaña “Ahora” sigue funcionando.'}},12000);
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>go(b.dataset.v));
 $('chips').innerHTML=CATS.map(c=>`<button class="chip ${c.k===cat?'on':''}" data-c="${c.k}">${c.l}</button>`).join('');
@@ -1291,43 +1382,56 @@ function dayNight(t){
 /* ---------- interfaz ---------- */
 function hud(t,ranked){
   const sun_=SUNSET[t.d]??SUNSET[0];const toSun=sun_-t.m;const na=nextAnchor(t,false);
-  const dp=dest&&POIS.find(p=>p.id===dest);
+  const dp=findTarget(dest);const pn=planNow(t);const nx=pn.next;
   document.getElementById('hud').innerHTML=
     `<span class="pill">🌇 <b>${fmt(sun_)}</b> ${toSun>0?'· en '+dur(toSun):'· de noche'}</span>`+
-    (na?`<span class="pill">⏱️ ${na.label} · <b>${dur(abs(na)-abs(t))}</b></span>`:'')+
+    (nx?`<span class="pill" style="border-color:#b98a2e">📅 ${nx.t} ${nx.star?'⭐ ':''}${esc(nx.title)} · <b>${dur(abs(nx)-abs(t))}</b></span>`:'')+
     (dp?`<span class="pill" style="border-color:#39d0ff">🎯 ${esc(dp.name)} · <b>${walkMin(pos,dp)} min</b></span>`:'')+
     `<span class="pill">${pos.src==='gps'?'🛰️ GPS':gpsFar?'🧪 Prueba · tocad el mapa':'👆 Manual · tocad el mapa'}</span>`+
     (t.simulated?`<span class="pill">🧪 ${DAYNAME[t.d]} ${fmt(t.m)}</span>`:'');
 }
 let chipSig='';
 function chips(ranked){
-  const sig=ranked.map(x=>x.p.id+':'+x.w).join('|')+'#'+dest;if(sig===chipSig)return;chipSig=sig;
+  const pn=planNow(now());const nx=pn.next&&pn.next.loc?pn.next:(pn.nextStar&&pn.nextStar.loc?pn.nextStar:null);
+  const sig=ranked.map(x=>x.p.id+':'+x.w).join('|')+'#'+dest+'#'+(nx?nx.id+walkMin(pos,nx.loc):'');if(sig===chipSig)return;chipSig=sig;
   const el=document.getElementById('mapChips');
-  el.innerHTML=ranked.map((x,i)=>`<button data-id="${x.p.id}" class="${i===0?'first':''} ${dest===x.p.id?'dest':''}">${i+1} · ${CATEMO[x.p.cat]} ${x.p.paz?'💖 ':''}${esc(x.p.name)} · ${x.w} min</button>`).join('');
-  el.querySelectorAll('button').forEach(b=>b.onclick=()=>focusPoi(POIS.find(p=>p.id===b.dataset.id)));
+  el.innerHTML=(nx?`<button class="plan ${dest==='plan:'+nx.id?'dest':''}" data-plan="${nx.id}">📅 ${nx.t} ${nx.star?'⭐ ':''}${esc(nx.title)} · ${walkMin(pos,nx.loc)} min</button>`:'')+ranked.map((x,i)=>`<button data-id="${x.p.id}" class="${i===0?'first':''} ${dest===x.p.id?'dest':''}">${i+1} · ${CATEMO[x.p.cat]} ${x.p.paz?'💖 ':''}${esc(x.p.name)} · ${x.w} min</button>`).join('');
+  el.querySelectorAll('button[data-id]').forEach(b=>b.onclick=()=>focusPoi(POIS.find(p=>p.id===b.dataset.id)));
+  el.querySelectorAll('button[data-plan]').forEach(b=>b.onclick=()=>goPlan('plan:'+b.dataset.plan));
 }
 function focusPoi(poi){
   followMode=false;updateFollowBtn();const w=toW(poi.lat,poi.lng),y=height(w.x,w.z);
   controls.target.set(w.x,y,w.z);camera.position.set(w.x+22,y+50,w.z+62);openSheet(poi);
 }
+function goPlan(id){
+  const tg=findTarget(id);if(!tg)return;
+  if(tg.plan.poi){const poi=POIS.find(p=>p.id===tg.plan.poi);if(poi){setDest(id);focusPoi(poi);return}}
+  setDest(id);followMode=false;updateFollowBtn();const w=toW(tg.lat,tg.lng),y=height(w.x,w.z);
+  controls.target.set(w.x,y,w.z);camera.position.set(w.x+22,y+50,w.z+62);
+  toast(`🎯 ${tg.name}${tg.plan.note?' · '+tg.plan.note:''}`);
+}
+document.addEventListener('brj:dest',e=>{const id=e.detail;const go_=()=>{if(started&&destLine)goPlan(id);else setTimeout(go_,200)};go_()});
 /* objetivo: línea desde vosotros hasta el sitio elegido */
 let dest=store.get('dest',null),destLine=null;
+let planPin=null;
 function buildDest(){
+  planPin=label('📅 plan','#b98a2e','#fff',1.2);planPin.visible=false;scene.add(planPin);
   const g=new THREE.BoxGeometry(1,.12,1);g.translate(0,0,.5);
   destLine=new THREE.Mesh(g,new THREE.MeshBasicMaterial({color:'#39d0ff',transparent:true,opacity:.75,depthTest:false}));
   destLine.renderOrder=6;destLine.visible=false;destLine.frustumCulled=false;scene.add(destLine);
 }
 function setDest(id){dest=id;store.set('dest',dest);chipSig='';refresh()}
 function updateDest(mid,el){
-  const dp=dest&&POIS.find(p=>p.id===dest);
-  if(!dp){destLine.visible=false;return}
+  const dp=findTarget(dest);
+  if(!dp){destLine.visible=false;planPin.visible=false;return}
+  if(dp.plan&&!dp.plan.poi){const w0=toW(dp.lat,dp.lng);planPin.visible=true;planPin.position.set(w0.x,height(w0.x,w0.z)+9+Math.sin(el*3)*.6,w0.z)}else planPin.visible=false;
   const w=toW(dp.lat,dp.lng),dx=w.x-mid.x,dz=w.z-mid.z,len=Math.hypot(dx,dz);
   destLine.visible=len>2;destLine.position.set(mid.x,Math.max(mid.y,height(w.x,w.z))+1.2,mid.z);
   destLine.rotation.y=Math.atan2(dx,dz);destLine.scale.set(.9,1,len);destLine.material.opacity=.55+.25*Math.sin(el*4);
 }
 function checkArrival(){
-  const dp=dest&&POIS.find(p=>p.id===dest);if(!dp)return;
-  if(kmBetween(pos,dp)*1000<60){dest=null;store.set('dest',null);chipSig='';toast('🎉 ¡Habéis llegado a '+dp.name+'!');openSheet(dp)}
+  const dp=findTarget(dest);if(!dp)return;
+  if(kmBetween(pos,dp)*1000<60){dest=null;store.set('dest',null);chipSig='';toast('🎉 ¡Habéis llegado a '+dp.name.replace('⭐ ','')+'!');if(!dp.plan)openSheet(dp)}
 }
 function updateFollowBtn(){document.getElementById('btnFollow').style.borderColor=followMode?'var(--acc)':'var(--line)'}
 document.getElementById('btnFollow').onclick=()=>{followMode=true;updateFollowBtn();const a=avatarTarget();camera.position.set(a.x+28,a.y+55,a.z+70)};
