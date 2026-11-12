@@ -1650,7 +1650,7 @@ function makeAvatar(o){
 
   const shadow=new THREE.Mesh(new THREE.CircleGeometry(.32,24),new THREE.MeshBasicMaterial({color:'#000',transparent:true,opacity:.25,depthWrite:false}));
   shadow.rotation.x=-Math.PI/2;shadow.position.y=.01;g.add(shadow);
-  const tag=label(o.name,o.tag,'#fff',.11);tag.position.set(o.side*.12,2.08,0);g.add(tag);g.userData.tag=tag;
+  g.userData.tag={visible:false};
   g.scale.setScalar(6.8*o.h);scene.add(g);
   return {group:g,name:o.name,h:o.h,head,scarf,legs,knees,arms,elbows,body:up,bodyBase:0,phase:Math.random()*6,speed:0,side:o.side};
 }
@@ -1670,7 +1670,7 @@ function makeMate(){
   return g;
 }
 function passMate(){
-  if(mateAnim||!mateHolder)return;
+  if(mateAnim||!mateHolder||action||movie)return;
   const g=mateHolder,r=avatars.find(a=>a!==g);
   mateAnim={g,r,t:0,swapped:false};lastPassT=clock.elapsedTime;toast(`🧉 ${g.name} le pasa el mate a ${r.name}`);
 }
@@ -1859,7 +1859,14 @@ const ACTIONS={
       if(t>4.6)once(A,'lol',()=>bubble(M,'😂',3.2))}
   }},
 };
+function endAction(A){
+  A.props.forEach(p=>p.parent&&p.parent.remove(p));
+  [A.mati,A.paz].forEach(av=>{av.arms.forEach((a,i)=>{a.rotation.z=SIDE[i]*.1});av.legs.forEach(l=>{l.rotation.z=0});av.head.rotation.set(0,0,0);av.lastHop=undefined;av.group.rotation.x=0;av.group.rotation.z=0});
+  if(!A.quiet)document.body.classList.remove('acting');
+  if(action===A)action=null;
+}
 function startAction(kind,o={}){
+  if(action&&action.quiet&&!o.quiet)endAction(action);
   if(action||mateAnim||movie)return false;
   const mati=avatars.find(a=>a.name==='Mati'),paz=avatars.find(a=>a.name==='Paz');
   const m=mati.group.position.clone().add(paz.group.position).multiplyScalar(.5);
@@ -1878,12 +1885,7 @@ function startAction(kind,o={}){
 function runAction(dt){
   if(!action)return;const A=action;A.t+=dt;if(A.t<0)return;
   A.def.run(A,A.t,dt,clock.elapsedTime);
-  if(A.t>=A.def.dur){
-    A.props.forEach(p=>p.parent&&p.parent.remove(p));
-    [A.mati,A.paz].forEach(av=>{av.arms.forEach((a,i)=>{a.rotation.z=SIDE[i]*.1});av.legs.forEach(l=>{l.rotation.z=0});av.head.rotation.set(0,0,0);av.lastHop=undefined});
-    if(!A.quiet){avatars.forEach(a=>{a.group.userData.tag.visible=true});document.body.classList.remove('acting')}
-    action=null;
-  }
+  if(A.t>=A.def.dur)endAction(A);
 }
 
 /* ================= VIVEN EL VIAJE ================= */
@@ -2019,18 +2021,23 @@ function applyMood(m,dt,el,mid,w){
     if(T%1.4<dt)floatIcon(Math.random()<.5?M:P,Math.random()<.5?'💛':'🧡');
   }
 }
+let umbrella=null;
 function weatherFx(){
-  const cold=weather&&weather.temp<8,wet=weather&&(weather.rain||weather.snow);
+  const cold=weather&&weather.temp<8,wet=!!(weather&&(weather.rain||weather.snow));
   avatars.forEach(av=>{av.scarf.visible=!!cold&&mood!=='sleep'});
-  if(wet&&mood!=='sleep'&&mood!=='boat'){
-    const M=avatars.find(a=>a.name==='Mati');
-    if(!moodObj.umb){const u=new THREE.Group();const S=c=>new THREE.MeshStandardMaterial({color:c,roughness:.6,side:THREE.DoubleSide});
-      const can=new THREE.Mesh(new THREE.ConeGeometry(.75,.3,12,1,true),S('#e05a6b'));can.position.y=.95;u.add(can);
-      const st=new THREE.Mesh(new THREE.CylinderGeometry(.012,.012,1,6),S('#222'));st.position.y=.45;u.add(st);
-      u.position.copy(PROP_P);M.elbows[1].add(u);moodObj.umb=u}
-    if(!action){poseArm(M,1,-2.75,-.25,-.15,1)}
-    moodObj.umb.quaternion.copy(M.elbows[1].getWorldQuaternion(new THREE.Quaternion()).invert().multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(0,0,-.25))));
-  }else if(moodObj.umb){moodObj.umb.parent&&moodObj.umb.parent.remove(moodObj.umb);moodObj.umb=null}
+  const show=wet&&mood==='idle'&&!action&&!mateAnim;
+  if(!show){if(umbrella)umbrella.visible=false;return}
+  const M=avatars.find(a=>a.name==='Mati');
+  if(!umbrella){   // se crea una sola vez y vive siempre en la mano izquierda de Mati
+    const u=new THREE.Group();u.userData.umbrella=true;const S=c=>new THREE.MeshStandardMaterial({color:c,roughness:.6,side:THREE.DoubleSide});
+    const can=new THREE.Mesh(new THREE.ConeGeometry(.75,.3,12,1,true),S('#e05a6b'));can.position.y=.95;u.add(can);
+    const st=new THREE.Mesh(new THREE.CylinderGeometry(.012,.012,1,6),S('#222'));st.position.y=.45;u.add(st);
+    u.position.copy(PROP_P);M.elbows[1].add(u);umbrella=u;
+  }
+  umbrella.visible=true;
+  poseArm(M,1,-2.75,-.25,-.15,1);
+  M.group.updateMatrixWorld(true);
+  umbrella.quaternion.copy(M.elbows[1].getWorldQuaternion(new THREE.Quaternion()).invert().multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(0,0,-.25))));
 }
 let flags=new Set(),flagMeshes=[],medalMeshes=[];
 function plantFlag(p){
@@ -2391,7 +2398,7 @@ document.getElementById('exReto').onclick=()=>{actMenu.hidden=true;openReto()};
 document.getElementById('exMovie').onclick=()=>{actMenu.hidden=true;openMovieSheet()};
 document.getElementById('exHome').onclick=()=>{actMenu.hidden=true;openHome()};
 document.addEventListener('brj:movie',()=>{const go_=()=>{if(started)openMovieSheet();else setTimeout(go_,200)};go_()});
-document.addEventListener('brj:medal',e=>{const go_=()=>{if(!started){setTimeout(go_,200);return}addMedal(e.detail);if(currentView==='map')startAction('cheer',{quiet:true,text:'¡Reto cumplido! 🏅'})};go_()});
+document.addEventListener('brj:medal',e=>{const go_=()=>{if(!started){setTimeout(go_,200);return}if(!medalMeshes.some(g=>g.userData.medal.id===e.detail.id))addMedal(e.detail);if(currentView==='map')startAction('cheer',{quiet:true,text:'¡Reto cumplido! 🏅'})};go_()});
 document.getElementById('btnOverview').onclick=()=>flyTo(-10,0,0,{dist:380,height:420,dur:2});
 function openSheet(poi){
   selected=poi;const t=now();const x=score(poi,t);const st=x.st;
