@@ -2453,7 +2453,7 @@ function weatherFx(){
     const u=new THREE.Group();u.userData.umbrella=true;const S=c=>new THREE.MeshStandardMaterial({color:c,roughness:.6,side:THREE.DoubleSide});
     const can=new THREE.Mesh(new THREE.ConeGeometry(.75,.3,12,1,true),S('#e05a6b'));can.position.y=.95;u.add(can);
     const st=new THREE.Mesh(new THREE.CylinderGeometry(.012,.012,1,6),S('#222'));st.position.y=.45;u.add(st);
-    u.position.copy(PROP_P);M.elbows[1].add(u);umbrella=u;
+    u.scale.setScalar(.72);u.position.copy(PROP_P);M.elbows[1].add(u);umbrella=u;
   }
   umbrella.visible=true;
   poseArm(M,1,-2.75,-.25,-.15,1);
