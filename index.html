@@ -578,7 +578,7 @@ let cat='all';
 let sim=null;              // {d,m}
 let pos=store.get('pos',{lat:HOTEL.lat,lng:HOTEL.lng,label:HOTEL.name,src:'manual'});
 let done=new Set(store.get('done',[]));
-let gpsOk=false;
+let gpsOk=false,showAnyway=false;
 
 /* ================= TIEMPO ================= */
 function budNow(dt){
@@ -675,7 +675,7 @@ function render(){
   $('clk').textContent=fmt(t.m);
   $('day').textContent=(DAYNAME[t.d]||'')+(t.simulated?' · simulado':'');
   const tb=$('testBanner');
-  if(t.simulated){tb.hidden=false;tb.innerHTML=(t.auto?'Aún no estáis en Budapest: estoy simulando <b>sábado 14:00</b>. ':'Hora simulada. ')+'<button id="simBtn" style="padding:4px 8px;font-size:12px">Cambiar hora</button>';$('simBtn').onclick=()=>$('simDlg').showModal();}
+  if(t.simulated){tb.hidden=false;tb.innerHTML=(t.auto?(budNow().date>TRIP[2]?'El viaje ya terminó: estoy simulando <b>sábado 14:00</b>. ':'Aún no estáis en Budapest: estoy simulando <b>sábado 14:00</b>. '):'Hora simulada. ')+'<button id="simBtn" style="padding:4px 8px;font-size:12px">Cambiar hora</button>';$('simBtn').onclick=()=>$('simDlg').showModal();}
   else tb.hidden=true;
 
   // anclas
@@ -687,7 +687,11 @@ function render(){
 
   // alertas
   const al=[];
-  if(toSun>0&&toSun<=100){
+  const sunPlan=PLAN.find(p=>p.star&&p.d===t.d&&/atardecer/i.test(p.title)&&p.loc);
+  if(toSun>0&&toSun<=100&&sunPlan){
+    const w=walkMin(pos,sunPlan.loc);
+    al.push(`<div class="banner sun">🌅 <b>Atardecer en ${dur(toSun)}</b> (${fmt(sun)}). Vuestro plan: <b>⭐ ${esc(sunPlan.title.replace(/: atardecer/i,''))}</b> a las ${sunPlan.t} · ${w<=25?'🚶 '+w+' min a pie':'🚇 mejor en transporte ('+w+' min a pie)'}.</div>`);
+  }else if(toSun>0&&toSun<=100){
     const views=POIS.filter(p=>p.best==='sunset'&&!done.has(p.id)).map(p=>({p,w:walkMin(pos,p)})).filter(x=>x.w<toSun-5).sort((a,b)=>a.w-b.w).slice(0,3);
     al.push(`<div class="banner sun">🌅 <b>Atardecer en ${dur(toSun)}</b> (${fmt(sun)}). ${views.length?'Llegáis a tiempo a: '+views.map(x=>`<b>${x.p.name}</b> (${x.w} min)`).join(', ')+'.':'Ningún mirador queda a menos de '+dur(toSun)+' a pie: buscad el río más cercano o coged un taxi.'}</div>`);
   }
@@ -709,6 +713,18 @@ function render(){
   let items=POIS.filter(p=>cat==='all'||(cat==='must'?p.must:cat==='paz'?p.paz:p.cat===cat)).map(p=>({p,...score(p,t)}));
   if(!showClosed) items=items.filter(x=>x.st.s!=='closed'&&!done.has(x.p.id));
   items.sort((a,b)=>b.s-a.s);
+  const pnow=planNow(t),cp=pnow.cur;
+  const rawBlock=!!(cp&&(cp.fest||['bonusz','dormir1','dormir2','despertar','taxi','vuelo'].includes(cp.id)));if(!rawBlock)showAnyway=false;
+  const block=rawBlock&&!showAnyway;
+  if(block){
+    const msg=cp.fest||cp.id==='bonusz'?['🎧','Estáis en el Bónusz','Disfrutad. Para volver, usad «🏠 Llevadme a casa» en la tarjeta de arriba.']:
+      cp.id.startsWith('dormir')?['💤','Toca dormir',pnow.next?`Siguiente: ${pnow.next.t} · ${pnow.next.title}.`:'']:
+      ['✈️','Toca aeropuerto',cp.id==='vuelo'?'Buen vuelo de vuelta 💛':'Taxi o Bolt a las 3:30 y vuelo a las 6:00.'];
+    $('count').textContent='';
+    $('list').innerHTML=`<div class="empty"><div style="font-size:40px">${msg[0]}</div><b style="font-size:17px;color:var(--tx)">${msg[1]}</b><br>${msg[2]}<br><button id="showAny" style="margin-top:12px">Ver recomendaciones igualmente</button></div>`;
+    $('showAny').onclick=()=>{showAnyway=true;render()};
+    return;
+  }
   $('count').textContent=items.length+' sitios';
   $('list').innerHTML=items.length?items.map(x=>card(x,t)).join(''):`<div class="empty">Nada abierto en esta categoría ahora mismo.<br>Probad otra o marcad “mostrar cerrados”.</div>`;
   document.querySelectorAll('[data-done]').forEach(b=>b.onclick=()=>{const id=b.dataset.done;done.has(id)?done.delete(id):done.add(id);store.set('done',[...done]);render()});
@@ -1070,6 +1086,11 @@ $('chips').innerHTML=CATS.map(c=>`<button class="chip ${c.k===cat?'on':''}" data
 $('chips').querySelectorAll('.chip').forEach(b=>b.onclick=()=>{cat=b.dataset.c;$('chips').querySelectorAll('.chip').forEach(x=>x.classList.toggle('on',x===b));render()});
 $('showClosed').onchange=render;
 
+(function tripReset(){
+  const n=budNow();if(!TRIP.includes(n.date)||store.get('tripReset',false))return;
+  ['trail','flags','medals','done','tasks'].forEach(k=>store.set(k,[]));store.set('dest',null);store.set('tripReset',true);
+  done=new Set();tasks=null;
+})();
 renderPlan();renderInfo();render();startGPS(false);
 setInterval(render,60000);
 </script>
@@ -1327,7 +1348,7 @@ function buildBridges(){
     const a=DANUBE[Math.max(0,i)],e=DANUBE[Math.min(DANUBE.length-1,i+1)];
     const ang=Math.atan2(e.x-a.x,e.z-a.z),Lh=(r.w+16)/2;
     const mat=new THREE.MeshLambertMaterial({color:b.col});nightMats.push({m:mat,col:'#ffd27a',k:.45});
-    const grp=new THREE.Group();grp.position.set(r.x,0,r.z);grp.rotation.y=ang+Math.PI/2;scene.add(grp);
+    const grp=new THREE.Group();grp.position.set(c.x,0,c.z);grp.rotation.y=ang+Math.PI/2;scene.add(grp);
     const add=(geo,x,y,z)=>{const m=new THREE.Mesh(geo,mat);m.position.set(x,y,z);grp.add(m);return m};
     add(new THREE.BoxGeometry(3.8,.7,Lh*2),0,1.6,0);
     const tube=(pts,rad)=>{const cv=new THREE.CatmullRomCurve3(pts.map(([z,y])=>new THREE.Vector3(0,y,z)));return cv};
@@ -1528,7 +1549,7 @@ function refresh(){
   if(!started)return;
   const t=now();
   const ranked=POIS.map(p=>({p,...score(p,t)})).filter(x=>x.st.s!=='closed'&&!done.has(x.p.id)).sort((a,b)=>b.s-a.s).slice(0,6);
-  checkArrival();
+  staleDest(t);checkArrival();
   markers.forEach(m=>{
     const r=ranked.findIndex(x=>x.p.id===m.poi.id)+1;const isDone=done.has(m.poi.id);const closed=openState(m.poi,t).s==='closed';const isDest=dest===m.poi.id;
     m.rank=r;m.ring.visible=r>0||isDest;m.ring.material.color.set(isDest?'#39d0ff':'#ffcc55');
@@ -1923,14 +1944,14 @@ function computeMood(t,mid){
   if(movie||(action&&!action.quiet))return 'idle';
   const pn=planNow(t),cur=pn.cur;const r=river(mid.x,mid.z);
   const onBridge=BRIDGE_SEGS.some(sg=>segDist(mid,{...sg.a,w:0},{...sg.b,w:0}).d<5);
-  if((r.d<r.w/2-1.5&&!onBridge)||(cur&&cur.id==='crucero'))return 'boat';
+  if((r.d<r.w/2-6&&!onBridge&&pos.src==='gps')||(cur&&cur.id==='crucero'))return 'boat';
   const nearHotel=walkMin(pos,HOTEL)<=4;
   if(cur&&(cur.id==='dormir1'||cur.id==='dormir2')&&(nearHotel||pos.src!=='gps'))return 'sleep';
   if(cur&&(cur.fest||cur.id==='bonusz'||cur.id==='szimpla'))return 'party';
   const st=stoppedFor()>40;const s_=SUNSET[t.d]??SUNSET[0];
   if(st&&t.m>=s_-25&&t.m<=s_+15)return 'hug';
   if(st&&cur&&['mercado','brunch','basilica','navidad2'].includes(cur.id))return 'eat';
-  if(st&&POIS.some(p=>p.cat==='comida'&&kmBetween(pos,p)*1000<45))return 'eat';
+  if(stoppedFor()>300&&POIS.some(p=>p.cat==='comida'&&kmBetween(pos,p)*1000<40))return 'eat';
   return 'idle';
 }
 function langos(){
@@ -2064,7 +2085,7 @@ function updateLife(dt,el,mid){
   const t=now();ambT-=dt;
   if(ambT<=0){ambT=2;const m=computeMood(t,mid);if(m!==mood)moodNext=m;
     // llegada a un ⭐
-    PLAN.forEach(p=>{if(!p.star||!p.loc||flags.has(p.id))return;
+    if(!t.simulated)PLAN.forEach(p=>{if(!p.star||!p.loc||flags.has(p.id))return;
       if(kmBetween(pos,p.loc)*1000<90&&Math.abs(abs(t)-abs(p))<=100){flags.add(p.id);store.set('flags',[...flags]);plantFlag(p);
         if(startAction('cheer',{quiet:true,text:'¡Llegamos! 🎉'}))ambTimers.photo=6}});
   }
@@ -2109,7 +2130,7 @@ function drawHud(o){
   hudMesh.material.map.needsUpdate=true;
 }
 function moviePath(){
-  let pts=(store.get('trail',[])||[]).filter(p=>p&&isFinite(p.lat)&&onMap(p));let demo=false;
+  let pts=(store.get('trail',[])||[]).filter(inTrip);let demo=false;
   let len=0;for(let i=1;i<pts.length;i++){const a=toW(pts[i-1].lat,pts[i-1].lng),b=toW(pts[i].lat,pts[i].lng);len+=Math.hypot(a.x-b.x,a.z-b.z)}
   if(pts.length<15||len<60){demo=true;pts=PLAN.filter(p=>p.loc&&!p.task&&onMap(p.loc)).map(p=>({lat:p.loc.lat,lng:p.loc.lng,ta:abs(p)}))}
   else{const tas=pts.map(p=>p.t?tsToAbs(p.t):null);const ok=tas.filter(v=>v!==null).length>pts.length*.6;
@@ -2217,7 +2238,8 @@ function moveAvatars(dt){
   const gap=2.8*avScale/6.8,px=Math.cos(heading)*gap,pz=-Math.sin(heading)*gap; // perpendicular
   avatars.forEach(a=>{
     const x=nx+px*a.side,z=nz+pz*a.side;
-    a.group.position.set(x,height(x,z)+.5,z);a.group.scale.setScalar(avScale*a.h);
+    const onBr=BRIDGE_SEGS.some(sg=>segDist({x,z},{...sg.a,w:0},{...sg.b,w:0}).d<2.3);
+    a.group.position.set(x,onBr?Math.max(height(x,z)+.5,1.97):height(x,z)+.5,z);a.group.scale.setScalar(avScale*a.h);
     let dr=heading-a.group.rotation.y;dr=Math.atan2(Math.sin(dr),Math.cos(dr));a.group.rotation.y+=dr*Math.min(1,dt*8);
     a.speed+=((moving?1:0)-a.speed)*Math.min(1,dt*6);
     a.phase+=dt*(moving?(movie?13:tired?6:9):2.2);
@@ -2237,16 +2259,17 @@ function moveAvatars(dt){
 /* ---------- recorrido ---------- */
 const onMap=(p)=>{const w=toW(p.lat,p.lng);return Math.abs(w.x-130)<620&&Math.abs(w.z)<490};
 document.addEventListener('brj:cleartrail',()=>{trail=[];if(trailLine)drawTrail()});
-document.addEventListener('brj:trailreload',()=>{trail=(store.get('trail',[])||[]).filter(p=>p&&isFinite(p.lat)&&onMap(p));if(trailLine)drawTrail();ambTimers.km=0});
+document.addEventListener('brj:trailreload',()=>{trail=(store.get('trail',[])||[]).filter(inTrip);if(trailLine)drawTrail();ambTimers.km=0});
+const inTrip=p=>p&&isFinite(p.lat)&&p.t&&tsToAbs(p.t)!==null&&onMap(p);
 function buildTrail(){
-  trail=(store.get('trail',[])||[]).filter(p=>p&&isFinite(p.lat)&&onMap(p));
+  trail=(store.get('trail',[])||[]).filter(inTrip);
   trailLine=new THREE.Line(new THREE.BufferGeometry(),new THREE.LineDashedMaterial({color:'#e8a33d',dashSize:2,gapSize:1.5,depthTest:false,transparent:true,opacity:.9}));
   trailLine.renderOrder=5;scene.add(trailLine);drawTrail();
 }
 function addTrail(tg){
   const last=trail[trail.length-1];const lp=last?toW(last.lat,last.lng):null;
   if(lp&&Math.hypot(lp.x-tg.x,lp.z-tg.z)<3)return;
-  if(!onMap(pos))return;
+  if(!onMap(pos)||pos.src!=='gps')return;
   trail.push({lat:pos.lat,lng:pos.lng,t:Date.now()});if(trail.length>3000)trail.shift();store.set('trail',trail);drawTrail();
 }
 function drawTrail(){
@@ -2364,6 +2387,7 @@ function buildDest(){
   destLine.renderOrder=6;destLine.visible=false;destLine.frustumCulled=false;scene.add(destLine);
 }
 function setDest(id){dest=id;store.set('dest',dest);chipSig='';refresh()}
+function staleDest(t){const tg=findTarget(dest);if(tg&&tg.plan&&abs(t)>abs(tg.plan)+120){dest=null;store.set('dest',null);chipSig=''}}
 function updateDest(mid,el){
   const dp=findTarget(dest);
   if(!dp){destLine.visible=false;planPin.visible=false;return}
@@ -2402,6 +2426,7 @@ document.addEventListener('brj:movie',()=>{const go_=()=>{if(started)openMovieSh
 document.addEventListener('brj:medal',e=>{const go_=()=>{if(!started){setTimeout(go_,200);return}if(!medalMeshes.some(g=>g.userData.medal.id===e.detail.id))addMedal(e.detail);if(currentView==='map')startAction('cheer',{quiet:true,text:'¡Reto cumplido! 🏅'})};go_()});
 document.getElementById('btnOverview').onclick=()=>flyTo(-10,0,0,{dist:380,height:420,dur:2});
 function openSheet(poi){
+  const am=document.getElementById('actMenu');if(am)am.hidden=true;
   selected=poi;const t=now();const x=score(poi,t);const st=x.st;
   const stTxt=st.s==='open'?'<span class="tag ok">Abierto</span>':st.s==='closed'?'<span class="tag bad">Cerrado</span>':'<span class="tag unk">Horario dudoso</span>';
   const sh=document.getElementById('sheet');sh.hidden=false;
