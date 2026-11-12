@@ -1004,20 +1004,33 @@ function makeAvatar(o){
   add(head,sph(.024),skin,-.1,0,-.005).scale.set(.6,1,1);         // orejas
   add(head,sph(.024),skin,.1,0,-.005).scale.set(.6,1,1);
   const nose=add(head,new THREE.ConeGeometry(.018,.045,8),skin,0,-.01,.112);nose.rotation.x=Math.PI/2;
-  [-.038,.038].forEach(x=>{add(head,sph(.014),M('#f4f1ec'),x,.022,.095);add(head,sph(.009),dark,x,.022,.105);
-    const b=add(head,new THREE.BoxGeometry(.04,.009,.01),hairM,x,.052,.1);b.rotation.z=x<0?.1:-.1});
-  const smile=add(head,new THREE.TorusGeometry(.028,.005,6,12,Math.PI),M('#8a3b33'),0,-.052,.1);smile.rotation.z=Math.PI;
+  [-.038,.038].forEach(x=>{
+    add(head,sph(.017),M('#f6f3ee',.4),x,.02,.098).scale.set(1,.8,.6);   // blanco del ojo
+    add(head,sph(.011),M('#3b2618',.3),x,.02,.108);                        // iris
+    add(head,sph(.004),M('#ffffff',.2),x+.004,.024,.118);                  // brillo
+    const b=add(head,new THREE.BoxGeometry(.044,.011,.012),hairM,x,.05,.104);b.rotation.z=x<0?.12:-.12});
+  const smile=add(head,new THREE.TorusGeometry(.026,.006,6,14,Math.PI),M('#9a4a40'),0,-.05,.104);smile.rotation.z=Math.PI;
   if(o.style==='mati'){
-    add(head,new THREE.BoxGeometry(.075,.014,.02),hairM,0,-.032,.105);   // bigote
-    const top=add(head,new THREE.SphereGeometry(.12,18,12,0,Math.PI*2,0,Math.PI/1.9),hairM,0,.02,-.01);top.scale.set(.98,1,1);
-    [[0,.11,.03,.055],[-.05,.1,.0,.05],[.05,.1,.0,.05],[-.03,.105,.06,.045],[.035,.1,.065,.045],[0,.09,-.06,.055],[-.07,.07,.04,.04],[.07,.07,.04,.04]]
-      .forEach(([x,y,z,r])=>add(head,sph(r),hairM,x,y,z));          // pelo ondulado con volumen
+    add(head,new THREE.BoxGeometry(.072,.015,.02),hairM,0,-.031,.108);   // bigote
+    // pelo corto: solo arriba y detrás, despejando frente y ojos
+    const top=add(head,new THREE.SphereGeometry(.118,18,12,0,Math.PI*2,0,Math.PI/2.4),hairM,0,.05,-.02);
+    [[0,.125,.035,.05],[-.045,.12,.015,.048],[.045,.12,.015,.048],[-.025,.118,.06,.04],[.03,.115,.062,.04],[0,.11,-.06,.055],[-.06,.095,-.02,.045],[.06,.095,-.02,.045]]
+      .forEach(([x,y,z,r])=>add(head,sph(r),hairM,x,y,z));
+    [-1,1].forEach(sd=>add(head,sph(.05),hairM,sd*.085,.03,-.045).scale.set(.5,1,1));   // patillas cortas detrás de las orejas
   }else{
-    const top=add(head,new THREE.SphereGeometry(.122,18,12,0,Math.PI*2,0,Math.PI/1.7),hairM,0,.015,-.012);
-    add(head,new THREE.BoxGeometry(.004,.03,.09),skin,0,.118,.04);  // raya al medio
-    const back=add(head,cap(.11,.24),hairM,0,-.17,-.06);back.scale.z=.55;   // melena por detrás
-    for(let i=0;i<8;i++){const r=.036-i*.0025;add(up,sph(r),hairM,.1-i*.004,1.6-i*.055,.06+Math.sin(i*1.3)*.008)} // trenza sobre el hombro
-    add(head,sph(.012),M('#e8d9a8',.3),-.1,-.035,.01);                // pendiente
+    // pelo largo recogido: raya al medio, laterales detrás de las orejas y trenza por la espalda
+    add(head,new THREE.SphereGeometry(.121,18,12,0,Math.PI*2,0,Math.PI/2.15),hairM,0,.035,-.012);
+    add(head,new THREE.BoxGeometry(.004,.025,.08),skin,0,.155,.03);       // raya
+    [-1,1].forEach(sd=>{const side=add(head,sph(.06),hairM,sd*.09,.0,-.04);side.scale.set(.45,1.25,1)});
+    add(head,sph(.075),hairM,0,-.02,-.085).scale.set(1,1.1,.8);          // volumen en la nuca
+    add(head,sph(.012),M('#e8d9a8',.3),-.1,-.035,.012);                  // pendiente
+    // trenza continua siguiendo la espalda
+    const path=new THREE.CatmullRomCurve3([[0,1.68,-.15],[0,1.58,-.19],[0,1.47,-.2],[0,1.36,-.19],[0,1.25,-.18]].map(v=>new THREE.Vector3(...v)));
+    add(up,new THREE.TubeGeometry(path,24,.024,10,false),hairM);
+    for(let i=0;i<=14;i++){const t=i/14;const pt=path.getPointAt(t);const r=.036-t*.012;
+      add(up,sph(r),hairM,pt.x+(i%2?.011:-.011),pt.y,pt.z-.004).scale.set(1,.85,.85)}   // trenzado
+    const tie=path.getPointAt(1);add(up,cyl(.016,.016,.02),M('#1a1a1a'),tie.x,tie.y-.015,tie.z);
+    add(up,new THREE.ConeGeometry(.025,.07,10),hairM,tie.x,tie.y-.06,tie.z).rotation.x=Math.PI;  // punta
   }
 
   /* brazos */
