@@ -1905,13 +1905,13 @@ function makeFingers(col){   // cinco dedos que se doblan uno por uno
     const c=new THREE.Mesh(new THREE.CapsuleGeometry(.0085,i===0?.022:.032,4,6),m);c.position.y=-.024;f.add(c);g.add(f)}
   return g;
 }
-function makeSunglasses(){   // gafas redondas doradas con cristal marrón
+function makeSunglasses(){   // gafas alargadas doradas con cristal marrón
   const g=new THREE.Group();const fr=new THREE.MeshStandardMaterial({color:'#c9a24a',metalness:.8,roughness:.25});
   const ln=new THREE.MeshStandardMaterial({color:'#3b2410',metalness:.5,roughness:.15,transparent:true,opacity:.92});
-  [-.04,.04].forEach(x=>{const r=new THREE.Mesh(new THREE.TorusGeometry(.031,.004,6,20),fr);r.position.set(x,0,0);g.add(r);
-    const l=new THREE.Mesh(new THREE.CircleGeometry(.03,20),ln);l.position.set(x,0,.001);g.add(l);
-    const tp=new THREE.Mesh(new THREE.BoxGeometry(.004,.004,.1),fr);tp.position.set(x*2.45,.004,-.05);g.add(tp)});
-  const br=new THREE.Mesh(new THREE.BoxGeometry(.018,.004,.004),fr);br.position.y=.008;g.add(br);
+  [-.05,.05].forEach(x=>{const r=new THREE.Mesh(new THREE.TorusGeometry(.031,.004,6,24),fr);r.position.set(x,0,0);r.scale.set(1.45,.62,1);g.add(r);
+    const l=new THREE.Mesh(new THREE.CircleGeometry(.03,24),ln);l.position.set(x,0,.001);l.scale.set(1.45,.62,1);g.add(l);
+    const tp=new THREE.Mesh(new THREE.BoxGeometry(.004,.004,.1),fr);tp.position.set(x*2.0,.004,-.05);g.add(tp)});
+  const br=new THREE.Mesh(new THREE.BoxGeometry(.012,.004,.004),fr);br.position.y=.006;g.add(br);
   g.position.set(0,.022,.118);return g;
 }
 // apunta el brazo (con codo) hacia un punto del mundo
@@ -2050,13 +2050,13 @@ const ACTIONS={
     // 3) baile techno: cabezas de lado a lado, sincronizadas, y hombros con el ritmo
     const wb=Wt(t,2,11.6,.6,.6),bpm=128/60,ph=(t-2)*bpm*Math.PI;
     if(wb>0){
-      const hs=Math.sin(ph/2)*.55;Lr(M.head.rotation,'y',hs,wb);Lr(P.head.rotation,'y',-hs,wb);
+      const hs=Math.sin(ph)*.55;Lr(M.head.rotation,'y',hs,Math.min(1,wb*1.5));Lr(P.head.rotation,'y',hs,Math.min(1,wb*1.5));   // un lado por golpe, cada uno hacia un lado
       [M,P].forEach((av,j)=>{av.body.rotation.z=Math.sin(ph)*.05*wb*(j?-1:1);av.body.rotation.y=Math.sin(ph/2)*.08*wb*(j?-1:1);
         av.group.position.y+=Math.abs(Math.sin(ph))*.035*avScale*wb;av.knees.forEach(k=>Lr(k.rotation,'x',.18+.14*Math.abs(Math.sin(ph)),wb))});
       const beat=Math.floor((t-2)*bpm);if(t>2&&t<11.3&&beat!==A.beat){A.beat=beat;sfx('kick')}
-      if(t>2.6)once(A,'dale',()=>{bubble(P,'¡Dale, dale! 🎶',2.2);say('¡Dale, dale!','Paz')});
-      if(t>6.2)once(A,'uh',()=>{bubble(M,'¡Uuuh! 🔥',1.8);say('¡Uuuh!','Mati')});
-      if(t>9)once(A,'tun',()=>bubble(P,'Tuntuntun 🕺',1.8));
+      if(t>2.6)once(A,'dale',()=>{bubble(M,'¡Dale, dale! 🎶',2.2);say('¡Dale, dale!','Mati')});
+      if(t>6.2)once(A,'uh',()=>{bubble(P,'¡Uh, temazo! 🔥',2);say('¡Uh, temazo!','Paz')});
+      if(t>9)once(A,'taca',()=>{bubble(M,'Taca taca taca 🕺',2);say('Taca taca taca','Mati')});
     }
     // 4) Mati le agarra los hombros; Paz le agarra el torso
     const wa=Wt(t,1.8,11.8,.6,.6);
