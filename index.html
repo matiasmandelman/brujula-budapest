@@ -1997,7 +1997,17 @@ const ACTIONS={
     if(t>4.7)once(A,'dame',()=>{bubble(P,'Dame tu mano 😈',1.8);say('Dame tu mano','Paz')});
     if(t>5.8)once(A,'no',()=>{bubble(M,'Nooo… bueno 🙄',1.6);say('No... bueno','Mati')});
     const w3=Wt(t,6.2,10.3,.5,.5);
-    poseArm(M,1,-1.4,.05,-.15,w3);poseArm(P,1,-1.3,-.15,-.35,w3);poseArm(P,0,-1.3,.15,-.35,w3);
+    poseArm(M,1,-1.4,.05,-.15,w3);
+    if(w3>0){   // Paz agarra con las dos manos la mano de Mati
+      M.group.updateMatrixWorld(true);const tgt=new THREE.Vector3(0,-.31,0);M.elbows[1].localToWorld(tgt);
+      P.group.updateMatrixWorld(true);const shw=new THREE.Vector3();P.arms[1].getWorldPosition(shw);
+      const armL=.62*P.group.scale.y,dx=tgt.x-shw.x,dz=tgt.z-shw.z,dh=Math.hypot(dx,dz)||1,gap=Math.hypot(dh,tgt.y-shw.y)-armL*.92;
+      P.group.position.x+=dx/dh*gap*w3;P.group.position.z+=dz/dh*gap*w3;P.group.updateMatrixWorld(true);
+      [0,1].forEach(i=>{const arm=P.arms[i],par=arm.parent;const q=tgt.clone().add(new THREE.Vector3(0,(i?.035:-.035)*P.group.scale.y,0));
+        par.worldToLocal(q);q.sub(arm.position).normalize();
+        const gm=Math.asin(Math.max(-1,Math.min(1,q.x))),cg=Math.cos(gm)||1e-3,al=Math.atan2(-q.z/cg,-q.y/cg);
+        Lr(arm.rotation,'x',al,w3);Lr(arm.rotation,'z',gm,w3);Lr(P.elbows[i].rotation,'x',-.12,w3)});
+    }
     for(let i=0;i<5;i++){crackF(A.fm,i,7+i*.45);if(t>7+i*.45&&t<7.25+i*.45)Lr(M.head.rotation,'z',.25,.5)}
     if(t>9.3)once(A,'ay',()=>{bubble(M,'¡Ay! 😖',1.2);bubble(P,'¡Listo! 😌',1.2);say('¡Ay!','Mati')});
   }},
