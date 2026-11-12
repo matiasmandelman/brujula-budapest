@@ -208,6 +208,7 @@ body.mapmode #map3d{height:calc(100dvh - 92px - env(safe-area-inset-bottom))}
           <button data-act="reel">📱 Reel<small>Mati → Paz</small></button>
           <button data-act="crack">🫰 Crack<small>Paz → Mati</small></button>
           <button data-act="pis">🌳 Pis<small>Paz</small></button>
+          <button data-act="fiesta">😎 Fiesta<small>Los dos</small></button>
         </div>
         <div class="extgrid">
           <button id="exReto">🎲 Reto</button>
@@ -1843,6 +1844,9 @@ function sfx(type){
   if(!soundOn)return;
   try{
     actx=actx||new (window.AudioContext||window.webkitAudioContext)();const t=actx.currentTime;
+    if(type==='kick'){const o=actx.createOscillator(),g=actx.createGain();o.type='sine';
+      o.frequency.setValueAtTime(140,t);o.frequency.exponentialRampToValueAtTime(42,t+.14);
+      g.gain.setValueAtTime(.55,t);g.gain.exponentialRampToValueAtTime(.001,t+.22);o.connect(g).connect(actx.destination);o.start(t);o.stop(t+.24);return}
     if(type==='crack'){const n=Math.floor(actx.sampleRate*.035),buf=actx.createBuffer(1,n,actx.sampleRate),d=buf.getChannelData(0);
       for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/n,4);
       const src=actx.createBufferSource();src.buffer=buf;const f=actx.createBiquadFilter();f.type='highpass';f.frequency.value=2200;const g=actx.createGain();g.gain.value=1.1;
@@ -1900,6 +1904,24 @@ function makeFingers(col){   // cinco dedos que se doblan uno por uno
   for(let i=0;i<5;i++){const f=new THREE.Group();f.position.set(-.028+i*.014,0,i===0?.02:0);
     const c=new THREE.Mesh(new THREE.CapsuleGeometry(.0085,i===0?.022:.032,4,6),m);c.position.y=-.024;f.add(c);g.add(f)}
   return g;
+}
+function makeSunglasses(){   // gafas redondas doradas con cristal marrón
+  const g=new THREE.Group();const fr=new THREE.MeshStandardMaterial({color:'#c9a24a',metalness:.8,roughness:.25});
+  const ln=new THREE.MeshStandardMaterial({color:'#3b2410',metalness:.5,roughness:.15,transparent:true,opacity:.92});
+  [-.04,.04].forEach(x=>{const r=new THREE.Mesh(new THREE.TorusGeometry(.031,.004,6,20),fr);r.position.set(x,0,0);g.add(r);
+    const l=new THREE.Mesh(new THREE.CircleGeometry(.03,20),ln);l.position.set(x,0,.001);g.add(l);
+    const tp=new THREE.Mesh(new THREE.BoxGeometry(.004,.004,.1),fr);tp.position.set(x*2.45,.004,-.05);g.add(tp)});
+  const br=new THREE.Mesh(new THREE.BoxGeometry(.018,.004,.004),fr);br.position.y=.008;g.add(br);
+  g.position.set(0,.022,.118);return g;
+}
+// apunta el brazo (con codo) hacia un punto del mundo
+function aimArm(av,i,tgt,w,L1=.31,L2=.33){
+  if(w<=0)return;const arm=av.arms[i],par=arm.parent;const sc=av.group.scale.y;
+  const q=tgt.clone();par.worldToLocal(q);q.sub(arm.position);const d=Math.max(.08,Math.min(L1+L2-.01,q.length()));q.normalize();
+  const bend=Math.PI-Math.acos(Math.max(-1,Math.min(1,(L1*L1+L2*L2-d*d)/(2*L1*L2))));
+  const lift=Math.acos(Math.max(-1,Math.min(1,(L1*L1+d*d-L2*L2)/(2*L1*d))));
+  const gm=Math.asin(Math.max(-1,Math.min(1,q.x))),cg=Math.cos(gm)||1e-3,al=Math.atan2(-q.z/cg,-q.y/cg);
+  Lr(arm.rotation,'x',al+lift,w);Lr(arm.rotation,'z',gm,w);Lr(av.elbows[i].rotation,'x',-bend,w);
 }
 function makeTree(){
   const g=new THREE.Group();
@@ -2010,6 +2032,46 @@ const ACTIONS={
     }
     for(let i=0;i<5;i++){crackF(A.fm,i,7+i*.45);if(t>7+i*.45&&t<7.25+i*.45)Lr(M.head.rotation,'z',.25,.5)}
     if(t>9.3)once(A,'ay',()=>{bubble(M,'¡Ay! 😖',1.2);bubble(P,'¡Listo! 😌',1.2);say('¡Ay!','Mati')});
+  }},
+  fiesta:{dur:12.4,run(A,t,dt,el){
+    const M=A.mati,P=A.paz;
+    // 1) Mati se pone las gafas de sol
+    once(A,'g',()=>{A.gl=makeSunglasses();A.gl.scale.setScalar(.001);M.head.add(A.gl);A.props.push(A.gl)});
+    const wg=Wt(t,0,1.5,.35,.4);La(M.group,camAng(M),Wt(t,0,1.4));poseArm(M,1,-2.5,.35,-2.1,wg);
+    if(t>.8){A.gl.scale.setScalar(Math.min(1,(t-.8)*5));once(A,'cool',()=>{sfx('pop');bubble(M,'😎',1.4)})}
+    // 2) frente a frente, bien pegados
+    const wd=Wt(t,1.3,12.4,.7,.6);
+    if(wd>0){
+      if(!A.dir){const dx=P.group.position.x-M.group.position.x,dz=P.group.position.z-M.group.position.z,L=Math.hypot(dx,dz)||1;A.dir={x:dx/L,z:dz/L}}
+      const sep=.5*avScale,c=A.mid;
+      [[M,-1],[P,1]].forEach(([av,k])=>{const x=c.x+A.dir.x*sep/2*k,z=c.z+A.dir.z*sep/2*k;av.group.position.x+=(x-av.group.position.x)*wd;av.group.position.z+=(z-av.group.position.z)*wd});
+      La(M.group,faceAng(M,P),wd);La(P.group,faceAng(P,M),wd);
+    }
+    // 3) baile techno: cabezas de lado a lado, sincronizadas, y hombros con el ritmo
+    const wb=Wt(t,2,11.6,.6,.6),bpm=128/60,ph=(t-2)*bpm*Math.PI;
+    if(wb>0){
+      const hs=Math.sin(ph/2)*.55;Lr(M.head.rotation,'y',hs,wb);Lr(P.head.rotation,'y',-hs,wb);
+      [M,P].forEach((av,j)=>{av.body.rotation.z=Math.sin(ph)*.05*wb*(j?-1:1);av.body.rotation.y=Math.sin(ph/2)*.08*wb*(j?-1:1);
+        av.group.position.y+=Math.abs(Math.sin(ph))*.035*avScale*wb;av.knees.forEach(k=>Lr(k.rotation,'x',.18+.14*Math.abs(Math.sin(ph)),wb))});
+      const beat=Math.floor((t-2)*bpm);if(t>2&&t<11.3&&beat!==A.beat){A.beat=beat;sfx('kick')}
+      if(t>2.6)once(A,'dale',()=>{bubble(P,'¡Dale, dale! 🎶',2.2);say('¡Dale, dale!','Paz')});
+      if(t>6.2)once(A,'uh',()=>{bubble(M,'¡Uuuh! 🔥',1.8);say('¡Uuuh!','Mati')});
+      if(t>9)once(A,'tun',()=>bubble(P,'Tuntuntun 🕺',1.8));
+    }
+    // 4) Mati le agarra los hombros; Paz le agarra el torso
+    const wa=Wt(t,1.8,11.8,.6,.6);
+    if(wa>0){
+      M.group.updateMatrixWorld(true);P.group.updateMatrixWorld(true);
+      const sh=[0,1].map(i=>{const v=new THREE.Vector3(0,-.02,.03);P.arms[i].localToWorld(v);return v});
+      const tor=[-1,1].map(sd=>{const v=new THREE.Vector3(sd*.17,1.12,.2);M.body.localToWorld(v);return v});
+      const near=(from,list)=>list.slice().sort((a,b)=>a.distanceToSquared(from)-b.distanceToSquared(from))[0];
+      [0,1].forEach(i=>{const o=new THREE.Vector3();M.arms[i].getWorldPosition(o);aimArm(M,i,near(o,sh),wa)});
+      [0,1].forEach(i=>{const o=new THREE.Vector3();P.arms[i].getWorldPosition(o);aimArm(P,i,near(o,tor),wa)});
+    }
+    // luces de fiesta alrededor
+    if(!A.lights){A.lights=['#ff3d7f','#3d8bff','#3dffb0'].map(col=>{const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:getGlow(),color:col,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,opacity:0}));scene.add(sp);A.props.push(sp);return sp})}
+    A.lights.forEach((g,i)=>{const a=el*1.4+i*2.1;g.position.set(A.mid.x+Math.cos(a)*2.4*avScale,A.mid.y+(2.1+Math.sin(el*3+i)*.4)*avScale,A.mid.z+Math.sin(a)*2.4*avScale);
+      g.material.opacity=.38*wb*(.6+.4*Math.abs(Math.sin(el*4+i)));const k=(1.6+.5*Math.sin(el*8+i))*avScale;g.scale.set(k,k,1)});
   }},
   pis:{dur:11.4,run(A,t,dt,el){
     const M=A.mati,P=A.paz;
@@ -2125,7 +2187,7 @@ const ACTIONS={
 };
 function endAction(A){
   A.props.forEach(p=>p.parent&&p.parent.remove(p));
-  [A.mati,A.paz].forEach(av=>{av.arms.forEach((a,i)=>{a.rotation.z=SIDE[i]*.1});av.legs.forEach(l=>{l.rotation.z=0});av.head.rotation.set(0,0,0);av.lastHop=undefined;av.group.rotation.x=0;av.group.rotation.z=0});
+  [A.mati,A.paz].forEach(av=>{av.body.rotation.set(0,0,0);av.arms.forEach((a,i)=>{a.rotation.z=SIDE[i]*.1});av.legs.forEach(l=>{l.rotation.z=0});av.head.rotation.set(0,0,0);av.lastHop=undefined;av.group.rotation.x=0;av.group.rotation.z=0});
   if(!A.quiet)document.body.classList.remove('acting');
   if(action===A)action=null;
 }
