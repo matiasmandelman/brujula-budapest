@@ -206,6 +206,8 @@ body.mapmode #map3d{height:calc(100dvh - 92px - env(safe-area-inset-bottom))}
           <button data-act="chipa">🧀 Dar chipá<small>Paz → Mati</small></button>
           <button data-act="sloth">🦥 Perezoso<small>Los dos</small></button>
           <button data-act="reel">📱 Reel<small>Mati → Paz</small></button>
+          <button data-act="crack">🫰 Crack<small>Paz → Mati</small></button>
+          <button data-act="pis">🌳 Pis<small>Paz</small></button>
         </div>
         <div class="extgrid">
           <button id="exReto">🎲 Reto</button>
@@ -1841,6 +1843,10 @@ function sfx(type){
   if(!soundOn)return;
   try{
     actx=actx||new (window.AudioContext||window.webkitAudioContext)();const t=actx.currentTime;
+    if(type==='crack'){const n=Math.floor(actx.sampleRate*.035),buf=actx.createBuffer(1,n,actx.sampleRate),d=buf.getChannelData(0);
+      for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/n,4);
+      const src=actx.createBufferSource();src.buffer=buf;const f=actx.createBiquadFilter();f.type='highpass';f.frequency.value=2200;const g=actx.createGain();g.gain.value=1.1;
+      src.connect(f).connect(g).connect(actx.destination);src.start(t);return}
     if(type==='crunch'){const n=Math.floor(actx.sampleRate*.2),buf=actx.createBuffer(1,n,actx.sampleRate),d=buf.getChannelData(0);
       for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/n,2)*(i%900<450?1:.4);
       const src=actx.createBufferSource();src.buffer=buf;const f=actx.createBiquadFilter();f.type='bandpass';f.frequency.value=1600;const g=actx.createGain();g.gain.value=.7;
@@ -1889,6 +1895,19 @@ function makeProp(kind){
   }
   return g;
 }
+function makeFingers(col){   // cinco dedos que se doblan uno por uno
+  const g=new THREE.Group();g.position.set(0,-.315,.012);const m=new THREE.MeshStandardMaterial({color:col,roughness:.7});
+  for(let i=0;i<5;i++){const f=new THREE.Group();f.position.set(-.028+i*.014,0,i===0?.02:0);
+    const c=new THREE.Mesh(new THREE.CapsuleGeometry(.0085,i===0?.022:.032,4,6),m);c.position.y=-.024;f.add(c);g.add(f)}
+  return g;
+}
+function makeTree(){
+  const g=new THREE.Group();
+  const tr=new THREE.Mesh(new THREE.CylinderGeometry(.09,.13,1.7,7),new THREE.MeshStandardMaterial({color:'#6b4a33',roughness:.9}));tr.position.y=.85;g.add(tr);
+  const cm=new THREE.MeshStandardMaterial({color:'#d9892e',roughness:.85,flatShading:true});
+  [[0,2.3,0,.75],[.38,2.05,.15,.5],[-.35,2.1,-.1,.5],[.05,2.75,0,.45]].forEach(([x,y,z,r])=>{const c=new THREE.Mesh(new THREE.IcosahedronGeometry(r,0),cm);c.position.set(x,y,z);g.add(c)});
+  return g;
+}
 const PROP_P=new THREE.Vector3(0,-.35,.035),PROP_Q=new THREE.Quaternion();
 function holdProp(A,prop,elbow){prop.position.copy(PROP_P);prop.quaternion.copy(PROP_Q);elbow.add(prop);A.props.push(prop)}
 function moveProp(A,key,prop,toElbow,t,t0,t1){
@@ -1912,9 +1931,30 @@ function faceAng(from,to){return Math.atan2(to.group.position.x-from.group.posit
 function camAng(av){return Math.atan2(camera.position.x-av.group.position.x,camera.position.z-av.group.position.z)}
 const once=(A,k,fn)=>{if(!A['_'+k]){A['_'+k]=1;fn()}};
 const ACTIONS={
-  food:{dur:8.4,run(A,t,dt,el){
-    const M=A.mati,P=A.paz,s=A.sandwich;
-    const wf=Wt(t,0,2.5);La(M.group,faceAng(M,P),wf);La(P.group,faceAng(P,M),wf);
+  food:{dur:12,run(A,t0,dt,el){
+    const M=A.mati,P=A.paz,OFF=3.6;
+    // 1) Paz se tira al suelo, muerta de cansancio
+    const wl=t0<OFF?Wt(t0,.25,99,.9,.1):1-smooth(OFF+1.95,OFF+2.45,t0);
+    if(t0<OFF){
+      La(M.group,faceAng(M,P),Wt(t0,0,9));La(P.group,faceAng(P,M)+Math.PI,Wt(t0,0,9,.3));
+      once(A,'tired',()=>{bubble(P,'Estoy muerta… 😩',2.4);say('Estoy muerta, no puedo más','Paz')});
+      if(t0>1.1)once(A,'flop',()=>{sfx('boing');floatIcon(P,'😮‍💨')});
+      if(t0>1.9)once(A,'hambre',()=>{bubble(M,'¿Tenés hambre? 🥪',1.8);say('¿Tenés hambre?','Mati')});
+      if(t0>2.8)once(A,'si',()=>bubble(P,'Sí… 🥺',1.2));
+      Lr(M.head.rotation,'x',.35,Wt(t0,1.6,OFF+.5));
+    }
+    if(wl>0){
+      P.group.rotation.x=-Math.PI/2*wl;P.group.position.y+=.22*avScale*wl;
+      {const dx=P.group.position.x-M.group.position.x,dz=P.group.position.z-M.group.position.z,L=Math.hypot(dx,dz)||1;P.group.position.x+=dx/L*.75*avScale*wl;P.group.position.z+=dz/L*.75*avScale*wl}   // la cabeza queda a los pies de Mati
+      P.legs.forEach(l=>Lr(l.rotation,'x',0,wl));P.knees.forEach(k=>Lr(k.rotation,'x',0,wl));
+      if(t0<OFF){poseArm(P,0,-.2,-1.25,-.1,wl);poseArm(P,1,-.2,1.25,-.1,wl)}
+    }else P.group.rotation.x=0;
+    if(t0<OFF)return;
+    const t=t0-OFF;
+    // 2) Mati le da la comida y Paz sale corriendo
+    if(t>1.95&&t<2.5)once(A,'up',()=>sfx('boing'));
+    Lr(M.head.rotation,'x',0,Math.min(1,dt*3));
+    const wf=Wt(t,0,2.5);La(M.group,faceAng(M,P),wf);La(P.group,faceAng(P,M)+(wl>.5?Math.PI:0),wf);
     once(A,'s',()=>{A.sandwich=makeProp('sandwich');holdProp(A,A.sandwich,M.elbows[1]);sfx('pop')});
     poseArm(M,1,-1.25,.05,-.25,Wt(t,.2,1.6));
     poseArm(P,1,-1.15,-.05,-.3,Wt(t,1.0,1.8,.3,.3));
@@ -1937,6 +1977,66 @@ const ACTIONS={
       once(A,'run',()=>{bubble(M,'😱',4.5);bubble(P,'¡Wiiiii! 🥪',4.5)});
     }
     if(A.sandwich&&t>7.5)once(A,'gone',()=>{A.sandwich.visible=false;sfx('pop')});
+  }},
+  crack:{dur:10.6,run(A,t,dt,el){
+    const M=A.mati,P=A.paz;
+    once(A,'f',()=>{A.fp=[makeFingers('#e7b993'),makeFingers('#e7b993')];A.fm=makeFingers('#e5b593');
+      P.elbows[1].add(A.fp[0]);P.elbows[0].add(A.fp[1]);M.elbows[1].add(A.fm);A.props.push(A.fp[0],A.fp[1],A.fm)});
+    const crackF=(fs,i,t0)=>{const f=fs.children[i];const k=t-t0;f.rotation.x=k>0&&k<.32?-Math.sin(k/.32*Math.PI)*1.3:0;
+      if(k>0)once(A,fs.uuid+i,()=>{sfx('crack');floatEmoji(fs===A.fm?M:P,'crack!',.15)})};
+    // 1) Paz se suena sus dedos, uno por uno
+    const w1=Wt(t,0,4.4,.4,.4);
+    La(P.group,camAng(P)+.4,w1);La(M.group,faceAng(M,P),Wt(t,0,10.6));
+    poseArm(P,1,-1.25,-.55,-1.35,w1);poseArm(P,0,-1.25,.55,-1.35,w1);Lr(P.head.rotation,'x',.3,w1);
+    for(let i=0;i<5;i++){crackF(A.fp[0],i,.7+i*.34);crackF(A.fp[1],i,2.6+i*.34)}
+    if(t>1.4)once(A,'mm',()=>bubble(M,'😬',2.2));
+    if(t>4.3)once(A,'ok',()=>bubble(P,'Ahhh 😌',1));
+    // 2) le pide la mano a Mati y le suena los dedos
+    const w2=Wt(t,4.6,10.6,.5,.5);
+    La(P.group,faceAng(P,M),w2);
+    if(t>4.7)once(A,'dame',()=>{bubble(P,'Dame tu mano 😈',1.8);say('Dame tu mano','Paz')});
+    if(t>5.8)once(A,'no',()=>{bubble(M,'Nooo… bueno 🙄',1.6);say('No... bueno','Mati')});
+    const w3=Wt(t,6.2,10.3,.5,.5);
+    poseArm(M,1,-1.4,.05,-.15,w3);poseArm(P,1,-1.3,-.15,-.35,w3);poseArm(P,0,-1.3,.15,-.35,w3);
+    for(let i=0;i<5;i++){crackF(A.fm,i,7+i*.45);if(t>7+i*.45&&t<7.25+i*.45)Lr(M.head.rotation,'z',.25,.5)}
+    if(t>9.3)once(A,'ay',()=>{bubble(M,'¡Ay! 😖',1.2);bubble(P,'¡Listo! 😌',1.2);say('¡Ay!','Mati')});
+  }},
+  pis:{dur:11.4,run(A,t,dt,el){
+    const M=A.mati,P=A.paz;
+    if(!A.tree){   // un árbol aparece detrás de la pareja, del lado de Paz
+      const away=new THREE.Vector3(A.mid.x-camera.position.x,0,A.mid.z-camera.position.z).normalize();
+      const side=new THREE.Vector3(P.group.position.x-A.mid.x,0,P.group.position.z-A.mid.z).normalize();
+      A.tree=makeTree();A.p0=P.group.position.clone();
+      const tp=A.p0.clone().addScaledVector(away,1.6*avScale).addScaledVector(side,.15*avScale);tp.y=height(tp.x,tp.z);
+      A.tree.position.copy(tp);scene.add(A.tree);A.props.push(A.tree);
+      A.p1=tp.clone().addScaledVector(away,.7*avScale).addScaledVector(side,.45*avScale);A.p1.y=height(A.p1.x,A.p1.z)+.5;
+    }
+    const gT=Math.min(ease(t/.7),1-ease((t-10.6)/.7));A.tree.scale.setScalar(avScale*Math.max(.001,gT));
+    const wf=Wt(t,0,4.1);La(M.group,faceAng(M,P),wf);La(P.group,faceAng(P,M),wf);
+    once(A,'pis',()=>{bubble(P,'Me hago pis 🙈',1.8);say('Me hago pis','Paz')});
+    const wh=Wt(t,1.7,3.8,.3,.4);poseHandsHead(M,wh,el);
+    if(t>1.8)once(A,'otra',()=>{bubble(M,'¿Otra vez? 🤦‍♂️',1.8);say('¿Otra vez?','Mati')});
+    if(t>3.3)once(A,'si',()=>{bubble(P,'¡Sí! 😅',1);say('¡Sí!','Paz')});
+    // Paz va detrás del árbol, se agacha y vuelve
+    const go=ease((t-3.9)/1.6),back=ease((t-9.1)/1.6),k=Math.max(0,Math.min(1,go-back));
+    const walking=(t>3.9&&t<5.5)||(t>9.1&&t<10.7);
+    if(t>3.9){
+      P.group.position.lerpVectors(A.p0,A.p1,k);P.group.position.y=height(P.group.position.x,P.group.position.z)+.5;
+      if(walking){const to=t<7?A.p1:A.p0,fr=t<7?A.p0:A.p1;La(P.group,Math.atan2(to.x-fr.x,to.z-fr.z),.35);
+        const sw=Math.sin(el*11)*.6;P.legs[0].rotation.x=sw;P.legs[1].rotation.x=-sw;P.knees[0].rotation.x=Math.max(0,sw)*1.1;P.knees[1].rotation.x=Math.max(0,-sw)*1.1}
+    }
+    const wsq=Wt(t,5.5,8.9,.45,.4);
+    if(wsq>0){La(P.group,camAng(P),wsq*.5);
+      P.legs.forEach(l=>Lr(l.rotation,'x',-1.45,wsq));P.knees.forEach(kn=>Lr(kn.rotation,'x',2.0,wsq));
+      P.group.position.y-=.47*avScale*P.h*wsq;poseArm(P,0,-.9,-.1,-.6,wsq);poseArm(P,1,-.9,.1,-.6,wsq);Lr(P.head.rotation,'x',.2,wsq);
+      once(A,'shh',()=>bubble(P,'¡No miréis! 🙈',2.2));
+    }
+    // Mati se muere de risa
+    const wl=Wt(t,5.6,9.4,.4,.5);
+    if(wl>0){La(M.group,camAng(M),wl);M.body.position.y+=Math.abs(Math.sin(el*16))*.02*wl;Lr(M.head.rotation,'x',-.35,wl);Lr(M.head.rotation,'z',Math.sin(el*9)*.15,wl);
+      poseArm(M,1,-.5,.35,-1.6,wl);
+      once(A,'jaja',()=>{bubble(M,'😂😂😂',3.4);say('¡Jajajajaja!','Mati')})}
+    if(t>10)once(A,'listo',()=>bubble(P,'Listo 😌',1.3));
   }},
   chipa:{dur:8,run(A,t,dt,el){
     const M=A.mati,P=A.paz;
