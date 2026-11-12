@@ -258,6 +258,8 @@ body.mapmode header{max-width:560px;margin:0 auto 8px}
   <div class="btns"><a id="hnMaps" target="_blank" rel="noopener" class="pri">Abrir en Google Maps</a><button id="hnNext">Siguiente paso</button><button id="hnClose">✕ Salir</button></div>
 </div>
 
+<input type="file" id="gpxIn" accept=".gpx,application/gpx+xml,application/xml,text/xml" hidden>
+
 <dialog id="retoDlg">
   <h3>🎲 Vuestro reto</h3>
   <div class="reto" id="retoTxt"></div>
@@ -817,7 +819,16 @@ function renderInfo(){
    <li>Para brindar: <b>pálinka</b> (aguardiente de fruta) o vino de Tokaj.</li>
   </ul></div>
   <div class="card"><h3>Emergencias</h3><p class="muted" style="margin:4px 0">Teléfono único: <b>112</b>. Llevad una batería externa: el GPS y el festival vacían el móvil.</p></div>
+  <div class="card"><h3>🎬 Recorrido completo para la película</h3>
+   <p class="muted" style="margin:4px 0 8px">La web solo registra el camino con la app abierta. Para tenerlo entero, grabadlo con una app de rutas en segundo plano y luego importad el archivo GPX aquí.</p>
+   <ul class="tight">
+    <li><b>iPhone · Open GPX Tracker</b>: pulsad «Start Tracking» al salir y dejadla grabando. Al final, «Save», abrid la ruta guardada y compartidla como archivo (guardadla en Archivos).</li>
+    <li><b>Android · GPSLogger</b>: dadle ubicación «Permitir siempre», quitadle la optimización de batería e iniciad el registro en GPX. Al final, compartid o exportad el archivo .gpx.</li>
+   </ul>
+   <button class="pri" id="gpxBtn" style="width:100%;margin-top:6px">📥 Importar recorrido (GPX)</button>
+   <p class="muted" id="gpxMsg" style="margin:8px 0 0"></p></div>
   <div class="card"><h3>Probar la app</h3><button id="simOpen">Simular otra hora</button> <button id="resetDone">Borrar “hechos”</button> <button id="resetTrail">Borrar recorrido del mapa</button></div>`;
+  $('gpxBtn').onclick=()=>$('gpxIn').click();
   $('resetTrail').onclick=()=>{store.set('trail',[]);document.dispatchEvent(new CustomEvent('brj:cleartrail'))};
   $('simOpen').onclick=()=>$('simDlg').showModal();
   $('resetDone').onclick=()=>{done.clear();store.set('done',[]);render()};
@@ -923,6 +934,33 @@ function drawHome(){
 }
 $('hnClose').onclick=closeHome;
 $('hnNext').onclick=()=>{homeStage=Math.min(homeStages.length-1,homeStage+1);drawHome()};
+
+/* ================= IMPORTAR GPX ================= */
+function importGpxText(txt){
+  const doc=new DOMParser().parseFromString(txt,'application/xml');
+  if(doc.querySelector('parsererror'))throw new Error('El archivo no es un GPX válido');
+  let nodes=[...doc.getElementsByTagName('trkpt')];if(!nodes.length)nodes=[...doc.getElementsByTagName('rtept')];
+  const raw=nodes.map(n=>{const tm=n.getElementsByTagName('time')[0];return {lat:parseFloat(n.getAttribute('lat')),lng:parseFloat(n.getAttribute('lon')),t:tm?Date.parse(tm.textContent.trim()):null}})
+    .filter(p=>isFinite(p.lat)&&isFinite(p.lng)&&kmBetween(p,{lat:47.4979,lng:19.0402})<30);
+  if(!raw.length)throw new Error('No hay puntos de Budapest en este archivo');
+  // un punto cada ~25 m
+  const gpx=[];raw.forEach(p=>{const l=gpx[gpx.length-1];if(!l||kmBetween(l,p)*1000>=25)gpx.push(p)});
+  const withT=gpx.filter(p=>p.t);const t0=withT.length?Math.min(...withT.map(p=>p.t)):null,t1=withT.length?Math.max(...withT.map(p=>p.t)):null;
+  // se conservan los puntos de la web fuera del tramo que cubre el GPX
+  const web=(store.get('trail',[])||[]).filter(p=>p&&isFinite(p.lat)&&(t0===null||!p.t||p.t<t0||p.t>t1));
+  let merged=t0===null?[...web,...gpx]:[...web.filter(p=>p.t),...gpx].sort((a,b)=>a.t-b.t);
+  if(merged.length>3000){const k=merged.length/3000;merged=Array.from({length:3000},(_,i)=>merged[Math.floor(i*k)])}
+  store.set('trail',merged);document.dispatchEvent(new CustomEvent('brj:trailreload'));
+  let km=0;for(let i=1;i<gpx.length;i++)km+=kmBetween(gpx[i-1],gpx[i]);
+  const f=ts=>{const n=budNow(new Date(ts));const d=TRIP.indexOf(n.date);return (d>=0?DAYNAME[d].split(' ')[0]:n.date)+' '+fmt(n.m)};
+  return `✅ Importados ${gpx.length} puntos · ${km.toFixed(1).replace('.',',')} km${t0?` · de ${f(t0)} a ${f(t1)}`:''}. La película ya usa este recorrido.`;
+}
+$('gpxIn').onchange=async e=>{
+  const file=e.target.files&&e.target.files[0];if(!file)return;
+  const out=m=>{const el=document.getElementById('gpxMsg');if(el)el.textContent=m;else alertBox(m)};
+  try{out(importGpxText(await file.text()))}catch(err){out('⚠️ '+(err.message||'No se pudo leer el archivo'))}
+  e.target.value='';
+};
 
 /* ================= RETOS ================= */
 const RETOS=[
@@ -2138,7 +2176,9 @@ function openMovieSheet(){
   sh.innerHTML=`<button class="x" id="shX">✕</button><h3>🎬 La película del viaje</h3>
    <div class="tip">${P.demo?'Aún no hay suficiente recorrido: veréis un avance con vuestro cronograma. Durante el viaje se irá llenando con vuestro camino real.':'Vuestro recorrido real, con el cielo de cada momento y los ⭐ por los que pasasteis.'}</div>
    <div class="actions"><button class="go" id="mvPlay">▶ Ver</button>${inClaude?'':'<button id="mvRec">⏺ Ver y grabar vídeo</button>'}</div>
-   ${inClaude?'<p class="muted">Para grabar el vídeo, abridla desde vuestra web de GitHub.</p>':''}`;
+   ${inClaude?'<p class="muted">Para grabar el vídeo, abridla desde vuestra web de GitHub.</p>':''}
+   <p class="muted" style="margin-top:8px">¿Grabasteis la ruta con otra app? <a href="#" id="mvGpx" style="color:var(--acc)">📥 Importar GPX</a></p>`;
+  document.getElementById('mvGpx').onclick=e=>{e.preventDefault();sh.hidden=true;document.getElementById('gpxIn').click()};
   document.getElementById('shX').onclick=()=>{sh.hidden=true};
   document.getElementById('mvPlay').onclick=()=>{sh.hidden=true;startMovie(false)};
   const r=document.getElementById('mvRec');if(r)r.onclick=()=>{sh.hidden=true;startMovie(true)};
@@ -2189,6 +2229,7 @@ function moveAvatars(dt){
 /* ---------- recorrido ---------- */
 const onMap=(p)=>{const w=toW(p.lat,p.lng);return Math.abs(w.x-130)<620&&Math.abs(w.z)<490};
 document.addEventListener('brj:cleartrail',()=>{trail=[];if(trailLine)drawTrail()});
+document.addEventListener('brj:trailreload',()=>{trail=(store.get('trail',[])||[]).filter(p=>p&&isFinite(p.lat)&&onMap(p));if(trailLine)drawTrail();ambTimers.km=0});
 function buildTrail(){
   trail=(store.get('trail',[])||[]).filter(p=>p&&isFinite(p.lat)&&onMap(p));
   trailLine=new THREE.Line(new THREE.BufferGeometry(),new THREE.LineDashedMaterial({color:'#e8a33d',dashSize:2,gapSize:1.5,depthTest:false,transparent:true,opacity:.9}));
