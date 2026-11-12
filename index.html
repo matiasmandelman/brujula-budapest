@@ -1759,8 +1759,8 @@ function makeAvatar(o){
       .forEach(([x,y,z,r])=>add(head,sph(r),hairM,x,y,z));
     [-1,1].forEach(sd=>add(head,sph(.05),hairM,sd*.085,.03,-.045).scale.set(.5,1,1));   // patillas cortas detrás de las orejas
     add(head,new THREE.SphereGeometry(.122,18,14,Math.PI,Math.PI,0,Math.PI*.72),hairM,0,.02,-.004);  // nuca cubierta
-    [[0,-.075,-.088,.05],[-.045,-.07,-.078,.04],[.045,-.07,-.078,.04],[0,-.115,-.075,.042],[-.03,-.11,-.07,.034],[.03,-.11,-.07,.034]]
-      .forEach(([x,y,z,r])=>add(head,sph(r),hairM,x,y,z).scale.set(1,1.15,.7));        // mullet corto
+    [[0,-.062,-.09,.046],[-.042,-.056,-.081,.036],[.042,-.056,-.081,.036]]
+      .forEach(([x,y,z,r])=>add(head,sph(r),hairM,x,y,z).scale.set(1,.9,.7));          // mullet muy corto (solo cubre la nuca)
   }else{
     // pelo largo recogido: raya al medio, laterales detrás de las orejas y trenza por la espalda
     add(head,new THREE.SphereGeometry(.121,18,12,0,Math.PI*2,0,Math.PI/2.15),hairM,0,.035,-.012);
