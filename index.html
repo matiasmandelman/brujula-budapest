@@ -51,6 +51,7 @@ select,input,textarea{background:var(--card2);border:1px solid var(--line);borde
 .tag.bad{color:var(--bad);border-color:#6a3530}
 .tag.unk{color:var(--info);border-color:#2f4a66}
 .tag.acc{color:var(--acc);border-color:#7a5522}
+.tag.paz{color:#ff8fb1;border-color:#7a3550;background:#2a1820}
 .why{font-size:14px;color:#e2d6c8;margin:4px 0 2px}
 .tip{font-size:13px;color:var(--mut)}
 .actions{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
@@ -342,15 +343,15 @@ const POIS=[
   hours:{sat:[['11:30','21:00']],sun:[['11:30','21:00']]},
   why:'Sopas y baguettes creativas, rápido y barato. Al lado de Szimpla.',
   tip:'Para comer de pie o llevar. Horario aproximado.'},
- {id:'hungarikum',name:'Hungarikum Bisztró',cat:'comida',lat:47.5040,lng:19.0475,dur:75,best:'meal',
+ {id:'hungarikum',paz:true,name:'Hungarikum Bisztró',cat:'comida',lat:47.50348,lng:19.04792,dur:75,best:'meal',
   hours:{sat:[['11:30','23:00']],sun:[['11:30','23:00']]},
   why:'Cocina húngara tradicional cuidada, cerca del Parlamento.',
   tip:'Muy popular: reservad. Horario aproximado.'},
- {id:'langos',name:'Retró Lángos',cat:'comida',lat:47.5030,lng:19.0540,dur:15,best:'any',
+ {id:'langos',paz:true,name:'Retró Lángos',cat:'comida',lat:47.50323,lng:19.05522,dur:15,best:'any',
   hours:{sat:[['10:00','21:00']],sun:[['10:00','21:00']]},
   why:'El lángos (masa frita con nata agria y queso) más famoso del centro. Imprescindible probarlo.',
   tip:'Junto al metro Arany János. Horario aproximado.'},
- {id:'kurtos',name:'Kürtőskalács (Molnár\'s)',cat:'comida',lat:47.4925,lng:19.0535,dur:10,best:'any',
+ {id:'kurtos',paz:true,name:'Kürtőskalács (Molnár\'s)',cat:'comida',lat:47.49265,lng:19.05309,dur:10,best:'any',
   hours:{sat:[['9:00','21:00']],sun:[['9:00','21:00']]},
   why:'El "pastel chimenea" recién hecho, con canela o nuez. Perfecto con el frío.',
   tip:'En Váci utca. Horario aproximado.'},
@@ -358,6 +359,40 @@ const POIS=[
   hours:{sat:[],sun:[['9:00','14:00']]},
   why:'Solo los domingos: productores locales dentro del ruin bar más famoso. Brunch perfecto a 5 min.',
   tip:'Solo domingo por la mañana.'},
+ // ---- GUARDADOS POR PAZ (lista "Comidaaaaa Budapest")
+ {id:'p_langospapi',paz:true,name:'Langos Papi',cat:'comida',lat:47.49773,lng:19.05778,dur:20,best:'any',hours:null,
+  why:'Lángos gigante y crujiente, frito al momento. Al lado de Gozsdu, a 10 min del alojamiento.',
+  tip:'Madách Imre út 3. Comida rápida: ideal para picar entre paseo y paseo.'},
+ {id:'p_kisharang',paz:true,name:'Kisharang Étkezde',cat:'comida',lat:47.50167,lng:19.05089,dur:50,best:'meal',hours:null,
+  why:'Comedor húngaro clásico y diminuto con menú de pizarra: gulyás, paprikás y postres caseros.',
+  tip:'Október 6. u. 17, cerca de la Basílica. Es pequeño y suele haber cola: id pronto.'},
+ {id:'p_nokedlish',paz:true,name:'Nokedlish Dob',cat:'comida',lat:47.49898,lng:19.06196,dur:30,best:'meal',hours:null,
+  why:'Nokedli (los ñoquis húngaros) en versión moderna. En Dob utca, a 5 min del alojamiento.',
+  tip:'Rápido e informal.'},
+ {id:'p_fozelekes',paz:true,name:'A Főzelékes',cat:'comida',lat:47.50344,lng:19.06008,dur:30,best:'meal',hours:null,
+  why:'Comedor de főzelék, los guisos espesos de verdura típicos de Hungría. Barato y muy local.',
+  tip:'Nagymező u. 18. Cierra por la tarde (hacia las 18:00 entre semana): mejor para comer, no para cenar.'},
+ {id:'p_pestbuda',paz:true,name:'Pest-Buda Bistro',cat:'comida',lat:47.50336,lng:19.03241,dur:60,best:'meal',hours:null,
+  why:'Bistró húngaro en el barrio del Castillo, a 3 min del Bastión. Encaja antes o después del atardecer del sábado.',
+  tip:'En Buda, en lo alto: combinadlo con el Bastión y la Iglesia de Matías.'},
+ {id:'p_bonnie',paz:true,name:'Goulash & Langosh Bar by Bonnie',cat:'comida',lat:47.49216,lng:19.05655,dur:45,best:'meal',hours:null,
+  why:'Gulyás y lángos tradicionales, de lo más popular del centro.',
+  tip:'Cerca de Váci utca y de la Gran Sinagoga. Muy concurrido: id fuera de hora punta.'},
+ {id:'p_krumplis',paz:true,name:'Krumplis Lángos',cat:'comida',lat:47.48859,lng:19.05690,dur:20,best:'any',hours:null,
+  why:'Lángos de masa de patata. Pilla de camino al Mercado Central.',
+  tip:'A 5 min del Mercado Central y del Puente de la Libertad.'},
+ {id:'p_gasztrohaz',paz:true,name:'Gasztro Ház Lángos',cat:'comida',lat:47.49925,lng:19.07000,dur:20,best:'any',hours:null,
+  why:'Lángos muy bien valorado, a 5 min a pie del alojamiento.',
+  tip:'Perfecto para un bocado rápido saliendo o volviendo del A57.'},
+ {id:'p_vaj',paz:true,name:'VAJ Buda · bakery & café',cat:'cafe',lat:47.52913,lng:19.00476,dur:40,best:'day',hours:null,
+  why:'Panadería de especialidad: croissants (el de pistacho) y babka de chocolate.',
+  tip:'Törökvész út 93, en las colinas de Buda: está lejos del centro, mejor en taxi/Bolt. Cierra hacia las 20:00.'},
+ {id:'p_mamagoulash',paz:true,name:'Mama Goulash',cat:'comida',lat:47.49870,lng:19.06186,dur:60,best:'meal',hours:null,
+  why:'Gulyás y paprikás de pollo caseros y abundantes. En Dob utca, a 5 min del alojamiento.',
+  tip:'Dob u. 31. Suele haber cola de 20–30 min: id pronto o a media tarde.'},
+ {id:'p_fuego',paz:true,name:'Restaurante Fuego',cat:'comida',lat:47.49626,lng:19.06413,dur:75,best:'meal',hours:null,
+  why:'Parrilla en el barrio judío, a 5 min del alojamiento. Opción para una cena contundente.',
+  tip:'Reservad para la cena.'},
  // ---- RUIN BARS
  {id:'szimpla',name:'Szimpla Kert',cat:'ruin',lat:47.4970,lng:19.0633,dur:60,best:'night',must:true,
   hours:{sat:[['12:00','28:00']],sun:[['12:00','28:00']]},
@@ -382,7 +417,7 @@ const POIS=[
 ];
 const CATS=[
  {k:'all',l:'Todo'},{k:'comida',l:'🍲 Comer'},{k:'cafe',l:'☕ Café'},{k:'vistas',l:'🌇 Vistas'},
- {k:'ciudad',l:'🏛️ Ciudad'},{k:'historia',l:'📜 Historia'},{k:'ruin',l:'🍻 Ruin bars'},{k:'must',l:'⭐ Imprescindibles'}
+ {k:'ciudad',l:'🏛️ Ciudad'},{k:'historia',l:'📜 Historia'},{k:'ruin',l:'🍻 Ruin bars'},{k:'paz',l:'💖 De Paz'},{k:'must',l:'⭐ Imprescindibles'}
 ];
 const CATLABEL={comida:'Comer',cafe:'Café',vistas:'Vistas',ciudad:'Ciudad',historia:'Historia',ruin:'Ruin bar'};
 // Anclas: d = índice de día del viaje, m = minutos
@@ -473,6 +508,7 @@ function score(p,t){
   if(p.cat==='ruin'&&t.m>=H('20:00')){s+=20}
   if(p.cat==='ruin'&&t.m<H('16:00')){s-=20}
   if(p.must){s+=12}
+  if(p.paz){s+=8;why.push('guardado por Paz')}
   if(done.has(p.id)){s-=500}
   return {s,w,st,fits,remaining,hint:why};
 }
@@ -513,7 +549,7 @@ function render(){
 
   // lista
   const showClosed=$('showClosed').checked;
-  let items=POIS.filter(p=>cat==='all'||(cat==='must'?p.must:p.cat===cat)).map(p=>({p,...score(p,t)}));
+  let items=POIS.filter(p=>cat==='all'||(cat==='must'?p.must:cat==='paz'?p.paz:p.cat===cat)).map(p=>({p,...score(p,t)}));
   if(!showClosed) items=items.filter(x=>x.st.s!=='closed'&&!done.has(x.p.id));
   items.sort((a,b)=>b.s-a.s);
   $('count').textContent=items.length+' sitios';
@@ -533,7 +569,7 @@ function card(x,t){
   const maps=`https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}&travelmode=walking`;
   return `<div class="card ${done.has(p.id)?'done':''}">
     <h3>${p.must?'⭐ ':''}${esc(p.name)}</h3>
-    <div class="meta"><span class="tag">${CATLABEL[p.cat]}</span><span class="tag">${walk}</span><span class="tag">~${dur(p.dur)}</span>${stTag}${hint}${fit}</div>
+    <div class="meta">${p.paz?'<span class="tag paz">💖 Guardado por Paz</span>':''}<span class="tag">${CATLABEL[p.cat]}</span><span class="tag">${walk}</span><span class="tag">~${dur(p.dur)}</span>${stTag}${hint}${fit}</div>
     <div class="why">${esc(p.why)}</div>
     <div class="tip">💡 ${esc(p.tip)}</div>
     <div class="actions">
@@ -553,12 +589,12 @@ function renderPlan(){
   ${day('Sábado 14 · ciudad + atardecer + festival',[
    ['12:05','Aterrizaje','Bus 100E al centro (Deák tér, ~40 min) o Bolt/taxi. A57 está a ~10 min a pie de Deák.'],
    ['13:15','Dejar mochilas en A57',''],
-   ['13:30','Comida rápida en el barrio','Karaván o Bors (al lado de Szimpla). Si hay hambre de verdad: Frici Papa.'],
+   ['13:30','Comida rápida en el barrio','💖 De la lista de Paz: Gasztro Ház Lángos o Langos Papi. Si hay hambre de verdad: 💖 Mama Goulash (Dob utca).'],
    ['14:15','Basílica → Parlamento → Zapatos del Danubio','Todo a pie. Si os apetece, el Mercado Central cierra a media tarde el sábado.'],
    ['15:15','Cruzar el Puente de las Cadenas y subir al Castillo','Funicular o a pie desde Clark Ádám tér. Café rápido en Ruszwurm.'],
    [s0,'🌅 Atardecer en el Bastión de los Pescadores','Llegad 20–30 min antes. Después, Iglesia de Matías y bajada por las terrazas del Palacio.'],
    ['17:30','Danubio de noche','Batthyány tér para la foto del Parlamento iluminado, o tranvía 2 por la orilla de Pest.'],
-   ['19:00','Cena en el barrio judío','Getto Gulyás (gulyás) o Mazel Tov. Paseo por Gozsdu.'],
+   ['19:00','Cena en el barrio judío','💖 Mama Goulash o 💖 Restaurante Fuego (de la lista de Paz), o Mazel Tov. Paseo por Gozsdu.'],
    ['20:30','Descanso / ducha en A57',''],
    ['21:30','Salir hacia el Bónusz (Hungexpo)','Está en el distrito X, lejos del centro: shuttle del festival desde Deák (si lo hay) o Bolt. Guardad batería.'],
   ])}
@@ -678,7 +714,7 @@ $('quick').querySelectorAll('button').forEach(b=>b.onclick=()=>{$('q').value=b.t
 function context(){
   const t=now();const sun=SUNSET[t.d]??SUNSET[0];const nh=nextAnchor(t,true);const na=nextAnchor(t,false);
   const near=POIS.map(p=>({p,...score(p,t)})).sort((a,b)=>b.s-a.s).slice(0,14)
-    .map(x=>`- ${x.p.name} [${CATLABEL[x.p.cat]}] ${x.w} min a pie, ${x.st.s==='open'?'abierto':x.st.s==='closed'?'cerrado':'horario dudoso'}${done.has(x.p.id)?', YA VISITADO':''}. ${x.p.why}`).join('\n');
+    .map(x=>`- ${x.p.name} [${CATLABEL[x.p.cat]}${x.p.paz?', guardado por Paz':''}] ${x.w} min a pie, ${x.st.s==='open'?'abierto':x.st.s==='closed'?'cerrado':'horario dudoso'}${done.has(x.p.id)?', YA VISITADO':''}. ${x.p.why}`).join('\n');
   return `Eres el guía de bolsillo de una pareja (Mati y Paz) en Budapest, de viaje solo el fin de semana (sáb 14 y dom 15 de noviembre de 2026). Les gusta: la ciudad en sí, vistas, atardeceres, comida, cafés, algo de historia y ruin bars. No tienen tiempo para termas. Se alojan en A57, Akácfa utca 57 (distrito VII, barrio judío, Pest).
 Cronograma fijo: sábado por la noche van al Bónusz Festival en Hungexpo (Albertirsai út 10, distrito X), salen hacia las 21:30. Lunes vuelo a las 6:00: salen al aeropuerto a las 3:45.
 AHORA: ${DAYNAME[t.d]}, ${fmt(t.m)} (hora de Budapest). Atardecer hoy: ${fmt(sun)} (${sun-t.m>0?'faltan '+dur(sun-t.m):'ya ha anochecido'}). Próximo compromiso: ${na?na.label+' a las '+fmt(na.m)+' (en '+dur(abs(na)-abs(t))+')':'ninguno'}${nh&&nh!==na?'; próximo compromiso fijo: '+nh.label+' a las '+fmt(nh.m):''}.
@@ -686,6 +722,7 @@ Ubicación: ${pos.label} (${pos.lat.toFixed(5)}, ${pos.lng.toFixed(5)}).
 Ya visitado: ${[...done].map(id=>POIS.find(p=>p.id===id)?.name).filter(Boolean).join(', ')||'nada aún'}.
 Mejores candidatos cercanos según la app:
 ${near}
+Los sitios marcados 'guardado por Paz' son de su lista de favoritos: dales preferencia cuando encajen.
 Reglas: responde en español, breve y práctico (máx. ~120 palabras), con 1–3 propuestas concretas y en orden, indicando el tiempo a pie. Respeta los horarios fijos. Puedes sugerir sitios que no estén en la lista si encajan, pero si no estás seguro de un horario o de que algo siga abierto, dilo y sugiere confirmarlo en Google Maps. No te inventes datos.`;
 }
 let sampleFn=null;let history=[];
@@ -1020,10 +1057,11 @@ function label(text,bg,fg,scale=1){
   const s=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,depthTest:false,transparent:true}));s.renderOrder=10;
   s.scale.set(w/64*3.2*scale,3.2*scale,1);return s;
 }
-function icon(emoji,bg){
+function icon(emoji,bg,paz){
   const c=document.createElement('canvas');c.width=c.height=128;const ctx=c.getContext('2d');
-  ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(64,64,60,0,7);ctx.fill();ctx.fillStyle=bg;ctx.beginPath();ctx.arc(64,64,52,0,7);ctx.fill();
+  ctx.fillStyle=paz?'#ff5c8a':'#fff';ctx.beginPath();ctx.arc(64,64,60,0,7);ctx.fill();ctx.fillStyle=bg;ctx.beginPath();ctx.arc(64,64,(paz?50:52),0,7);ctx.fill();
   ctx.font='64px serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(emoji,64,70);
+  if(paz){ctx.fillStyle='#ffffff';ctx.beginPath();ctx.arc(102,26,24,0,7);ctx.fill();ctx.font='30px serif';ctx.fillText('💖',102,29)}
   const tex=new THREE.CanvasTexture(c);tex.colorSpace=THREE.SRGBColorSpace;
   const s=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthTest:true}));return s;
 }
@@ -1034,7 +1072,7 @@ function buildMarkers(){
   POIS.forEach(poi=>{
     const grp=new THREE.Group();const p=toW(poi.lat,poi.lng);grp.position.set(p.x,height(p.x,p.z),p.z);
     const stick=new THREE.Mesh(new THREE.CylinderGeometry(.18,.18,6,6),new THREE.MeshLambertMaterial({color:CATCOL[poi.cat]}));stick.position.y=3;grp.add(stick);
-    const sp=icon(CATEMO[poi.cat],CATCOL[poi.cat]);sp.position.y=7.2;sp.scale.set(3.6,3.6,1);sp.userData.poi=poi;grp.add(sp);
+    const sp=icon(CATEMO[poi.cat],CATCOL[poi.cat],poi.paz);sp.position.y=7.2;sp.scale.set(3.6,3.6,1);sp.userData.poi=poi;grp.add(sp);
     const ring=new THREE.Mesh(new THREE.RingGeometry(2.6,3.4,32),new THREE.MeshBasicMaterial({color:'#ffcc55',transparent:true,opacity:.85,side:THREE.DoubleSide,depthWrite:false}));
     ring.rotation.x=-Math.PI/2;ring.position.y=.4;ring.visible=false;grp.add(ring);
     scene.add(grp);markers.push({poi,group:grp,sprite:sp,stick,ring,label:null,rank:0});
@@ -1051,7 +1089,7 @@ function refresh(){
     const sc=isDest?6:r?(r===1?5.4:4.6):isDone?2.2:3;m.sprite.scale.set(sc,sc,1);
     m.sprite.material.opacity=isDone||closed?.45:1;
     if(m.labelRank!==r){if(m.label){m.group.remove(m.label);m.label.material.map.dispose();m.label=null}
-      if(r){m.label=label(r+' · '+m.poi.name,r===1?'#e8a33d':'#14110fdd',r===1?'#1b130b':'#f3ebe1',.8);m.label.position.y=11.5;m.group.add(m.label)}
+      if(r){m.label=label(r+' · '+(m.poi.paz?'💖 ':'')+m.poi.name,r===1?'#e8a33d':'#14110fdd',r===1?'#1b130b':'#f3ebe1',.8);m.label.position.y=11.5;m.group.add(m.label)}
       m.labelRank=r}
   });
   dayNight(t);hud(t,ranked);chips(ranked);
@@ -1265,7 +1303,7 @@ let chipSig='';
 function chips(ranked){
   const sig=ranked.map(x=>x.p.id+':'+x.w).join('|')+'#'+dest;if(sig===chipSig)return;chipSig=sig;
   const el=document.getElementById('mapChips');
-  el.innerHTML=ranked.map((x,i)=>`<button data-id="${x.p.id}" class="${i===0?'first':''} ${dest===x.p.id?'dest':''}">${i+1} · ${CATEMO[x.p.cat]} ${esc(x.p.name)} · ${x.w} min</button>`).join('');
+  el.innerHTML=ranked.map((x,i)=>`<button data-id="${x.p.id}" class="${i===0?'first':''} ${dest===x.p.id?'dest':''}">${i+1} · ${CATEMO[x.p.cat]} ${x.p.paz?'💖 ':''}${esc(x.p.name)} · ${x.w} min</button>`).join('');
   el.querySelectorAll('button').forEach(b=>b.onclick=()=>focusPoi(POIS.find(p=>p.id===b.dataset.id)));
 }
 function focusPoi(poi){
@@ -1299,7 +1337,7 @@ function openSheet(poi){
   const stTxt=st.s==='open'?'<span class="tag ok">Abierto</span>':st.s==='closed'?'<span class="tag bad">Cerrado</span>':'<span class="tag unk">Horario dudoso</span>';
   const sh=document.getElementById('sheet');sh.hidden=false;
   sh.innerHTML=`<button class="x" id="shX">✕</button><h3>${CATEMO[poi.cat]} ${esc(poi.name)}</h3>
-   <div class="meta"><span class="tag">🚶 ${x.w} min</span><span class="tag">~${dur(poi.dur)}</span>${stTxt}${x.hint.length?`<span class="tag acc">${x.hint.join(' · ')}</span>`:''}</div>
+   <div class="meta">${poi.paz?'<span class="tag paz">💖 Guardado por Paz</span>':''}<span class="tag">🚶 ${x.w} min</span><span class="tag">~${dur(poi.dur)}</span>${stTxt}${x.hint.length?`<span class="tag acc">${x.hint.join(' · ')}</span>`:''}</div>
    <div class="why">${esc(poi.why)}</div><div class="tip">💡 ${esc(poi.tip)}</div>
    <div class="actions"><a class="go" href="https://www.google.com/maps/dir/?api=1&destination=${poi.lat},${poi.lng}&travelmode=walking" target="_blank" rel="noopener">Cómo llegar</a>
    <button id="shDone">${done.has(poi.id)?'↺ Desmarcar':'✓ Hecho'}</button>
