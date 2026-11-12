@@ -87,9 +87,15 @@ body.mapmode header{max-width:560px;margin:0 auto 8px}
 .hud{position:absolute;left:8px;right:8px;top:8px;display:flex;gap:6px;flex-wrap:wrap;pointer-events:none}
 .pill{background:#14110fd9;border:1px solid var(--line);border-radius:999px;padding:6px 10px;font-size:12px;font-variant-numeric:tabular-nums;backdrop-filter:blur(6px)}
 .pill b{color:var(--acc)}
-.mapbtns{position:absolute;right:8px;bottom:8px;display:flex;flex-direction:column;gap:6px}
+.mapbtns{position:absolute;right:8px;bottom:54px;display:flex;flex-direction:column;gap:6px}
+.mapchips{position:absolute;left:8px;right:8px;bottom:8px;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;touch-action:pan-x}
+.mapchips::-webkit-scrollbar{display:none}
+.mapchips button{white-space:nowrap;background:#14110fe6;border-radius:999px;font-size:13px;padding:8px 12px}
+.mapchips button.first{background:var(--acc);color:#1b130b;border-color:var(--acc);font-weight:600}
+.mapchips button.dest{border-color:#39d0ff;color:#bfefff}
+.attrib{position:absolute;left:10px;bottom:52px;font-size:10px;color:#14110f;background:#ffffffb0;border-radius:6px;padding:1px 5px;pointer-events:none}
 .mapbtns button{background:#14110fe6;font-size:13px;padding:8px 10px}
-.maphint{position:absolute;left:8px;bottom:8px;max-width:58%;font-size:12px;color:var(--tx);background:#14110fd0;border:1px solid var(--line);border-radius:10px;padding:6px 9px;pointer-events:none}
+.maphint{position:absolute;left:8px;bottom:74px;max-width:58%;font-size:12px;color:var(--tx);background:#14110fd0;border:1px solid var(--line);border-radius:10px;padding:6px 9px;pointer-events:none}
 .sheet{position:absolute;left:8px;right:8px;bottom:8px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;box-shadow:0 10px 30px #0008;z-index:3}
 .sheet .x{position:absolute;right:8px;top:8px;padding:4px 9px}
 .maploading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:20px;color:#1b130b;font-weight:600}
@@ -122,7 +128,9 @@ body.mapmode header{max-width:560px;margin:0 auto 8px}
     <div id="map3d">
       <div class="maploading" id="mapLoading">Cargando Budapest en 3D…</div>
       <div class="hud" id="hud"></div>
-      <div class="maphint" id="mapHint"></div>
+      <div class="maphint" id="mapHint" hidden></div>
+      <div class="attrib" id="attrib" hidden>© OpenStreetMap</div>
+      <div class="mapchips" id="mapChips"></div>
       <div class="mapbtns">
         <button id="btnFollow">📍 Seguirnos</button>
         <button id="btnOverview">🗺️ Vista general</button>
@@ -500,7 +508,7 @@ function render(){
   $('alerts').innerHTML=al.join('');
 
   // ubicación
-  $('locLine').innerHTML=`📍 ${pos.src==='gps'?'GPS':'Ubicación manual'}: <b>${esc(pos.label||'')}</b> <button id="chLoc" style="padding:4px 8px;font-size:12px">Cambiar</button>`;
+  $('locLine').innerHTML=`📍 ${pos.src==='gps'?'GPS':'Ubicación manual'}: <b>${esc(pos.label||'')}</b> <button id="chLoc" style="padding:4px 8px;font-size:12px">Cambiar</button>`+(gpsFar?`<br>🛰️ GPS activo, pero estáis a ~${gpsFar} km de Budapest: modo prueba hasta que lleguéis.`:'');
   $('chLoc').onclick=openLoc;
 
   // lista
@@ -600,7 +608,8 @@ function renderInfo(){
    <li>Para brindar: <b>pálinka</b> (aguardiente de fruta) o vino de Tokaj.</li>
   </ul></div>
   <div class="card"><h3>Emergencias</h3><p class="muted" style="margin:4px 0">Teléfono único: <b>112</b>. Llevad una batería externa: el GPS y el festival vacían el móvil.</p></div>
-  <div class="card"><h3>Probar la app</h3><button id="simOpen">Simular otra hora</button> <button id="resetDone">Borrar “hechos”</button></div>`;
+  <div class="card"><h3>Probar la app</h3><button id="simOpen">Simular otra hora</button> <button id="resetDone">Borrar “hechos”</button> <button id="resetTrail">Borrar recorrido del mapa</button></div>`;
+  $('resetTrail').onclick=()=>{store.set('trail',[]);document.dispatchEvent(new CustomEvent('brj:cleartrail'))};
   $('simOpen').onclick=()=>$('simDlg').showModal();
   $('resetDone').onclick=()=>{done.clear();store.set('done',[]);render()};
 }
@@ -625,15 +634,38 @@ $('locOk').onclick=()=>{
   store.set('pos',pos);$('locDlg').close();render();
 };
 $('gpsTry').onclick=()=>{$('locDlg').close();startGPS(true)};
-function alertBox(msg){const d=document.createElement('div');d.className='banner warn';d.textContent=msg;$('alerts').prepend(d);setTimeout(()=>d.remove(),5000)}
+function alertBox(msg){const d=document.createElement('div');d.className='banner warn';d.textContent=msg;$('alerts').before(d);setTimeout(()=>d.remove(),6000)}
+let gpsFar=null,gpsWatch=null,lastFix=null;
+const BUD={lat:47.4979,lng:19.0402};
+function kmBetween(a,b){const r=Math.PI/180,dLat=(b.lat-a.lat)*r,dLng=(b.lng-a.lng)*r;const x=Math.sin(dLat/2)**2+Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.sin(dLng/2)**2;return 12742*Math.asin(Math.sqrt(x))}
 function startGPS(verbose){
   try{
     if(!navigator.geolocation){if(verbose)alertBox('Este navegador no da GPS aquí. Usad la ubicación manual.');return}
-    navigator.geolocation.watchPosition(g=>{
-      gpsOk=true;pos={lat:g.coords.latitude,lng:g.coords.longitude,label:'Vuestra posición (±'+Math.round(g.coords.accuracy)+' m)',src:'gps'};render();
-    },e=>{if(verbose)alertBox('GPS no disponible ('+(e.message||'permiso denegado')+'). Usad la ubicación manual.');},{enableHighAccuracy:true,maximumAge:30000,timeout:15000});
+    if(gpsWatch!==null)navigator.geolocation.clearWatch(gpsWatch);
+    gpsWatch=navigator.geolocation.watchPosition(g=>{
+      const c={lat:g.coords.latitude,lng:g.coords.longitude};const acc=Math.round(g.coords.accuracy||0);
+      const km=kmBetween(c,BUD);
+      if(km>40){                                   // GPS correcto, pero aún no estáis en Budapest: modo prueba
+        const first=gpsFar===null;gpsFar=Math.round(km);
+        if(pos.src==='gps')pos=store.get('pos',{lat:HOTEL.lat,lng:HOTEL.lng,label:HOTEL.name,src:'manual'});
+        if(first)render();return;
+      }
+      const wasFar=gpsFar!==null;gpsFar=null;
+      if(acc>200&&pos.src==='gps')return;          // lectura mala: se ignora
+      gpsOk=true;pos={...c,label:'Vuestra posición (±'+acc+' m)',src:'gps'};
+      const t=Date.now();
+      if(wasFar||!lastFix||kmBetween(c,lastFix)*1000>8||t-lastFix.t>15000){lastFix={...c,t};render()}
+    },e=>{if(verbose)alertBox('GPS no disponible ('+(e.message||'permiso denegado')+'). Usad la ubicación manual.');},{enableHighAccuracy:true,maximumAge:5000,timeout:20000});
   }catch(e){if(verbose)alertBox('GPS bloqueado en esta vista. Usad la ubicación manual.')}
 }
+let wake=null;
+async function keepAwake(on){
+  try{
+    if(on&&navigator.wakeLock&&!wake){wake=await navigator.wakeLock.request('screen');wake.addEventListener('release',()=>{wake=null})}
+    else if(!on&&wake){const w=wake;wake=null;await w.release()}
+  }catch(e){wake=null}
+}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&currentView==='map')keepAwake(true)});
 
 /* ================= SIMULACIÓN ================= */
 $('simOk').onclick=()=>{sim={d:+$('simDay').value,m:H($('simTime').value||'14:00')};$('simDlg').close();render()};
@@ -689,7 +721,7 @@ $('copyQ').onclick=copyQ;
 
 /* ================= NAVEGACIÓN ================= */
 let currentView='now';
-function go(v){currentView=v;document.querySelectorAll('.view').forEach(s=>s.classList.toggle('on',s.id==='v-'+v));document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));document.body.classList.toggle('mapmode',v==='map');window.scrollTo(0,0);document.dispatchEvent(new CustomEvent('brj:view',{detail:v}))}
+function go(v){currentView=v;document.querySelectorAll('.view').forEach(s=>s.classList.toggle('on',s.id==='v-'+v));document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));document.body.classList.toggle('mapmode',v==='map');keepAwake(v==='map');window.scrollTo(0,0);document.dispatchEvent(new CustomEvent('brj:view',{detail:v}))}
 setTimeout(()=>{if(!window.map3dLoaded){const l=document.getElementById('mapLoading');if(l)l.textContent='No se pudo cargar el motor 3D (¿sin conexión?). La pestaña “Ahora” sigue funcionando.'}},12000);
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>go(b.dataset.v));
 $('chips').innerHTML=CATS.map(c=>`<button class="chip ${c.k===cat?'on':''}" data-c="${c.k}">${c.l}</button>`).join('');
@@ -742,6 +774,77 @@ function height(x,z){
   return v*smooth(r.w/2+2,r.w/2+16,r.d);
 }
 
+/* ---------- cartografía real (OpenStreetMap) para el centro ---------- */
+const TZOOM=15,TN=8,TILE_N=2**TZOOM;
+const lng2x=l=>Math.floor((l+180)/360*TILE_N);
+const lat2y=l=>{const r=l*Math.PI/180;return Math.floor((1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2*TILE_N)};
+const x2lng=x=>x/TILE_N*360-180,y2lat=y=>Math.atan(Math.sinh(Math.PI*(1-2*y/TILE_N)))*180/Math.PI;
+const TX0=lng2x(19.012),TY0=lat2y(47.5305);
+const CORE=(()=>{const a=toW(y2lat(TY0),x2lng(TX0)),b=toW(y2lat(TY0+TN),x2lng(TX0+TN));return {x0:a.x,z0:a.z,x1:b.x,z1:b.z}})();
+const inCore=(x,z)=>x>CORE.x0&&x<CORE.x1&&z>CORE.z0&&z<CORE.z1;
+const hash=(x,z)=>{const v=Math.sin(x*127.1+z*311.7)*43758.5453;return v-Math.floor(v)};
+const vnoise=(x,z)=>{const xi=Math.floor(x),zi=Math.floor(z),fx=x-xi,fz=z-zi,u=fx*fx*(3-2*fx),v=fz*fz*(3-2*fz);return (hash(xi,zi)*(1-u)+hash(xi+1,zi)*u)*(1-v)+(hash(xi,zi+1)*(1-u)+hash(xi+1,zi+1)*u)*v};
+let tilesOn=false,cityCore=null,roadMeshes=[];
+function loadTiles(){
+  const cv=document.createElement('canvas');cv.width=cv.height=TN*256;const ctx=cv.getContext('2d',{willReadFrequently:true});
+  ctx.fillStyle='#f2efe9';ctx.fillRect(0,0,cv.width,cv.height);
+  const jobs=[];
+  for(let i=0;i<TN;i++)for(let j=0;j<TN;j++)jobs.push(new Promise(res=>{
+    const im=new Image();im.crossOrigin='anonymous';
+    im.onload=()=>{try{ctx.drawImage(im,i*256,j*256,256,256);res(true)}catch(e){res(false)}};
+    im.onerror=()=>res(false);
+    im.src=`https://tile.openstreetmap.org/${TZOOM}/${TX0+i}/${TY0+j}.png`;
+  }));
+  Promise.race([Promise.all(jobs),new Promise(r=>setTimeout(()=>r(null),20000))]).then(r=>{
+    if(!r||r.filter(Boolean).length<TN*TN*.85)return;        // sin mapa real: se queda la maqueta
+    try{applyTiles(cv,ctx)}catch(e){}
+  });
+}
+function applyTiles(cv,ctx){
+  const tex=new THREE.CanvasTexture(cv);tex.colorSpace=THREE.SRGBColorSpace;tex.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
+  const geo=new THREE.PlaneGeometry(CORE.x1-CORE.x0,CORE.z1-CORE.z0,150,150);geo.rotateX(-Math.PI/2);geo.translate((CORE.x0+CORE.x1)/2,0,(CORE.z0+CORE.z1)/2);
+  const p=geo.attributes.position;for(let i=0;i<p.count;i++)p.setY(i,Math.max(height(p.getX(i),p.getZ(i))+.14,.3));
+  geo.computeVertexNormals();
+  scene.add(new THREE.Mesh(geo,new THREE.MeshLambertMaterial({map:tex,polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-1})));
+  tilesOn=true;if(cityCore)cityCore.visible=false;roadMeshes.forEach(m=>m.visible=false);
+  document.getElementById('attrib').hidden=false;
+  let px=null;try{px=ctx.getImageData(0,0,cv.width,cv.height).data}catch(e){}
+  if(px)buildTileCity(px,cv.width);
+}
+function buildTileCity(d,W){
+  // Los edificios se levantan donde el mapa real los dibuja (color de edificio de OSM)
+  const sx=W/(CORE.x1-CORE.x0),sz=W/(CORE.z1-CORE.z0);
+  const isB=(x,y)=>{if(x<0||y<0||x>=W||y>=W)return false;const k=(y*W+x)*4;return Math.abs(d[k]-217)<10&&Math.abs(d[k+1]-208)<10&&Math.abs(d[k+2]-201)<10};
+  const avoid=[...POIS.map(p=>({...toW(p.lat,p.lng),r:3.2})),{...toW(HOTEL.lat,HOTEL.lng),r:4},
+    ...[[47.5071,19.0452,16],[47.5008,19.0539,8],[47.4962,19.0393,17],[47.5019,19.0342,11],[47.5149,19.0778,11],[47.4870,19.0587,9],[47.4957,19.0608,7],[47.4867,19.0472,5]].map(([a,b,r])=>({...toW(a,b),r}))];
+  const scan=(CELL)=>{const out=[];
+    for(let x=CORE.x0+CELL/2;x<CORE.x1;x+=CELL)for(let z=CORE.z0+CELL/2;z<CORE.z1;z+=CELL){
+      const px=Math.round((x-CORE.x0)*sx),py=Math.round((z-CORE.z0)*sz);
+      let n=isB(px,py)?2:0;if(!n)continue;
+      if(isB(px-2,py-2))n++;if(isB(px+2,py-2))n++;if(isB(px-2,py+2))n++;if(isB(px+2,py+2))n++;
+      if(n<4)continue;
+      if(avoid.some(a=>Math.abs(a.x-x)<a.r&&Math.abs(a.z-z)<a.r))continue;
+      out.push(x,z);
+    }return out};
+  let CELL=2.4,cells=scan(CELL);if(cells.length/2>30000){CELL=3.2;cells=scan(CELL)}
+  const n=cells.length/2;if(!n)return;
+  const geo=new THREE.BoxGeometry(1,1,1);geo.translate(0,.5,0);
+  const nrm=geo.attributes.normal,col=[];for(let i=0;i<nrm.count;i++){const top=nrm.getY(i)>.5;col.push(top?.74:1,top?.6:1,top?.54:1)}   // tejado más oscuro
+  geo.setAttribute('color',new THREE.Float32BufferAttribute(col,3));
+  const mat=new THREE.MeshLambertMaterial({color:'#ffffff',vertexColors:true});
+  const mesh=new THREE.InstancedMesh(geo,mat,n);
+  const pal=['#efe3cc','#e6d3b3','#dcc7a6','#f3ead9','#d9bfa0','#e9d9c2','#cfc0aa'].map(c=>new THREE.Color(c));
+  const M=new THREE.Matrix4(),Q=new THREE.Quaternion(),P=new THREE.Vector3(),S=new THREE.Vector3();
+  for(let i=0;i<n;i++){
+    const x=cells[i*2],z=cells[i*2+1],gy=height(x,z);
+    let h=1.3+1.5*vnoise(x/38,z/38)+.4*hash(Math.floor(x/7),Math.floor(z/7));if(gy>2)h*=.6;
+    P.set(x,Math.max(gy+.14,.3),z);S.set(CELL*1.02,h,CELL*1.02);M.compose(P,Q,S);mesh.setMatrixAt(i,M);
+    mesh.setColorAt(i,pal[Math.floor(hash(Math.floor(x/9)+3,Math.floor(z/9)+7)*pal.length)]);
+  }
+  mesh.frustumCulled=false;scene.add(mesh);nightMats.push({m:mat,col:'#5a4a35',k:.35});
+  refresh();
+}
+
 /* ---------- escena ---------- */
 const box=document.getElementById('map3d');
 let renderer,scene,camera,controls,hemi,sun,ground,water,started=false;
@@ -766,14 +869,14 @@ function init(){
   hemi=new THREE.HemisphereLight(0xffffff,0x8a7a60,1.1);scene.add(hemi);
   sun=new THREE.DirectionalLight(0xffffff,1.2);sun.position.set(-200,300,150);scene.add(sun);
 
-  buildGround();buildWater();buildRoadsParks();buildBridges();buildCity();buildLandmarks();buildMarkers();buildAvatars();buildTrail();
+  buildGround();buildWater();buildRoadsParks();buildBridges();buildCity();buildLandmarks();buildMarkers();buildAvatars();buildTrail();buildDest();
   resize();new ResizeObserver(resize).observe(box);
   setupTap();
   document.getElementById('mapLoading').remove();
   const s=avatarTarget();avatars.forEach(a=>{a.group.position.set(s.x,s.y,s.z)});
   controls.target.set(s.x,s.y,s.z);camera.position.set(s.x+28,s.y+55,s.z+70);
   refresh();setInterval(refresh,3000);
-  loop();
+  loop();loadTiles();
 }
 function resize(){if(!renderer)return;const w=box.clientWidth,h=box.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()}
 
@@ -781,7 +884,7 @@ function resize(){if(!renderer)return;const w=box.clientWidth,h=box.clientHeight
 function buildGround(){
   const geo=new THREE.PlaneGeometry(1200,950,240,190);geo.rotateX(-Math.PI/2);geo.translate(130,0,0);
   const p=geo.attributes.position;const col=[];const c=new THREE.Color();
-  const land=new THREE.Color('#ddcfae'),hill=new THREE.Color('#9fb47e'),park=new THREE.Color('#a9c48a');
+  const land=new THREE.Color('#e6dfcf'),hill=new THREE.Color('#9fb47e'),park=new THREE.Color('#a9c48a');
   for(let i=0;i<p.count;i++){
     const x=p.getX(i),z=p.getZ(i);const y=height(x,z);p.setY(i,y);
     c.copy(land);if(y>1.5)c.lerp(hill,Math.min(1,y/8));
@@ -805,14 +908,14 @@ function ribbon(line,y,widthFn){
 function densify(line,step){const out=[];for(let i=0;i<line.length-1;i++){const a=line[i],b=line[i+1];const n=Math.max(1,Math.ceil(Math.hypot(b.x-a.x,b.z-a.z)/step));for(let k=0;k<n;k++){const t=k/n;out.push({x:a.x+(b.x-a.x)*t,z:a.z+(b.z-a.z)*t,w:a.w+(b.w-a.w)*t})}}out.push(line[line.length-1]);return out}
 function buildWater(){
   water=new THREE.MeshLambertMaterial({color:'#4f8fc0',side:THREE.DoubleSide});
-  scene.add(new THREE.Mesh(ribbon(densify(DANUBE,8),0.35,p=>p.w),water));
+  scene.add(new THREE.Mesh(ribbon(densify(DANUBE,8),0.1,p=>p.w),water));
   const sh=new THREE.Shape();sh.absellipse(0,0,ISLAND.rx,ISLAND.rz,0,Math.PI*2);
   const ig=new THREE.ShapeGeometry(sh,40);ig.rotateX(-Math.PI/2);
-  const isl=new THREE.Mesh(ig,new THREE.MeshLambertMaterial({color:'#9cbf7e'}));isl.position.set(ISLAND.x,0.6,ISLAND.z);isl.rotation.y=0.12;scene.add(isl);
+  const isl=new THREE.Mesh(ig,new THREE.MeshLambertMaterial({color:'#9cbf7e'}));isl.position.set(ISLAND.x,0.16,ISLAND.z);isl.rotation.y=0.12;scene.add(isl);
 }
 function buildRoadsParks(){
   const m=new THREE.MeshLambertMaterial({color:'#f2e8d2'});
-  ROADS.forEach(r=>scene.add(new THREE.Mesh(ribbon(densify(r,6),p=>height(p.x,p.z)+0.12,()=>3.2),m)));
+  ROADS.forEach((r,i)=>{const me=new THREE.Mesh(ribbon(densify(r,6),p=>height(p.x,p.z)+0.06,()=>3.2),m);scene.add(me);if(i<ROADS.length-1)roadMeshes.push(me)});
 }
 function buildBridges(){
   const list=[['Margit',47.5123,19.0438,'#d8c78a'],['Lánchíd',47.4990,19.0432,'#e6dccb',true],['Erzsébet',47.4910,19.0485,'#f4f4f4'],['Szabadság',47.4855,19.0552,'#5a9a6a'],['Petőfi',47.4775,19.0640,'#b8b8b8']];
@@ -831,7 +934,6 @@ function buildBridges(){
 function rand(s){return ()=>{s=(s*16807)%2147483647;return (s-1)/2147483646}}
 function buildCity(){
   const R=rand(42);const items=[];
-  const roadsD=densify(ROADS.flat(),20);
   const avoid=[...POIS.map(p=>toW(p.lat,p.lng)),toW(HOTEL.lat,HOTEL.lng)];
   for(let ix=-30;ix<=48;ix++)for(let iz=-30;iz<=26;iz++){
     if(ix%5===0||iz%5===0)continue;
@@ -847,11 +949,14 @@ function buildCity(){
   }
   const geo=new THREE.BoxGeometry(1,1,1);geo.translate(0,.5,0);
   const mat=new THREE.MeshLambertMaterial({color:'#ffffff'});
-  const mesh=new THREE.InstancedMesh(geo,mat,items.length);
   const pal=['#ead9b9','#dcc4a2','#cfb28c','#efe4cf','#c9a07c','#bba78e','#e2c9a8'].map(c=>new THREE.Color(c));
   const M=new THREE.Matrix4();
-  items.forEach((b,i)=>{M.compose(new THREE.Vector3(b.x,b.y,b.z),new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),(R()-.5)*.08),new THREE.Vector3(b.w,b.h,b.d));mesh.setMatrixAt(i,M);mesh.setColorAt(i,pal[Math.floor(R()*pal.length)])});
-  scene.add(mesh);nightMats.push({m:mat,col:'#5a4a35',k:.35});
+  const make=(list)=>{const mesh=new THREE.InstancedMesh(geo,mat,list.length);
+    list.forEach((b,i)=>{M.compose(new THREE.Vector3(b.x,b.y,b.z),new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),(R()-.5)*.08),new THREE.Vector3(b.w,b.h,b.d));mesh.setMatrixAt(i,M);mesh.setColorAt(i,pal[Math.floor(R()*pal.length)])});
+    mesh.frustumCulled=false;scene.add(mesh);return mesh};
+  cityCore=make(items.filter(b=>inCore(b.x,b.z)));make(items.filter(b=>!inCore(b.x,b.z)));
+  if(tilesOn)cityCore.visible=false;
+  nightMats.push({m:mat,col:'#5a4a35',k:.35});
 }
 function place(obj,la,ln,yOff=0){const p=toW(la,ln);obj.position.set(p.x,height(p.x,p.z)+yOff,p.z);scene.add(obj);return obj}
 function lm(color,glow){const m=new THREE.MeshLambertMaterial({color});if(glow)nightMats.push({m,col:glow,k:.8});return m}
@@ -939,16 +1044,17 @@ function refresh(){
   if(!started)return;
   const t=now();
   const ranked=POIS.map(p=>({p,...score(p,t)})).filter(x=>x.st.s!=='closed'&&!done.has(x.p.id)).sort((a,b)=>b.s-a.s).slice(0,6);
+  checkArrival();
   markers.forEach(m=>{
-    const r=ranked.findIndex(x=>x.p.id===m.poi.id)+1;const isDone=done.has(m.poi.id);const closed=openState(m.poi,t).s==='closed';
-    m.rank=r;m.ring.visible=r>0;
-    const sc=r?(r===1?5.4:4.6):isDone?2.2:3;m.sprite.scale.set(sc,sc,1);
+    const r=ranked.findIndex(x=>x.p.id===m.poi.id)+1;const isDone=done.has(m.poi.id);const closed=openState(m.poi,t).s==='closed';const isDest=dest===m.poi.id;
+    m.rank=r;m.ring.visible=r>0||isDest;m.ring.material.color.set(isDest?'#39d0ff':'#ffcc55');
+    const sc=isDest?6:r?(r===1?5.4:4.6):isDone?2.2:3;m.sprite.scale.set(sc,sc,1);
     m.sprite.material.opacity=isDone||closed?.45:1;
     if(m.labelRank!==r){if(m.label){m.group.remove(m.label);m.label.material.map.dispose();m.label=null}
       if(r){m.label=label(r+' · '+m.poi.name,r===1?'#e8a33d':'#14110fdd',r===1?'#1b130b':'#f3ebe1',.8);m.label.position.y=11.5;m.group.add(m.label)}
       m.labelRank=r}
   });
-  dayNight(t);hud(t,ranked);
+  dayNight(t);hud(t,ranked);chips(ranked);
 }
 
 /* ---------- personajes ---------- */
@@ -1071,7 +1177,7 @@ function makeAvatar(o){
   shadow.rotation.x=-Math.PI/2;shadow.position.y=.01;g.add(shadow);
   const tag=label(o.name,o.tag,'#fff',.11);tag.position.set(o.side*.12,2.08,0);g.add(tag);
   g.scale.setScalar(6.8*o.h);scene.add(g);
-  return {group:g,legs,knees,arms,armOffset:o.armOffset,body:up,bodyBase:0,phase:Math.random()*6,speed:0,side:o.side};
+  return {group:g,h:o.h,legs,knees,arms,armOffset:o.armOffset,body:up,bodyBase:0,phase:Math.random()*6,speed:0,side:o.side};
 }
 function buildAvatars(){
   avatars=[
@@ -1080,19 +1186,20 @@ function buildAvatars(){
   ];
 }
 function avatarTarget(){const p=toW(pos.lat,pos.lng);return {x:p.x,z:p.z,y:height(p.x,p.z)}}
-let heading=0;
+let heading=0,avScale=6.8;
 function moveAvatars(dt){
   const tg=avatarTarget();
   const mid=new THREE.Vector3();avatars.forEach(a=>mid.add(a.group.position));mid.multiplyScalar(.5);
   const dx=tg.x-mid.x,dz=tg.z-mid.z,dist=Math.hypot(dx,dz);
-  const moving=dist>0.6;
+  const jump=dist>250;                                    // primer punto GPS o salto grande: aparecer allí
+  const moving=dist>0.6&&!jump;
   if(moving)heading=Math.atan2(dx,dz);
   const step=Math.min(dist,Math.max(12,dist*1.8)*dt);
   const nx=moving?mid.x+dx/dist*step:tg.x,nz=moving?mid.z+dz/dist*step:tg.z;
-  const px=Math.cos(heading)*2.8,pz=-Math.sin(heading)*2.8; // perpendicular
+  const gap=2.8*avScale/6.8,px=Math.cos(heading)*gap,pz=-Math.sin(heading)*gap; // perpendicular
   avatars.forEach(a=>{
     const x=nx+px*a.side,z=nz+pz*a.side;
-    a.group.position.set(x,height(x,z),z);
+    a.group.position.set(x,height(x,z)+.5,z);a.group.scale.setScalar(avScale*a.h);
     let dr=heading-a.group.rotation.y;dr=Math.atan2(Math.sin(dr),Math.cos(dr));a.group.rotation.y+=dr*Math.min(1,dt*8);
     a.speed+=((moving?1:0)-a.speed)*Math.min(1,dt*6);
     a.phase+=dt*(moving?9:2.2);
@@ -1106,14 +1213,17 @@ function moveAvatars(dt){
 }
 
 /* ---------- recorrido ---------- */
+const onMap=(p)=>{const w=toW(p.lat,p.lng);return Math.abs(w.x-130)<620&&Math.abs(w.z)<490};
+document.addEventListener('brj:cleartrail',()=>{trail=[];if(trailLine)drawTrail()});
 function buildTrail(){
-  trail=(store.get('trail',[])||[]).filter(p=>p&&isFinite(p.lat));
+  trail=(store.get('trail',[])||[]).filter(p=>p&&isFinite(p.lat)&&onMap(p));
   trailLine=new THREE.Line(new THREE.BufferGeometry(),new THREE.LineDashedMaterial({color:'#e8a33d',dashSize:2,gapSize:1.5,depthTest:false,transparent:true,opacity:.9}));
   trailLine.renderOrder=5;scene.add(trailLine);drawTrail();
 }
 function addTrail(tg){
   const last=trail[trail.length-1];const lp=last?toW(last.lat,last.lng):null;
   if(lp&&Math.hypot(lp.x-tg.x,lp.z-tg.z)<3)return;
+  if(!onMap(pos))return;
   trail.push({lat:pos.lat,lng:pos.lng});if(trail.length>3000)trail.shift();store.set('trail',trail);drawTrail();
 }
 function drawTrail(){
@@ -1143,13 +1253,43 @@ function dayNight(t){
 /* ---------- interfaz ---------- */
 function hud(t,ranked){
   const sun_=SUNSET[t.d]??SUNSET[0];const toSun=sun_-t.m;const na=nextAnchor(t,false);
+  const dp=dest&&POIS.find(p=>p.id===dest);
   document.getElementById('hud').innerHTML=
     `<span class="pill">🌇 <b>${fmt(sun_)}</b> ${toSun>0?'· en '+dur(toSun):'· de noche'}</span>`+
     (na?`<span class="pill">⏱️ ${na.label} · <b>${dur(abs(na)-abs(t))}</b></span>`:'')+
-    (t.simulated?`<span class="pill">🧪 ${DAYNAME[t.d]} ${fmt(t.m)} simulado</span>`:'');
-  document.getElementById('mapHint').innerHTML=pos.src==='gps'
-    ?`🛰️ GPS activo: os movéis solos. ⭐ Top: <b>${ranked[0]?ranked[0].p.name:'—'}</b>`
-    :`👆 Tocad el mapa para moveros allí · tocad un icono para ver el sitio`;
+    (dp?`<span class="pill" style="border-color:#39d0ff">🎯 ${esc(dp.name)} · <b>${walkMin(pos,dp)} min</b></span>`:'')+
+    `<span class="pill">${pos.src==='gps'?'🛰️ GPS':gpsFar?'🧪 Prueba · tocad el mapa':'👆 Manual · tocad el mapa'}</span>`+
+    (t.simulated?`<span class="pill">🧪 ${DAYNAME[t.d]} ${fmt(t.m)}</span>`:'');
+}
+let chipSig='';
+function chips(ranked){
+  const sig=ranked.map(x=>x.p.id+':'+x.w).join('|')+'#'+dest;if(sig===chipSig)return;chipSig=sig;
+  const el=document.getElementById('mapChips');
+  el.innerHTML=ranked.map((x,i)=>`<button data-id="${x.p.id}" class="${i===0?'first':''} ${dest===x.p.id?'dest':''}">${i+1} · ${CATEMO[x.p.cat]} ${esc(x.p.name)} · ${x.w} min</button>`).join('');
+  el.querySelectorAll('button').forEach(b=>b.onclick=()=>focusPoi(POIS.find(p=>p.id===b.dataset.id)));
+}
+function focusPoi(poi){
+  followMode=false;updateFollowBtn();const w=toW(poi.lat,poi.lng),y=height(w.x,w.z);
+  controls.target.set(w.x,y,w.z);camera.position.set(w.x+22,y+50,w.z+62);openSheet(poi);
+}
+/* objetivo: línea desde vosotros hasta el sitio elegido */
+let dest=store.get('dest',null),destLine=null;
+function buildDest(){
+  const g=new THREE.BoxGeometry(1,.12,1);g.translate(0,0,.5);
+  destLine=new THREE.Mesh(g,new THREE.MeshBasicMaterial({color:'#39d0ff',transparent:true,opacity:.75,depthTest:false}));
+  destLine.renderOrder=6;destLine.visible=false;destLine.frustumCulled=false;scene.add(destLine);
+}
+function setDest(id){dest=id;store.set('dest',dest);chipSig='';refresh()}
+function updateDest(mid,el){
+  const dp=dest&&POIS.find(p=>p.id===dest);
+  if(!dp){destLine.visible=false;return}
+  const w=toW(dp.lat,dp.lng),dx=w.x-mid.x,dz=w.z-mid.z,len=Math.hypot(dx,dz);
+  destLine.visible=len>2;destLine.position.set(mid.x,Math.max(mid.y,height(w.x,w.z))+1.2,mid.z);
+  destLine.rotation.y=Math.atan2(dx,dz);destLine.scale.set(.9,1,len);destLine.material.opacity=.55+.25*Math.sin(el*4);
+}
+function checkArrival(){
+  const dp=dest&&POIS.find(p=>p.id===dest);if(!dp)return;
+  if(kmBetween(pos,dp)*1000<60){dest=null;store.set('dest',null);chipSig='';toast('🎉 ¡Habéis llegado a '+dp.name+'!');openSheet(dp)}
 }
 function updateFollowBtn(){document.getElementById('btnFollow').style.borderColor=followMode?'var(--acc)':'var(--line)'}
 document.getElementById('btnFollow').onclick=()=>{followMode=true;updateFollowBtn();const a=avatarTarget();camera.position.set(a.x+28,a.y+55,a.z+70)};
@@ -1163,7 +1303,9 @@ function openSheet(poi){
    <div class="why">${esc(poi.why)}</div><div class="tip">💡 ${esc(poi.tip)}</div>
    <div class="actions"><a class="go" href="https://www.google.com/maps/dir/?api=1&destination=${poi.lat},${poi.lng}&travelmode=walking" target="_blank" rel="noopener">Cómo llegar</a>
    <button id="shDone">${done.has(poi.id)?'↺ Desmarcar':'✓ Hecho'}</button>
+   <button id="shDest">${dest===poi.id?'✕ Quitar objetivo':'🎯 Ir aquí'}</button>
    ${pos.src!=='gps'?'<button id="shGo">🚶 Movernos aquí</button>':''}</div>`;
+  document.getElementById('shDest').onclick=()=>{setDest(dest===poi.id?null:poi.id);sh.hidden=true;selected=null;if(dest){followMode=true;updateFollowBtn()}};
   document.getElementById('shX').onclick=()=>{sh.hidden=true;selected=null};
   document.getElementById('shDone').onclick=()=>{done.has(poi.id)?done.delete(poi.id):done.add(poi.id);store.set('done',[...done]);render();refresh();openSheet(poi)};
   const g=document.getElementById('shGo');if(g)g.onclick=()=>{setManual(poi.lat,poi.lng,'Cerca de '+poi.name);sh.hidden=true;followMode=true;updateFollowBtn()};
@@ -1187,7 +1329,8 @@ function setupTap(){
     }
   });
 }
-function toast(msg){const h=document.getElementById('mapHint');h.textContent=msg;setTimeout(()=>refresh(),2500)}
+let toastT=null;
+function toast(msg){const h=document.getElementById('mapHint');h.textContent=msg;h.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>{h.hidden=true},3500)}
 
 /* ---------- bucle ---------- */
 let lastMid=null;
@@ -1195,7 +1338,8 @@ function loop(){
   requestAnimationFrame(loop);
   if(currentView!=='map'||document.hidden)return;
   const dt=Math.min(.05,clock.getDelta());const el=clock.elapsedTime;
-  const mid=moveAvatars(dt);
+  avScale+=(Math.max(2.6,Math.min(6.8,camera.position.distanceTo(controls.target)/14))-avScale)*Math.min(1,dt*6);
+  const mid=moveAvatars(dt);updateDest(mid,el);
   if(followMode){
     if(lastMid){const d=mid.clone().sub(lastMid);camera.position.add(d);controls.target.add(d)}
     controls.target.lerp(mid,Math.min(1,dt*3));
