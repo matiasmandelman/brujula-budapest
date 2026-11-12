@@ -70,7 +70,8 @@ select,input,textarea{background:var(--card2);border:1px solid var(--line);borde
 .mapchips button.plan{background:#2a2013;border-color:#b98a2e;color:#ffe7a6}
 body.noai nav button[data-v=ai],body.noai [data-ask]{display:none!important}
 body.mapfull #map3d{position:fixed;inset:0;height:100dvh;min-height:0;border-radius:0;border:none;z-index:60}
-body.mapfull header,body.mapfull nav,body.mapfull .hud,body.mapfull .mapchips,body.mapfull .mapbtns,body.mapfull .maphint{display:none!important}
+body.mapfull header,body.mapfull nav,body.mapfull .hud,body.mapfull .mapchips,body.mapfull .maphint,body.mapfull .mapbtns button:not(#btnAct){display:none!important}
+body.mapfull .mapbtns{bottom:calc(14px + env(safe-area-inset-bottom))}
 body.mapfull .attrib{bottom:calc(8px + env(safe-area-inset-bottom))}
 .fullpill{display:none;position:absolute;left:12px;right:64px;top:calc(12px + env(safe-area-inset-top));background:#14110fe8;border:1px solid #b98a2e;border-radius:16px;padding:10px 14px;font-size:15px;line-height:1.3;pointer-events:none;backdrop-filter:blur(6px)}
 .fullpill small{display:block;color:var(--mut);font-size:12px;margin-bottom:2px}
@@ -1899,7 +1900,7 @@ function startAction(kind,o={}){
   // cámara de lado respecto a la pareja, para verlos a los dos
   const ax=paz.group.position.x-mati.group.position.x,az=paz.group.position.z-mati.group.position.z,L=Math.hypot(ax,az)||1;
   let dir=new THREE.Vector3(-az/L,0,ax/L);const cur=camera.position.clone().sub(controls.target);cur.y=0;if(dir.dot(cur)<0)dir.negate();
-  flyTo(m.x,m.y+.9,m.z,{dist:8.6,height:2.0,dur:1.1,dir});document.body.classList.add('acting');
+  flyTo(m.x,m.y+avScale*.95,m.z,{dist:avScale*5.4,height:avScale*1.1,dur:1.1,dir});document.body.classList.add('acting');
   avatars.forEach(a=>{a.group.userData.tag.visible=false});
   action={kind,def:ACTIONS[kind],t:-1.15,mati,paz,props:[],mid:m.clone(),o};
   return true;
@@ -2222,7 +2223,7 @@ function buildAvatars(){
   mateHolder.elbows[0].rotation.x=-Math.PI/2;mateHolder.elbows[0].add(mate);mate.position.copy(MATE_P);mate.quaternion.copy(MATE_Q);
 }
 function avatarTarget(){const p=toW(pos.lat,pos.lng);return {x:p.x,z:p.z,y:height(p.x,p.z)}}
-let heading=0,avScale=3.5;
+let heading=0;const avScale=4.2;   // tamaño fijo: protagonistas
 let lastMoveT=0,tired=false;
 function moveAvatars(dt){
   const tg=movie&&movie.cur?{x:movie.cur.x,z:movie.cur.z,y:height(movie.cur.x,movie.cur.z)}:avatarTarget();
@@ -2476,7 +2477,6 @@ function loop(){
   requestAnimationFrame(loop);
   if(currentView!=='map'||document.hidden)return;
   const dt=Math.min(.05,clock.getDelta());const el=clock.elapsedTime;
-  avScale+=(Math.max(1.2,Math.min(4.2,camera.position.distanceTo(controls.target)/22))-avScale)*Math.min(1,dt*6);
   updateMovie(dt,el);
   const mid=moveAvatars(dt);updateMate(dt);updateLife(dt,el,mid);runAction(dt);updateBubbles(dt);updateFloats(dt,el);updateDest(mid,el);updateNear(mid,dt);
   waterU.uTime.value=el;updateNightFx(el);
