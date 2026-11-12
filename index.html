@@ -1,0 +1,1102 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Brújula Budapest</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#14110f;--card:#1e1a17;--card2:#26211d;--line:#3a322b;
+  --tx:#f3ebe1;--mut:#a89a8a;--acc:#e8a33d;--acc2:#c8553d;--ok:#6fbf73;--bad:#d9665b;--info:#6aa6d9;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--tx);font-family:Inter,system-ui,sans-serif;font-size:15px;-webkit-font-smoothing:antialiased}
+body{padding:env(safe-area-inset-top) env(safe-area-inset-right) calc(76px + env(safe-area-inset-bottom)) env(safe-area-inset-left)}
+h1,h2,h3{font-family:Fraunces,Georgia,serif;margin:0}
+.wrap{max-width:560px;margin:0 auto;padding:14px}
+header{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;margin-bottom:12px}
+header h1{font-size:26px;letter-spacing:.2px}
+header h1 span{color:var(--acc)}
+.clock{text-align:right;font-variant-numeric:tabular-nums}
+.clock b{font-size:22px;display:block}
+.clock small{color:var(--mut)}
+.banner{border-radius:14px;padding:12px 14px;margin-bottom:10px;background:var(--card);border:1px solid var(--line)}
+.banner.sun{background:linear-gradient(135deg,#4a2a14,#2a1a12);border-color:#7a4a22}
+.banner.warn{background:#3a1d1a;border-color:#7a3a33}
+.banner.test{background:#1b2633;border-color:#2f4a66;font-size:13px}
+.banner b{color:var(--acc)}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.anchors{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.anchor{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px}
+.anchor small{color:var(--mut);display:block;font-size:12px}
+.anchor b{font-size:18px;font-variant-numeric:tabular-nums}
+.loc{font-size:13px;color:var(--mut);margin-bottom:10px}
+.loc button{margin-left:6px}
+button,select,input,textarea{font:inherit;color:var(--tx)}
+button{background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:8px 12px;cursor:pointer}
+button.pri{background:var(--acc);color:#1b130b;border-color:var(--acc);font-weight:600}
+button:active{transform:scale(.98)}
+select,input,textarea{background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:8px 10px;width:100%}
+.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:10px;scrollbar-width:none}
+.chip{white-space:nowrap;border-radius:999px;padding:7px 12px;font-size:14px}
+.chip.on{background:var(--acc);color:#1b130b;border-color:var(--acc);font-weight:600}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:10px}
+.card.done{opacity:.45}
+.card h3{font-size:18px;margin-bottom:2px}
+.meta{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}
+.tag{font-size:12px;border-radius:999px;padding:3px 8px;background:var(--card2);border:1px solid var(--line);color:var(--mut)}
+.tag.ok{color:var(--ok);border-color:#35583a}
+.tag.bad{color:var(--bad);border-color:#6a3530}
+.tag.unk{color:var(--info);border-color:#2f4a66}
+.tag.acc{color:var(--acc);border-color:#7a5522}
+.why{font-size:14px;color:#e2d6c8;margin:4px 0 2px}
+.tip{font-size:13px;color:var(--mut)}
+.actions{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.actions a,.actions button{font-size:13px;padding:7px 10px;text-decoration:none;color:var(--tx);background:var(--card2);border:1px solid var(--line);border-radius:10px}
+.actions a.go{background:var(--acc);color:#1b130b;border-color:var(--acc);font-weight:600}
+nav{position:fixed;left:0;right:0;bottom:0;background:#0f0d0bf2;border-top:1px solid var(--line);display:flex;justify-content:space-around;padding:8px 6px calc(8px + env(safe-area-inset-bottom));backdrop-filter:blur(8px);z-index:5}
+nav button{background:none;border:none;color:var(--mut);display:flex;flex-direction:column;align-items:center;font-size:11px;gap:2px;padding:4px 8px}
+nav button span{font-size:20px}
+nav button.on{color:var(--acc)}
+.view{display:none}.view.on{display:block}
+.plan h2{font-size:20px;margin:14px 0 8px}
+.step{display:grid;grid-template-columns:58px 1fr;gap:8px;padding:8px 0;border-bottom:1px dashed var(--line)}
+.step time{color:var(--acc);font-variant-numeric:tabular-nums;font-weight:600}
+.step p{margin:2px 0 0;color:var(--mut);font-size:13px}
+.chat{min-height:120px}
+.msg{padding:10px 12px;border-radius:12px;margin-bottom:8px;white-space:pre-wrap;line-height:1.45}
+.msg.u{background:var(--card2);margin-left:30px}
+.msg.a{background:var(--card);border:1px solid var(--line);margin-right:10px}
+.quick{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.quick button{font-size:13px;padding:6px 10px}
+.muted{color:var(--mut);font-size:13px}
+dialog{background:var(--card);color:var(--tx);border:1px solid var(--line);border-radius:16px;width:min(92vw,480px);padding:16px}
+dialog::backdrop{background:#000a}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:14px}
+.kv b{color:var(--acc)}
+ul.tight{margin:6px 0;padding-left:18px}ul.tight li{margin:4px 0}
+.empty{text-align:center;color:var(--mut);padding:30px 10px}
+/* ---- MAPA 3D ---- */
+body.mapmode .anchors,body.mapmode #locLine,body.mapmode #alerts,body.mapmode #testBanner{display:none!important}
+body.mapmode .wrap{max-width:none;padding:10px 10px 0}
+body.mapmode header{max-width:560px;margin:0 auto 8px}
+#map3d{position:relative;height:calc(100dvh - 150px - env(safe-area-inset-bottom));min-height:420px;border-radius:16px;overflow:hidden;background:#9fc4e8;border:1px solid var(--line);touch-action:none}
+#map3d canvas{display:block;width:100%;height:100%}
+.hud{position:absolute;left:8px;right:8px;top:8px;display:flex;gap:6px;flex-wrap:wrap;pointer-events:none}
+.pill{background:#14110fd9;border:1px solid var(--line);border-radius:999px;padding:6px 10px;font-size:12px;font-variant-numeric:tabular-nums;backdrop-filter:blur(6px)}
+.pill b{color:var(--acc)}
+.mapbtns{position:absolute;right:8px;bottom:8px;display:flex;flex-direction:column;gap:6px}
+.mapbtns button{background:#14110fe6;font-size:13px;padding:8px 10px}
+.maphint{position:absolute;left:8px;bottom:8px;max-width:58%;font-size:12px;color:var(--tx);background:#14110fd0;border:1px solid var(--line);border-radius:10px;padding:6px 9px;pointer-events:none}
+.sheet{position:absolute;left:8px;right:8px;bottom:8px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;box-shadow:0 10px 30px #0008;z-index:3}
+.sheet .x{position:absolute;right:8px;top:8px;padding:4px 9px}
+.maploading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:20px;color:#1b130b;font-weight:600}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Brújula <span>Budapest</span></h1>
+    <div class="clock"><b id="clk">--:--</b><small id="day">—</small></div>
+  </header>
+
+  <div id="testBanner" class="banner test" hidden></div>
+  <div id="alerts"></div>
+  <div class="anchors" id="anchors"></div>
+  <div class="loc" id="locLine"></div>
+
+  <!-- AHORA -->
+  <section class="view on" id="v-now">
+    <div class="chips" id="chips"></div>
+    <div class="row" style="margin-bottom:10px;justify-content:space-between">
+      <label class="muted"><input type="checkbox" id="showClosed" style="width:auto"> mostrar cerrados / hechos</label>
+      <span class="muted" id="count"></span>
+    </div>
+    <div id="list"></div>
+  </section>
+
+  <!-- MAPA 3D -->
+  <section class="view" id="v-map">
+    <div id="map3d">
+      <div class="maploading" id="mapLoading">Cargando Budapest en 3D…</div>
+      <div class="hud" id="hud"></div>
+      <div class="maphint" id="mapHint"></div>
+      <div class="mapbtns">
+        <button id="btnFollow">📍 Seguirnos</button>
+        <button id="btnOverview">🗺️ Vista general</button>
+      </div>
+      <div class="sheet" id="sheet" hidden></div>
+    </div>
+  </section>
+
+  <!-- PLAN -->
+  <section class="view plan" id="v-plan"></section>
+
+  <!-- GUIA IA -->
+  <section class="view" id="v-ai">
+    <div class="card">
+      <h3>Pregúntale al guía</h3>
+      <p class="muted" style="margin:6px 0 0">Sabe dónde estáis, qué hora es, cuánto queda hasta el próximo compromiso, qué habéis hecho ya y qué hay cerca.</p>
+      <div class="quick" id="quick"></div>
+      <textarea id="q" rows="3" placeholder="Ej: estamos cansados y con frío, ¿un café bonito a menos de 10 min?"></textarea>
+      <div class="row" style="margin-top:8px">
+        <button class="pri" id="ask">Preguntar</button>
+        <button id="copyQ">Copiar para Claude</button>
+        <span class="muted" id="aiState"></span>
+      </div>
+    </div>
+    <div class="chat" id="chat"></div>
+  </section>
+
+  <!-- BASICOS -->
+  <section class="view" id="v-info"></section>
+</div>
+
+<nav>
+  <button class="on" data-v="now"><span>🧭</span>Ahora</button>
+  <button data-v="map"><span>🗺️</span>Mapa</button>
+  <button data-v="plan"><span>🗓️</span>Plan</button>
+  <button data-v="ai"><span>💬</span>Guía IA</button>
+  <button data-v="info"><span>ℹ️</span>Básicos</button>
+</nav>
+
+<dialog id="locDlg">
+  <h3 style="margin-bottom:8px">¿Dónde estáis?</h3>
+  <p class="muted" style="margin-top:0">El GPS no está disponible aquí. Elegid el sitio más cercano o pegad coordenadas / un enlace de Google Maps.</p>
+  <select id="locSel"></select>
+  <input id="locTxt" placeholder="47.4979, 19.0402  ó  enlace de Google Maps" style="margin-top:8px">
+  <div class="row" style="margin-top:12px;justify-content:flex-end">
+    <button id="gpsTry">Probar GPS</button>
+    <button id="locCancel">Cancelar</button>
+    <button class="pri" id="locOk">Usar</button>
+  </div>
+</dialog>
+
+<dialog id="simDlg">
+  <h3 style="margin-bottom:8px">Simular hora (para probar)</h3>
+  <div class="row">
+    <select id="simDay" style="flex:1">
+      <option value="0">Sábado 14</option>
+      <option value="1">Domingo 15</option>
+      <option value="2">Lunes 16</option>
+    </select>
+    <input id="simTime" type="time" value="14:00" style="flex:1">
+  </div>
+  <div class="row" style="margin-top:12px;justify-content:flex-end">
+    <button id="simReal">Hora real</button>
+    <button class="pri" id="simOk">Simular</button>
+  </div>
+</dialog>
+
+<script>
+/* ================= DATOS ================= */
+const TZ='Europe/Budapest';
+const TRIP=['2026-11-14','2026-11-15','2026-11-16'];
+const DAYKEY=['sat','sun','mon'];
+const DAYNAME=['Sábado 14','Domingo 15','Lunes 16'];
+const HOTEL={id:'hotel',name:'A57 (Akácfa u. 57)',lat:47.5010,lng:19.0663};
+const H=(s)=>{const [h,m]=s.split(':').map(Number);return h*60+m};
+// horas: {sat:[["10:00","18:00"]], sun:[...]} ; cierre > 24:00 permitido ("28:00" = 4:00 del día siguiente); '24h' ; null = desconocido
+const ALL24={sat:[['0:00','24:00']],sun:[['0:00','24:00']],mon:[['0:00','24:00']]};
+const POIS=[
+ // ---- VISTAS / ATARDECER
+ {id:'bastion',name:'Bastión de los Pescadores',cat:'vistas',lat:47.5021,lng:19.0347,dur:45,best:'sunset',must:true,hours:ALL24,
+  why:'La vista clásica del Parlamento y el Danubio. Al atardecer es lo mejor del viaje.',
+  tip:'Terrazas inferiores gratis 24 h; la terraza superior es de pago (≈1.700 HUF) de 9 a 19 h. Subid con el funicular o caminando desde Clark Ádám tér.'},
+ {id:'matias',name:'Iglesia de Matías',cat:'historia',lat:47.5019,lng:19.0342,dur:30,best:'day',
+  hours:{sat:[['9:00','17:00']],sun:[['13:00','17:00']]},
+  why:'Tejado de cerámica de colores pegado al Bastión. Interior pintado espectacular.',
+  tip:'Horario aproximado; los domingos por la mañana hay misa. Entrada de pago.'},
+ {id:'palacio',name:'Palacio de Buda (terrazas)',cat:'vistas',lat:47.4962,lng:19.0396,dur:40,best:'sunset',hours:ALL24,
+  why:'Paseo por las terrazas del castillo con vistas al Puente de las Cadenas y Pest.',
+  tip:'Las terrazas exteriores se pueden recorrer libremente; museos aparte.'},
+ {id:'gellert',name:'Monte Gellért (mirador)',cat:'vistas',lat:47.4870,lng:19.0466,dur:60,best:'sunset',hours:ALL24,
+  why:'La panorámica más alta de la ciudad, con los puentes en fila.',
+  tip:'Subida a pie de 20–25 min. El entorno de la Ciudadela ha estado en obras: comprobad el acceso en Maps.'},
+ {id:'batthyany',name:'Batthyány tér (Parlamento iluminado)',cat:'vistas',lat:47.5063,lng:19.0389,dur:20,best:'night',hours:ALL24,
+  why:'La foto del Parlamento iluminado reflejado en el Danubio, desde enfrente.',
+  tip:'Desde Pest: M2 una parada desde Kossuth tér, o tranvía 19/41 por el lado de Buda.'},
+ {id:'cadenas',name:'Puente de las Cadenas',cat:'ciudad',lat:47.4990,lng:19.0436,dur:20,best:'any',hours:ALL24,
+  why:'El puente icónico. Cruzarlo a pie es la forma natural de pasar de Pest al Castillo.',
+  tip:'De noche, iluminado, es aún mejor.'},
+ {id:'korzo',name:'Paseo del Danubio (Duna korzó)',cat:'vistas',lat:47.4945,lng:19.0490,dur:30,best:'night',hours:ALL24,
+  why:'Paseo junto al río con el Castillo enfrente. Perfecto para ver el atardecer o la ciudad iluminada.',
+  tip:'El tranvía 2 recorre esta orilla y es casi un tour panorámico por sí mismo.'},
+ {id:'basilica_cupula',name:'Cúpula de San Esteban',cat:'vistas',lat:47.5008,lng:19.0539,dur:40,best:'sunset',
+  hours:{sat:[['10:00','18:00']],sun:[['10:00','18:00']]},
+  why:'Mirador de 360° en pleno Pest, a 15 min a pie del alojamiento.',
+  tip:'Horario aproximado: confirmad en Maps. Hay ascensor y escaleras. De pago.'},
+ // ---- CIUDAD
+ {id:'parlamento',name:'Parlamento (exterior)',cat:'ciudad',lat:47.5071,lng:19.0456,dur:30,best:'any',must:true,hours:ALL24,
+  why:'El edificio más famoso de Hungría. El exterior y la plaza Kossuth valen por sí solos.',
+  tip:'Para visitar el interior hay que reservar online con antelación.'},
+ {id:'basilica',name:'Basílica de San Esteban',cat:'historia',lat:47.5008,lng:19.0539,dur:30,best:'day',
+  hours:{sat:[['9:00','17:30']],sun:[['13:00','17:30']]},
+  why:'La iglesia más grande de Budapest; la plaza de delante tiene mucho ambiente.',
+  tip:'Domingo por la mañana: misas, visita turística limitada. Horario aproximado.'},
+ {id:'andrassy',name:'Avenida Andrássy',cat:'ciudad',lat:47.5050,lng:19.0620,dur:45,best:'day',hours:ALL24,
+  why:'Los "Campos Elíseos" de Budapest: palacetes, la Ópera, cafés. Patrimonio UNESCO.',
+  tip:'Id a pie hacia la Plaza de los Héroes y volved en la línea M1 de metro (la más antigua del continente).'},
+ {id:'opera',name:'Ópera Estatal',cat:'ciudad',lat:47.5025,lng:19.0583,dur:15,best:'any',hours:ALL24,
+  why:'Fachada neorrenacentista espectacular en plena Andrássy.',
+  tip:'El vestíbulo a veces se puede ver; visitas guiadas aparte.'},
+ {id:'heroes',name:'Plaza de los Héroes',cat:'ciudad',lat:47.5149,lng:19.0778,dur:30,best:'day',hours:ALL24,
+  why:'La gran plaza monumental, con los siete jefes magiares fundadores.',
+  tip:'Al final de Andrássy. Metro M1: Hősök tere.'},
+ {id:'vajdahunyad',name:'Castillo Vajdahunyad (Városliget)',cat:'ciudad',lat:47.5153,lng:19.0820,dur:40,best:'day',hours:ALL24,
+  why:'Castillo de cuento en el parque, junto al lago. Muy bonito para pasear.',
+  tip:'Justo detrás de la Plaza de los Héroes.'},
+ {id:'gozsdu',name:'Gozsdu udvar',cat:'ciudad',lat:47.4983,lng:19.0567,dur:20,best:'night',hours:ALL24,
+  why:'Pasaje de patios interiores lleno de bares y restaurantes. Ambiente puro de barrio.',
+  tip:'Atraviesa de Király utca a Dob utca.'},
+ {id:'vaci',name:'Váci utca y Plaza Vörösmarty',cat:'ciudad',lat:47.4950,lng:19.0525,dur:30,best:'any',hours:ALL24,
+  why:'La calle peatonal comercial. Turística, pero práctica para unir el centro con el Mercado.',
+  tip:'Mejor recorrerla de paso que como destino.'},
+ {id:'mercado',name:'Mercado Central',cat:'comida',lat:47.4870,lng:19.0587,dur:50,best:'day',
+  hours:{sat:[['6:00','15:00']],sun:null},
+  why:'Mercado neogótico enorme: lángos, embutidos, pimentón, souvenirs en el piso de arriba.',
+  tip:'Sábado cierra a media tarde. Domingo: las fuentes no coinciden (algunas dicen 10–16, otras cerrado). Si os interesa, mejor el sábado.'},
+ {id:'libertad',name:'Puente de la Libertad',cat:'vistas',lat:47.4860,lng:19.0550,dur:15,best:'sunset',hours:ALL24,
+  why:'Puente verde y fotogénico, al lado del Mercado. Buena luz al atardecer.',
+  tip:'Une el Mercado con el Monte Gellért.'},
+ // ---- HISTORIA
+ {id:'zapatos',name:'Zapatos en la orilla del Danubio',cat:'historia',lat:47.5045,lng:19.0450,dur:15,best:'any',must:true,hours:ALL24,
+  why:'Memorial a los judíos asesinados en la orilla en 1944–45. Breve y muy impactante.',
+  tip:'A 5 min del Parlamento: combinadlos.'},
+ {id:'dohany',name:'Gran Sinagoga (Dohány)',cat:'historia',lat:47.4957,lng:19.0608,dur:60,best:'day',
+  hours:{sat:[],sun:[['10:00','16:00']]},
+  why:'La sinagoga más grande de Europa, en vuestro barrio. Incluye el jardín memorial del árbol de plata.',
+  tip:'Cerrada en sábado (Shabat). Domingo, horario aproximado: confirmad en Maps.'},
+ {id:'terror',name:'Casa del Terror',cat:'historia',lat:47.5068,lng:19.0650,dur:90,best:'day',
+  hours:{sat:[['10:00','18:00']],sun:[['10:00','18:00']]},
+  why:'Museo sobre los regímenes nazi y comunista en el antiguo cuartel de la policía política.',
+  tip:'Intenso y largo: solo si os apetece una dosis fuerte de historia. Horario aproximado.'},
+ {id:'muro',name:'Resto del muro del gueto',cat:'historia',lat:47.4985,lng:19.0570,dur:10,best:'day',hours:{sat:[['9:00','18:00']],sun:[['9:00','18:00']]},
+  why:'Fragmento del muro del gueto de 1944, escondido en un patio.',
+  tip:'Király utca 15, en un patio interior; a veces está cerrado al público.'},
+ {id:'roca',name:'Hospital en la Roca',cat:'historia',lat:47.5010,lng:19.0330,dur:60,best:'day',
+  hours:{sat:[['10:00','19:00']],sun:[['10:00','19:00']]},
+  why:'Hospital y búnker excavado bajo el Castillo (2ª Guerra Mundial y Guerra Fría).',
+  tip:'Solo con visita guiada por turnos. Horario aproximado.'},
+ // ---- CAFÉS
+ {id:'newyork',name:'New York Café',cat:'cafe',lat:47.4985,lng:19.0705,dur:50,best:'day',
+  hours:{sat:[['8:00','24:00']],sun:[['8:00','24:00']]},
+  why:'"El café más bonito del mundo": dorado, barroco, exagerado. A 7 min del alojamiento.',
+  tip:'Suele haber cola: id temprano o a última hora. Caro para Budapest.'},
+ {id:'gerbeaud',name:'Gerbeaud',cat:'cafe',lat:47.4970,lng:19.0510,dur:40,best:'day',
+  hours:{sat:[['9:00','20:00']],sun:[['9:00','20:00']]},
+  why:'Pastelería histórica (1858) en la Plaza Vörösmarty. Pedid una Dobos o una Esterházy.',
+  tip:'Horario aproximado.'},
+ {id:'central',name:'Central Kávéház',cat:'cafe',lat:47.4920,lng:19.0567,dur:40,best:'day',
+  hours:{sat:[['8:00','23:00']],sun:[['8:00','23:00']]},
+  why:'Café literario de 1887, elegante y con menos colas que el New York.',
+  tip:'Horario aproximado.'},
+ {id:'muvesz',name:'Művész Kávéház',cat:'cafe',lat:47.5022,lng:19.0590,dur:30,best:'day',
+  hours:{sat:[['9:00','20:00']],sun:[['9:00','20:00']]},
+  why:'Café clásico frente a la Ópera, sin postureo. Parada perfecta en Andrássy.',
+  tip:'Horario aproximado.'},
+ {id:'ruszwurm',name:'Ruszwurm',cat:'cafe',lat:47.5017,lng:19.0335,dur:30,best:'day',
+  hours:{sat:[['10:00','18:00']],sun:[['10:00','18:00']]},
+  why:'Pastelería diminuta de 1827 en el Castillo, a 2 min del Bastión. Ideal antes del atardecer.',
+  tip:'Muy pequeña: quizá toque para llevar. Horario aproximado.'},
+ {id:'melbourne',name:'My Little Melbourne',cat:'cafe',lat:47.4977,lng:19.0575,dur:25,best:'day',
+  hours:{sat:[['8:00','19:00']],sun:[['9:00','19:00']]},
+  why:'Café de especialidad pequeño y bueno, junto a Gozsdu.',
+  tip:'Horario aproximado.'},
+ {id:'alexandra',name:'Book Café (Párisi Nagy Áruház)',cat:'cafe',lat:47.5032,lng:19.0605,dur:35,best:'day',
+  hours:{sat:[['10:00','22:00']],sun:[['10:00','22:00']]},
+  why:'Salón de baile Art Nouveau con frescos en el techo, encima de una librería en Andrássy.',
+  tip:'Subid a la primera planta. Horario aproximado.'},
+ {id:'massolit',name:'Massolit Books & Café',cat:'cafe',lat:47.4970,lng:19.0650,dur:30,best:'any',
+  hours:{sat:[['9:00','20:00']],sun:[['10:00','20:00']]},
+  why:'Librería-café con jardincito, muy de barrio judío. A 5 min del alojamiento.',
+  tip:'Horario aproximado.'},
+ // ---- COMIDA
+ {id:'mazel',name:'Mazel Tov',cat:'comida',lat:47.5002,lng:19.0665,dur:75,best:'meal',must:true,
+  hours:{sat:[['12:00','25:00']],sun:[['12:00','25:00']]},
+  why:'Cocina israelí-mediterránea en un patio ruinoso precioso. Está en vuestra misma calle.',
+  tip:'Reservad para la cena del domingo. Horario aproximado.'},
+ {id:'karavan',name:'Karaván (street food)',cat:'comida',lat:47.4980,lng:19.0618,dur:30,best:'meal',
+  hours:{sat:[['11:30','24:00']],sun:[['11:30','23:00']]},
+  why:'Patio de food trucks junto a Szimpla: lángos, burgers, húngaro rápido. Comida exprés al llegar.',
+  tip:'Horario aproximado.'},
+ {id:'fricipapa',name:'Frici Papa',cat:'comida',lat:47.5025,lng:19.0640,dur:50,best:'meal',
+  hours:{sat:[['11:00','23:00']],sun:[['11:00','23:00']]},
+  why:'Comida húngara casera y barata: gulyás, pörkölt, paprikás. Sin pretensiones.',
+  tip:'Horario aproximado.'},
+ {id:'getto',name:'Getto Gulyás',cat:'comida',lat:47.4988,lng:19.0640,dur:60,best:'meal',
+  hours:{sat:[['12:00','24:00']],sun:[['12:00','24:00']]},
+  why:'Pequeño y muy recomendado para probar gulyás y paprikás bien hechos.',
+  tip:'Pequeño: reservad o id pronto. Horario aproximado.'},
+ {id:'bors',name:'Bors GasztroBár',cat:'comida',lat:47.4973,lng:19.0610,dur:20,best:'meal',
+  hours:{sat:[['11:30','21:00']],sun:[['11:30','21:00']]},
+  why:'Sopas y baguettes creativas, rápido y barato. Al lado de Szimpla.',
+  tip:'Para comer de pie o llevar. Horario aproximado.'},
+ {id:'hungarikum',name:'Hungarikum Bisztró',cat:'comida',lat:47.5040,lng:19.0475,dur:75,best:'meal',
+  hours:{sat:[['11:30','23:00']],sun:[['11:30','23:00']]},
+  why:'Cocina húngara tradicional cuidada, cerca del Parlamento.',
+  tip:'Muy popular: reservad. Horario aproximado.'},
+ {id:'langos',name:'Retró Lángos',cat:'comida',lat:47.5030,lng:19.0540,dur:15,best:'any',
+  hours:{sat:[['10:00','21:00']],sun:[['10:00','21:00']]},
+  why:'El lángos (masa frita con nata agria y queso) más famoso del centro. Imprescindible probarlo.',
+  tip:'Junto al metro Arany János. Horario aproximado.'},
+ {id:'kurtos',name:'Kürtőskalács (Molnár\'s)',cat:'comida',lat:47.4925,lng:19.0535,dur:10,best:'any',
+  hours:{sat:[['9:00','21:00']],sun:[['9:00','21:00']]},
+  why:'El "pastel chimenea" recién hecho, con canela o nuez. Perfecto con el frío.',
+  tip:'En Váci utca. Horario aproximado.'},
+ {id:'szimplapiac',name:'Mercado de productores de Szimpla',cat:'comida',lat:47.4970,lng:19.0633,dur:45,best:'day',
+  hours:{sat:[],sun:[['9:00','14:00']]},
+  why:'Solo los domingos: productores locales dentro del ruin bar más famoso. Brunch perfecto a 5 min.',
+  tip:'Solo domingo por la mañana.'},
+ // ---- RUIN BARS
+ {id:'szimpla',name:'Szimpla Kert',cat:'ruin',lat:47.4970,lng:19.0633,dur:60,best:'night',must:true,
+  hours:{sat:[['12:00','28:00']],sun:[['12:00','28:00']]},
+  why:'El ruin bar original (2002) y el más icónico: laberinto de salas con trastos, luces y arte.',
+  tip:'A 5 min del alojamiento. Se llena mucho el sábado por la noche. Horario aproximado.'},
+ {id:'instant',name:'Instant-Fogas',cat:'ruin',lat:47.5003,lng:19.0663,dur:60,best:'night',
+  hours:{sat:[['18:00','30:00']],sun:[['18:00','28:00']]},
+  why:'Complejo enorme de bares y pistas en un edificio ruinoso. Está pegado a vuestro alojamiento.',
+  tip:'Más de fiesta que de charla. Horario aproximado.'},
+ {id:'kolves',name:'Kőleves Kert',cat:'ruin',lat:47.4985,lng:19.0620,dur:45,best:'night',
+  hours:{sat:[['11:00','25:00']],sun:[['11:00','25:00']]},
+  why:'Jardín-bar más tranquilo, con hamacas y ambiente relajado. Ideal para una copa sin agobio.',
+  tip:'En invierno, parte cubierta. Horario aproximado.'},
+ {id:'ellato',name:'Ellátó Kert',cat:'ruin',lat:47.4998,lng:19.0620,dur:45,best:'night',
+  hours:{sat:[['17:00','28:00']],sun:[['17:00','26:00']]},
+  why:'Ruin bar con buena onda y tacos. Más local que Szimpla.',
+  tip:'Horario aproximado.'},
+ {id:'csendes',name:'Csendes Vintage Bar',cat:'ruin',lat:47.4920,lng:19.0580,dur:45,best:'night',
+  hours:{sat:[['10:00','26:00']],sun:[['10:00','24:00']]},
+  why:'Bar-café lleno de objetos raros. Sirve para un café de tarde o una copa de noche.',
+  tip:'Cerca del Museo Nacional. Horario aproximado.'},
+];
+const CATS=[
+ {k:'all',l:'Todo'},{k:'comida',l:'🍲 Comer'},{k:'cafe',l:'☕ Café'},{k:'vistas',l:'🌇 Vistas'},
+ {k:'ciudad',l:'🏛️ Ciudad'},{k:'historia',l:'📜 Historia'},{k:'ruin',l:'🍻 Ruin bars'},{k:'must',l:'⭐ Imprescindibles'}
+];
+const CATLABEL={comida:'Comer',cafe:'Café',vistas:'Vistas',ciudad:'Ciudad',historia:'Historia',ruin:'Ruin bar'};
+// Anclas: d = índice de día del viaje, m = minutos
+const ANCHORS=[
+ {d:0,m:H('12:05'),label:'Aterrizaje (BUD)',hard:false},
+ {d:0,m:H('21:30'),label:'Salir hacia el festival',hard:true},
+ {d:1,m:H('22:30'),label:'A dormir (vuelo de madrugada)',hard:false},
+ {d:2,m:H('3:45'),label:'Salir al aeropuerto',hard:true},
+];
+
+/* ================= ESTADO ================= */
+const store={get(k,d){try{const v=localStorage.getItem('brj_'+k);return v?JSON.parse(v):d}catch(e){return d}},
+             set(k,v){try{localStorage.setItem('brj_'+k,JSON.stringify(v))}catch(e){}}};
+let cat='all';
+let sim=null;              // {d,m}
+let pos=store.get('pos',{lat:HOTEL.lat,lng:HOTEL.lng,label:HOTEL.name,src:'manual'});
+let done=new Set(store.get('done',[]));
+let gpsOk=false;
+
+/* ================= TIEMPO ================= */
+function budNow(){
+  const p=Object.fromEntries(new Intl.DateTimeFormat('en-CA',{timeZone:TZ,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).formatToParts(new Date()).map(x=>[x.type,x.value]));
+  return {date:`${p.year}-${p.month}-${p.day}`,m:(Number(p.hour)%24)*60+Number(p.minute)};
+}
+function now(){
+  if(sim) return {...sim,simulated:true};
+  const n=budNow();const d=TRIP.indexOf(n.date);
+  if(d===-1) return {d:0,m:H('14:00'),simulated:true,auto:true};
+  return {d,m:n.m,simulated:false};
+}
+const abs=(t)=>t.d*1440+t.m;
+const fmt=(m)=>{m=((m%1440)+1440)%1440;return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0')};
+const dur=(m)=>{m=Math.round(m);if(m<60)return m+' min';const h=Math.floor(m/60),r=m%60;return h+' h'+(r?' '+r+' min':'')};
+function sunset(dateStr,lat=47.4979,lng=19.0402){
+  const d=new Date(dateStr+'T12:00:00Z');const n=Math.floor((d-Date.UTC(d.getUTCFullYear(),0,1))/864e5)+1;const g=2*Math.PI/365*(n-1);
+  const eq=229.18*(0.000075+0.001868*Math.cos(g)-0.032077*Math.sin(g)-0.014615*Math.cos(2*g)-0.040849*Math.sin(2*g));
+  const dec=0.006918-0.399912*Math.cos(g)+0.070257*Math.sin(g)-0.006758*Math.cos(2*g)+0.000907*Math.sin(2*g)-0.002697*Math.cos(3*g)+0.00148*Math.sin(3*g);
+  const r=Math.PI/180;const ha=Math.acos(Math.cos(90.833*r)/(Math.cos(lat*r)*Math.cos(dec))-Math.tan(lat*r)*Math.tan(dec))/r;
+  return Math.round(720-4*(lng-ha)-eq+60);
+}
+const SUNSET=TRIP.map(d=>sunset(d));
+
+/* ================= DISTANCIA / HORARIOS ================= */
+function walkMin(a,b){
+  const R=6371000,r=Math.PI/180;const dLat=(b.lat-a.lat)*r,dLng=(b.lng-a.lng)*r;
+  const x=Math.sin(dLat/2)**2+Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.sin(dLng/2)**2;
+  const m=2*R*Math.asin(Math.sqrt(x));return Math.max(1,Math.round(m*1.3/78));
+}
+function openState(p,t){
+  if(!p.hours) return {s:'unk'};
+  const check=(dayIdx,minute)=>{
+    const key=DAYKEY[dayIdx];if(key===undefined) return null;
+    const sl=p.hours[key];if(sl===undefined||sl===null) return 'unk';
+    for(const [o,c] of sl){const O=H(o),C=H(c);if(minute>=O&&minute<C) return {closeAbs:dayIdx*1440+C};}
+    return false;
+  };
+  const today=check(t.d,t.m);
+  if(today&&today!=='unk') return {s:'open',closesIn:today.closeAbs-abs(t)};
+  const prev=t.d>0?check(t.d-1,t.m+1440):false; // spillover madrugada
+  if(prev&&prev!=='unk') return {s:'open',closesIn:prev.closeAbs-abs(t)};
+  if(today==='unk') return {s:'unk'};
+  // próxima apertura hoy
+  const key=DAYKEY[t.d];const sl=(p.hours[key]||[]);
+  const next=sl.map(([o])=>H(o)).filter(o=>o>t.m).sort((a,b)=>a-b)[0];
+  return {s:'closed',opensIn:next!==undefined?next-t.m:null};
+}
+function nextAnchor(t,hardOnly){
+  return ANCHORS.filter(a=>(!hardOnly||a.hard)&&abs(a)>abs(t)).sort((a,b)=>abs(a)-abs(b))[0];
+}
+
+/* ================= RECOMENDADOR ================= */
+function score(p,t){
+  const w=walkMin(pos,p);const st=openState(p,t);const nh=nextAnchor(t,true);
+  const remaining=nh?abs(nh)-abs(t):9999;
+  const fits=w+p.dur+ (nh&&nh.label.includes('festival')? walkMin(p,HOTEL):0) <= remaining;
+  const sun=SUNSET[t.d]??SUNSET[0];const toSun=sun-t.m;
+  let s=100-w*1.6;const why=[];
+  if(st.s==='closed'){s-=1000}
+  if(st.s==='unk'){s-=6}
+  if(st.s==='open'&&st.closesIn!=null&&st.closesIn<w+p.dur){s-=60;why.push('cierra pronto')}
+  if(!fits){s-=45}
+  if(p.best==='sunset'&&toSun>w&&toSun-w<=75){s+=55;why.push('llegáis para el atardecer')}
+  if(p.best==='night'&&t.m>sun+20){s+=25}
+  if(p.best==='night'&&t.m<sun-60){s-=15}
+  if(p.best==='day'&&t.m>sun+30&&p.cat!=='cafe'){s-=25}
+  if(p.cat==='comida'&&((t.m>=H('12:30')&&t.m<=H('15:30'))||(t.m>=H('19:00')&&t.m<=H('22:30')))){s+=22;why.push('hora de comer')}
+  if(p.cat==='cafe'&&((t.m>=H('9:00')&&t.m<=H('11:30'))||(t.m>=H('15:00')&&t.m<=H('18:30')))){s+=15}
+  if(p.cat==='ruin'&&t.m>=H('20:00')){s+=20}
+  if(p.cat==='ruin'&&t.m<H('16:00')){s-=20}
+  if(p.must){s+=12}
+  if(done.has(p.id)){s-=500}
+  return {s,w,st,fits,remaining,hint:why};
+}
+
+/* ================= RENDER ================= */
+const $=(id)=>document.getElementById(id);
+function render(){
+  const t=now();
+  $('clk').textContent=fmt(t.m);
+  $('day').textContent=(DAYNAME[t.d]||'')+(t.simulated?' · simulado':'');
+  const tb=$('testBanner');
+  if(t.simulated){tb.hidden=false;tb.innerHTML=(t.auto?'Aún no estáis en Budapest: estoy simulando <b>sábado 14:00</b>. ':'Hora simulada. ')+'<button id="simBtn" style="padding:4px 8px;font-size:12px">Cambiar hora</button>';$('simBtn').onclick=()=>$('simDlg').showModal();}
+  else tb.hidden=true;
+
+  // anclas
+  const sun=SUNSET[t.d]??SUNSET[0];const toSun=sun-t.m;
+  const na=nextAnchor(t,false);
+  $('anchors').innerHTML=`
+   <div class="anchor"><small>🌇 Atardecer ${fmt(sun)}</small><b>${toSun>0?'en '+dur(toSun):'ya anocheció'}</b></div>
+   <div class="anchor"><small>⏱️ ${na?na.label+' · '+fmt(na.m):'Fin del viaje'}</small><b>${na?'en '+dur(abs(na)-abs(t)):'—'}</b></div>`;
+
+  // alertas
+  const al=[];
+  if(toSun>0&&toSun<=100){
+    const views=POIS.filter(p=>p.best==='sunset'&&!done.has(p.id)).map(p=>({p,w:walkMin(pos,p)})).filter(x=>x.w<toSun-5).sort((a,b)=>a.w-b.w).slice(0,3);
+    al.push(`<div class="banner sun">🌅 <b>Atardecer en ${dur(toSun)}</b> (${fmt(sun)}). ${views.length?'Llegáis a tiempo a: '+views.map(x=>`<b>${x.p.name}</b> (${x.w} min)`).join(', ')+'.':'Ningún mirador queda a menos de '+dur(toSun)+' a pie: buscad el río más cercano o coged un taxi.'}</div>`);
+  }
+  const nh=nextAnchor(t,true);
+  if(nh){const r=abs(nh)-abs(t);if(r<=120&&r>0){
+    const back=walkMin(pos,HOTEL);
+    al.push(`<div class="banner warn">⚠️ <b>${nh.label}</b> en ${dur(r)}. Estáis a ${back} min a pie del alojamiento.${nh.label.includes('festival')?' Hungexpo está lejos del centro: contad ~30–40 min en transporte/taxi.':' Pedid el taxi/Bolt con margen.'}</div>`);
+  }}
+  $('alerts').innerHTML=al.join('');
+
+  // ubicación
+  $('locLine').innerHTML=`📍 ${pos.src==='gps'?'GPS':'Ubicación manual'}: <b>${esc(pos.label||'')}</b> <button id="chLoc" style="padding:4px 8px;font-size:12px">Cambiar</button>`;
+  $('chLoc').onclick=openLoc;
+
+  // lista
+  const showClosed=$('showClosed').checked;
+  let items=POIS.filter(p=>cat==='all'||(cat==='must'?p.must:p.cat===cat)).map(p=>({p,...score(p,t)}));
+  if(!showClosed) items=items.filter(x=>x.st.s!=='closed'&&!done.has(x.p.id));
+  items.sort((a,b)=>b.s-a.s);
+  $('count').textContent=items.length+' sitios';
+  $('list').innerHTML=items.length?items.map(x=>card(x,t)).join(''):`<div class="empty">Nada abierto en esta categoría ahora mismo.<br>Probad otra o marcad “mostrar cerrados”.</div>`;
+  document.querySelectorAll('[data-done]').forEach(b=>b.onclick=()=>{const id=b.dataset.done;done.has(id)?done.delete(id):done.add(id);store.set('done',[...done]);render()});
+  document.querySelectorAll('[data-ask]').forEach(b=>b.onclick=()=>{const p=POIS.find(z=>z.id===b.dataset.ask);go('ai');$('q').value=`Estamos pensando en ir a ${p.name}. ¿Merece la pena ahora y qué hacemos justo antes o después cerca?`;});
+}
+function card(x,t){
+  const p=x.p;const st=x.st;
+  let stTag='';
+  if(st.s==='open') stTag=`<span class="tag ok">Abierto${st.closesIn!=null&&st.closesIn<1440*0.9&&st.closesIn<600?' · cierra en '+dur(st.closesIn):''}</span>`;
+  else if(st.s==='closed') stTag=`<span class="tag bad">Cerrado${st.opensIn?' · abre en '+dur(st.opensIn):''}</span>`;
+  else stTag=`<span class="tag unk">Horario dudoso</span>`;
+  const walk=x.w>35?`🚇 ${x.w} min a pie (mejor transporte)`:`🚶 ${x.w} min`;
+  const fit=x.fits?'':`<span class="tag bad">No da tiempo antes del próximo compromiso</span>`;
+  const hint=x.hint.length?`<span class="tag acc">${x.hint.join(' · ')}</span>`:'';
+  const maps=`https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}&travelmode=walking`;
+  return `<div class="card ${done.has(p.id)?'done':''}">
+    <h3>${p.must?'⭐ ':''}${esc(p.name)}</h3>
+    <div class="meta"><span class="tag">${CATLABEL[p.cat]}</span><span class="tag">${walk}</span><span class="tag">~${dur(p.dur)}</span>${stTag}${hint}${fit}</div>
+    <div class="why">${esc(p.why)}</div>
+    <div class="tip">💡 ${esc(p.tip)}</div>
+    <div class="actions">
+      <a class="go" href="${maps}" target="_blank" rel="noopener">Cómo llegar</a>
+      <button data-done="${p.id}">${done.has(p.id)?'↺ Desmarcar':'✓ Hecho'}</button>
+      <button data-ask="${p.id}">💬 Preguntar</button>
+    </div></div>`;
+}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+
+/* ================= PLAN ================= */
+function renderPlan(){
+  const s0=fmt(SUNSET[0]),s1=fmt(SUNSET[1]);
+  const day=(title,steps)=>`<h2>${title}</h2>`+steps.map(([t,a,b])=>`<div class="step"><time>${t}</time><div><b>${a}</b>${b?`<p>${b}</p>`:''}</div></div>`).join('');
+  $('v-plan').innerHTML=`
+  <div class="banner">Esto es un guion orientativo, no un tour: la pestaña <b>Ahora</b> os recoloca según dónde estéis y la hora.</div>
+  ${day('Sábado 14 · ciudad + atardecer + festival',[
+   ['12:05','Aterrizaje','Bus 100E al centro (Deák tér, ~40 min) o Bolt/taxi. A57 está a ~10 min a pie de Deák.'],
+   ['13:15','Dejar mochilas en A57',''],
+   ['13:30','Comida rápida en el barrio','Karaván o Bors (al lado de Szimpla). Si hay hambre de verdad: Frici Papa.'],
+   ['14:15','Basílica → Parlamento → Zapatos del Danubio','Todo a pie. Si os apetece, el Mercado Central cierra a media tarde el sábado.'],
+   ['15:15','Cruzar el Puente de las Cadenas y subir al Castillo','Funicular o a pie desde Clark Ádám tér. Café rápido en Ruszwurm.'],
+   [s0,'🌅 Atardecer en el Bastión de los Pescadores','Llegad 20–30 min antes. Después, Iglesia de Matías y bajada por las terrazas del Palacio.'],
+   ['17:30','Danubio de noche','Batthyány tér para la foto del Parlamento iluminado, o tranvía 2 por la orilla de Pest.'],
+   ['19:00','Cena en el barrio judío','Getto Gulyás (gulyás) o Mazel Tov. Paseo por Gozsdu.'],
+   ['20:30','Descanso / ducha en A57',''],
+   ['21:30','Salir hacia el Bónusz (Hungexpo)','Está en el distrito X, lejos del centro: shuttle del festival desde Deák (si lo hay) o Bolt. Guardad batería.'],
+  ])}
+  ${day('Domingo 15 · Pest a fondo + ruin bars',[
+   ['Mañana','Recuperarse del festival','Sin culpa: la app os recoloca a la hora que sea.'],
+   ['hasta 14:00','Brunch en el mercado de productores de Szimpla','Solo los domingos, a 5 min del alojamiento.'],
+   ['13:00','Gran Sinagoga Dohány','Cerrada el sábado: hoy es el día. Confirmad el horario.'],
+   ['14:30','Andrássy a pie → Ópera → Plaza de los Héroes → Vajdahunyad','Café en Művész o en el Book Café por el camino. Volved en el metro M1.'],
+   [s1,'🌅 Segundo atardecer','Opciones: Paseo del Danubio / Puente de la Libertad, cúpula de San Esteban o Monte Gellért (más lejos).'],
+   ['17:00','Café histórico','New York Café a última hora (menos cola) o Central Kávéház.'],
+   ['19:30','Cena de despedida','Mazel Tov, en vuestra calle (reservad).'],
+   ['21:00','Ruta corta de ruin bars','Szimpla → Kőleves → Instant-Fogas (pegado a A57).'],
+   ['22:30','A dormir','Despertador ~3:15.'],
+  ])}
+  ${day('Lunes 16 · vuelta',[
+   ['3:45','Bolt/taxi al aeropuerto','~25–30 min de noche. Vuelo a las 6:00 (Wizz, mochila).'],
+  ])}`;
+}
+
+/* ================= BÁSICOS ================= */
+function renderInfo(){
+  $('v-info').innerHTML=`
+  <div class="card"><h3>Moverse</h3><ul class="tight">
+   <li>Aeropuerto ↔ centro: bus <b>100E</b> hasta Deák tér (~40 min, billete especial) o Bolt/taxi.</li>
+   <li>Pase de 24 h o 72 h de BKK: metro, tranvía y bus ilimitados. Validad el billete sencillo antes de subir.</li>
+   <li><b>Tranvía 2</b>: recorre el Danubio por Pest, casi una visita panorámica.</li>
+   <li><b>M1</b> (línea amarilla): metro histórico bajo Andrássy, hasta la Plaza de los Héroes.</li>
+   <li>Bónusz: Hungexpo, Albertirsai út 10 (distrito X).</li>
+  </ul></div>
+  <div class="card"><h3>Dinero</h3><ul class="tight">
+   <li>Moneda: forinto (HUF). La tarjeta funciona casi en todas partes.</li>
+   <li>Si el cajero o el datáfono ofrecen cobrar “en euros”, elegid <b>HUF</b> (la conversión dinámica sale más cara).</li>
+   <li>Propinas: ~10%. Mirad si la cuenta ya lleva “szervízdíj” (servicio incluido).</li>
+  </ul></div>
+  <div class="card"><h3>Palabras útiles</h3><div class="kv">
+   <b>Szia</b><span>Hola / chao (informal)</span>
+   <b>Köszönöm</b><span>Gracias (“kø-sø-nøm”)</span>
+   <b>Egészségedre!</b><span>¡Salud! (al brindar)</span>
+   <b>Kérek…</b><span>Quiero… / por favor</span>
+   <b>A számlát kérem</b><span>La cuenta, por favor</span>
+  </div></div>
+  <div class="card"><h3>Comer sí o sí</h3><ul class="tight">
+   <li><b>Lángos</b>: masa frita con nata agria y queso.</li>
+   <li><b>Gulyás</b> (sopa) y <b>pörkölt / paprikás</b> (guisos).</li>
+   <li><b>Kürtőskalács</b>: pastel chimenea, mejor recién hecho.</li>
+   <li><b>Dobos / Esterházy</b>: tartas clásicas de café histórico.</li>
+   <li>Para brindar: <b>pálinka</b> (aguardiente de fruta) o vino de Tokaj.</li>
+  </ul></div>
+  <div class="card"><h3>Emergencias</h3><p class="muted" style="margin:4px 0">Teléfono único: <b>112</b>. Llevad una batería externa: el GPS y el festival vacían el móvil.</p></div>
+  <div class="card"><h3>Probar la app</h3><button id="simOpen">Simular otra hora</button> <button id="resetDone">Borrar “hechos”</button></div>`;
+  $('simOpen').onclick=()=>$('simDlg').showModal();
+  $('resetDone').onclick=()=>{done.clear();store.set('done',[]);render()};
+}
+
+/* ================= UBICACIÓN ================= */
+function openLoc(){
+  const sel=$('locSel');
+  sel.innerHTML=`<option value="hotel">${HOTEL.name}</option>`+[...POIS].sort((a,b)=>a.name.localeCompare(b.name)).map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('');
+  $('locTxt').value='';$('locDlg').showModal();
+}
+$('locCancel').onclick=()=>$('locDlg').close();
+$('locOk').onclick=()=>{
+  const txt=$('locTxt').value.trim();
+  if(txt){
+    const m=txt.match(/(-?\d{1,2}\.\d+)\s*,\s*(-?\d{1,3}\.\d+)/);
+    if(m){pos={lat:+m[1],lng:+m[2],label:'Coordenadas '+(+m[1]).toFixed(4)+', '+(+m[2]).toFixed(4),src:'manual'};}
+    else{alertBox('No encuentro coordenadas en ese texto. Pegad algo como 47.4979, 19.0402.');return;}
+  }else{
+    const id=$('locSel').value;const p=id==='hotel'?HOTEL:POIS.find(z=>z.id===id);
+    pos={lat:p.lat,lng:p.lng,label:'Cerca de '+p.name,src:'manual'};
+  }
+  store.set('pos',pos);$('locDlg').close();render();
+};
+$('gpsTry').onclick=()=>{$('locDlg').close();startGPS(true)};
+function alertBox(msg){const d=document.createElement('div');d.className='banner warn';d.textContent=msg;$('alerts').prepend(d);setTimeout(()=>d.remove(),5000)}
+function startGPS(verbose){
+  try{
+    if(!navigator.geolocation){if(verbose)alertBox('Este navegador no da GPS aquí. Usad la ubicación manual.');return}
+    navigator.geolocation.watchPosition(g=>{
+      gpsOk=true;pos={lat:g.coords.latitude,lng:g.coords.longitude,label:'Vuestra posición (±'+Math.round(g.coords.accuracy)+' m)',src:'gps'};render();
+    },e=>{if(verbose)alertBox('GPS no disponible ('+(e.message||'permiso denegado')+'). Usad la ubicación manual.');},{enableHighAccuracy:true,maximumAge:30000,timeout:15000});
+  }catch(e){if(verbose)alertBox('GPS bloqueado en esta vista. Usad la ubicación manual.')}
+}
+
+/* ================= SIMULACIÓN ================= */
+$('simOk').onclick=()=>{sim={d:+$('simDay').value,m:H($('simTime').value||'14:00')};$('simDlg').close();render()};
+$('simReal').onclick=()=>{sim=null;$('simDlg').close();render()};
+
+/* ================= GUÍA IA ================= */
+const QUICK=['¿Qué hacemos ahora mismo?','Un café bonito cerca','Comida típica y barata cerca','¿Dónde vemos el atardecer?','Algo tranquilo, estamos cansados','Plan para las próximas 3 horas'];
+$('quick').innerHTML=QUICK.map(q=>`<button>${q}</button>`).join('');
+$('quick').querySelectorAll('button').forEach(b=>b.onclick=()=>{$('q').value=b.textContent;ask()});
+function context(){
+  const t=now();const sun=SUNSET[t.d]??SUNSET[0];const nh=nextAnchor(t,true);const na=nextAnchor(t,false);
+  const near=POIS.map(p=>({p,...score(p,t)})).sort((a,b)=>b.s-a.s).slice(0,14)
+    .map(x=>`- ${x.p.name} [${CATLABEL[x.p.cat]}] ${x.w} min a pie, ${x.st.s==='open'?'abierto':x.st.s==='closed'?'cerrado':'horario dudoso'}${done.has(x.p.id)?', YA VISITADO':''}. ${x.p.why}`).join('\n');
+  return `Eres el guía de bolsillo de una pareja (Mati y Paz) en Budapest, de viaje solo el fin de semana (sáb 14 y dom 15 de noviembre de 2026). Les gusta: la ciudad en sí, vistas, atardeceres, comida, cafés, algo de historia y ruin bars. No tienen tiempo para termas. Se alojan en A57, Akácfa utca 57 (distrito VII, barrio judío, Pest).
+Cronograma fijo: sábado por la noche van al Bónusz Festival en Hungexpo (Albertirsai út 10, distrito X), salen hacia las 21:30. Lunes vuelo a las 6:00: salen al aeropuerto a las 3:45.
+AHORA: ${DAYNAME[t.d]}, ${fmt(t.m)} (hora de Budapest). Atardecer hoy: ${fmt(sun)} (${sun-t.m>0?'faltan '+dur(sun-t.m):'ya ha anochecido'}). Próximo compromiso: ${na?na.label+' a las '+fmt(na.m)+' (en '+dur(abs(na)-abs(t))+')':'ninguno'}${nh&&nh!==na?'; próximo compromiso fijo: '+nh.label+' a las '+fmt(nh.m):''}.
+Ubicación: ${pos.label} (${pos.lat.toFixed(5)}, ${pos.lng.toFixed(5)}).
+Ya visitado: ${[...done].map(id=>POIS.find(p=>p.id===id)?.name).filter(Boolean).join(', ')||'nada aún'}.
+Mejores candidatos cercanos según la app:
+${near}
+Reglas: responde en español, breve y práctico (máx. ~120 palabras), con 1–3 propuestas concretas y en orden, indicando el tiempo a pie. Respeta los horarios fijos. Puedes sugerir sitios que no estén en la lista si encajan, pero si no estás seguro de un horario o de que algo siga abierto, dilo y sugiere confirmarlo en Google Maps. No te inventes datos.`;
+}
+let sampleFn=null;let history=[];
+(async()=>{try{if(window.claude&&window.claude.use){sampleFn=await window.claude.use('sample');}}catch(e){sampleFn=null}
+  $('aiState').textContent=sampleFn?'':'Aquí el guía no puede responder dentro de la página: usad “Copiar para Claude”.';
+  if(!sampleFn)$('ask').hidden=true;})();
+function addMsg(role,text){const d=document.createElement('div');d.className='msg '+(role==='user'?'u':'a');d.textContent=text;$('chat').prepend(d);return d}
+let busy=false;
+async function ask(){
+  const q=$('q').value.trim();if(!q||busy)return;
+  if(!sampleFn){copyQ();return}
+  busy=true;$('ask').disabled=true;$('aiState').textContent='Pensando…';
+  addMsg('user',q);const out=addMsg('assistant','…');$('q').value='';
+  const msgs=[...history.slice(-6),{role:'user',content:context()+'\n\nPREGUNTA: '+q}];
+  try{
+    const r=await sampleFn(msgs,{cache:false,modelTier:'default',onText:({text})=>{out.textContent=text}});
+    out.textContent=r.text;history.push({role:'user',content:q},{role:'assistant',content:r.text});$('aiState').textContent='';
+  }catch(e){
+    if(e&&e.code==='not_granted'){out.textContent='No se ha dado permiso para preguntar a Claude desde la página. Usad “Copiar para Claude”.';$('ask').hidden=true}
+    else if(e&&e.code==='rate_limited'){out.textContent='Demasiadas preguntas seguidas: esperad un minuto.'}
+    else out.textContent='No he podido responder ahora ('+((e&&e.message)||'error')+'). Usad “Copiar para Claude”.';
+    $('aiState').textContent='';
+  }finally{busy=false;$('ask').disabled=false}
+}
+$('ask').onclick=ask;
+async function copyQ(){
+  const q=$('q').value.trim()||'¿Qué hacemos ahora mismo?';
+  const txt=context()+'\n\nPREGUNTA: '+q;
+  try{await navigator.clipboard.writeText(txt);$('aiState').textContent='Copiado. Pegadlo en la app de Claude.'}
+  catch(e){$('q').value=txt;$('q').select();$('aiState').textContent='No pude copiar: el texto está seleccionado en el cuadro, copiadlo a mano.'}
+}
+$('copyQ').onclick=copyQ;
+
+/* ================= NAVEGACIÓN ================= */
+let currentView='now';
+function go(v){currentView=v;document.querySelectorAll('.view').forEach(s=>s.classList.toggle('on',s.id==='v-'+v));document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));document.body.classList.toggle('mapmode',v==='map');window.scrollTo(0,0);document.dispatchEvent(new CustomEvent('brj:view',{detail:v}))}
+setTimeout(()=>{if(!window.map3dLoaded){const l=document.getElementById('mapLoading');if(l)l.textContent='No se pudo cargar el motor 3D (¿sin conexión?). La pestaña “Ahora” sigue funcionando.'}},12000);
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>go(b.dataset.v));
+$('chips').innerHTML=CATS.map(c=>`<button class="chip ${c.k===cat?'on':''}" data-c="${c.k}">${c.l}</button>`).join('');
+$('chips').querySelectorAll('.chip').forEach(b=>b.onclick=()=>{cat=b.dataset.c;$('chips').querySelectorAll('.chip').forEach(x=>x.classList.toggle('on',x===b));render()});
+$('showClosed').onchange=render;
+
+renderPlan();renderInfo();render();startGPS(false);
+setInterval(render,60000);
+</script>
+
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+window.map3dLoaded=true;
+
+/* ---------- proyección: 1 unidad = 10 m ---------- */
+const LAT0=47.500,LNG0=19.055,KX=7521,KZ=11120;
+const toW=(lat,lng)=>({x:(lng-LNG0)*KX,z:-(lat-LAT0)*KZ});
+const toLL=(x,z)=>({lat:LAT0-z/KZ,lng:LNG0+x/KX});
+const pts=(arr)=>arr.map(([a,b,w])=>({...toW(a,b),w:w||3}));
+
+/* ---------- geografía simplificada ---------- */
+const DANUBE=pts([[47.570,19.054,40],[47.548,19.051,44],[47.538,19.049,62],[47.526,19.047,66],[47.516,19.0448,52],[47.5115,19.0435,40],[47.506,19.0420,38],[47.499,19.0432,36],[47.493,19.0465,32],[47.4905,19.0487,30],[47.4855,19.0552,32],[47.480,19.0610,36],[47.4770,19.0640,38],[47.468,19.0670,42],[47.455,19.0680,46],[47.430,19.0670,50]]);
+const ROADS=[
+ pts([[47.5135,19.0485],[47.5112,19.0560],[47.5055,19.0636],[47.4990,19.0690],[47.4965,19.0705],[47.4900,19.0720],[47.4860,19.0710],[47.4800,19.0670],[47.4775,19.0640]]), // Nagykörút
+ pts([[47.4990,19.0485],[47.4975,19.0545],[47.4945,19.0585],[47.4930,19.0598],[47.4895,19.0615],[47.4868,19.0585]]), // Kiskörút
+ pts([[47.5010,19.0560],[47.5055,19.0636],[47.5149,19.0778]]), // Andrássy
+ pts([[47.4930,19.0598],[47.4965,19.0705],[47.4997,19.0838]]), // Rákóczi
+ pts([[47.4990,19.0485],[47.5040,19.0520],[47.5112,19.0560]]), // Bajcsy-Zs.
+ pts([[47.4930,19.0515],[47.4945,19.0585]]), // Kossuth L.
+ pts([[47.4995,19.0838],[47.4930,19.1280]]), // hacia Hungexpo
+];
+const PARK=[[47.5155,19.0790],[47.5205,19.0850],[47.5185,19.0935],[47.5135,19.0965],[47.5075,19.0890],[47.5110,19.0820]].map(([a,b])=>toW(a,b));
+const ISLAND={...toW(47.527,19.0495),rx:12,rz:150};
+
+function segDist(p,a,b){const dx=b.x-a.x,dz=b.z-a.z;const L=dx*dx+dz*dz||1;let t=((p.x-a.x)*dx+(p.z-a.z)*dz)/L;t=Math.max(0,Math.min(1,t));const x=a.x+t*dx,z=a.z+t*dz;return {d:Math.hypot(p.x-x,p.z-z),x,z,w:a.w+(b.w-a.w)*t}}
+function lineInfo(p,line){let best={d:1e9};for(let i=0;i<line.length-1;i++){const r=segDist(p,line[i],line[i+1]);if(r.d<best.d)best=r}return best}
+const river=(x,z)=>lineInfo({x,z},DANUBE);
+function inPoly(p,poly){let c=false;for(let i=0,j=poly.length-1;i<poly.length;j=i++){const a=poly[i],b=poly[j];if(((a.z>p.z)!==(b.z>p.z))&&(p.x<(b.x-a.x)*(p.z-a.z)/(b.z-a.z)+a.x))c=!c}return c}
+const inIsland=(x,z)=>((x-ISLAND.x)/ISLAND.rx)**2+((z-ISLAND.z)/ISLAND.rz)**2<1;
+const g=(x,z,cx,cz,sx,sz)=>Math.exp(-(((x-cx)/sx)**2+((z-cz)/sz)**2)/2);
+const smooth=(a,b,v)=>{const t=Math.max(0,Math.min(1,(v-a)/(b-a)));return t*t*(3-2*t)};
+function height(x,z){
+  const r=river(x,z);const west=x<r.x;
+  let v=9*g(x,z,-139,6,16,38)+20*g(x,z,-66,148,30,30);
+  if(west)v+=Math.min(16,Math.max(0,r.d-r.w/2-22)*0.04);
+  return v*smooth(r.w/2+2,r.w/2+16,r.d);
+}
+
+/* ---------- escena ---------- */
+const box=document.getElementById('map3d');
+let renderer,scene,camera,controls,hemi,sun,ground,water,started=false;
+let followMode=true,selected=null;
+const clock=new THREE.Clock();
+const nightMats=[];   // materiales que brillan de noche
+const markers=[];     // {poi,group,sprite,ring,label}
+let avatars=[],trailLine,trail=[];
+
+function init(){
+  if(started)return;started=true;
+  renderer=new THREE.WebGLRenderer({antialias:true});
+  renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  box.prepend(renderer.domElement);
+  scene=new THREE.Scene();
+  scene.fog=new THREE.Fog(0x9fc4e8,450,1100);
+  camera=new THREE.PerspectiveCamera(45,1,1,3000);
+  camera.position.set(0,110,140);
+  controls=new OrbitControls(camera,renderer.domElement);
+  controls.enableDamping=true;controls.maxPolarAngle=1.32;controls.minDistance=25;controls.maxDistance=700;
+  controls.addEventListener('start',()=>{followMode=false;updateFollowBtn()});
+  hemi=new THREE.HemisphereLight(0xffffff,0x8a7a60,1.1);scene.add(hemi);
+  sun=new THREE.DirectionalLight(0xffffff,1.2);sun.position.set(-200,300,150);scene.add(sun);
+
+  buildGround();buildWater();buildRoadsParks();buildBridges();buildCity();buildLandmarks();buildMarkers();buildAvatars();buildTrail();
+  resize();new ResizeObserver(resize).observe(box);
+  setupTap();
+  document.getElementById('mapLoading').remove();
+  const s=avatarTarget();avatars.forEach(a=>{a.group.position.set(s.x,s.y,s.z)});
+  controls.target.set(s.x,s.y,s.z);camera.position.set(s.x+28,s.y+55,s.z+70);
+  refresh();setInterval(refresh,3000);
+  loop();
+}
+function resize(){if(!renderer)return;const w=box.clientWidth,h=box.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()}
+
+/* ---------- terreno ---------- */
+function buildGround(){
+  const geo=new THREE.PlaneGeometry(1200,950,240,190);geo.rotateX(-Math.PI/2);geo.translate(130,0,0);
+  const p=geo.attributes.position;const col=[];const c=new THREE.Color();
+  const land=new THREE.Color('#ddcfae'),hill=new THREE.Color('#9fb47e'),park=new THREE.Color('#a9c48a');
+  for(let i=0;i<p.count;i++){
+    const x=p.getX(i),z=p.getZ(i);const y=height(x,z);p.setY(i,y);
+    c.copy(land);if(y>1.5)c.lerp(hill,Math.min(1,y/8));
+    if(inPoly({x,z},PARK))c.copy(park);
+    col.push(c.r,c.g,c.b);
+  }
+  geo.setAttribute('color',new THREE.Float32BufferAttribute(col,3));geo.computeVertexNormals();
+  ground=new THREE.Mesh(geo,new THREE.MeshLambertMaterial({vertexColors:true}));scene.add(ground);
+}
+function ribbon(line,y,widthFn){
+  const v=[],idx=[];
+  for(let i=0;i<line.length;i++){
+    const a=line[Math.max(0,i-1)],b=line[Math.min(line.length-1,i+1)];
+    let tx=b.x-a.x,tz=b.z-a.z;const L=Math.hypot(tx,tz)||1;tx/=L;tz/=L;
+    const nx=-tz,nz=tx,w=widthFn(line[i])/2,yy=typeof y==='function'?y(line[i]):y;
+    v.push(line[i].x+nx*w,yy,line[i].z+nz*w, line[i].x-nx*w,yy,line[i].z-nz*w);
+    if(i<line.length-1){const k=i*2;idx.push(k,k+1,k+2, k+1,k+3,k+2)}
+  }
+  const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(v,3));geo.setIndex(idx);geo.computeVertexNormals();return geo;
+}
+function densify(line,step){const out=[];for(let i=0;i<line.length-1;i++){const a=line[i],b=line[i+1];const n=Math.max(1,Math.ceil(Math.hypot(b.x-a.x,b.z-a.z)/step));for(let k=0;k<n;k++){const t=k/n;out.push({x:a.x+(b.x-a.x)*t,z:a.z+(b.z-a.z)*t,w:a.w+(b.w-a.w)*t})}}out.push(line[line.length-1]);return out}
+function buildWater(){
+  water=new THREE.MeshLambertMaterial({color:'#4f8fc0',side:THREE.DoubleSide});
+  scene.add(new THREE.Mesh(ribbon(densify(DANUBE,8),0.35,p=>p.w),water));
+  const sh=new THREE.Shape();sh.absellipse(0,0,ISLAND.rx,ISLAND.rz,0,Math.PI*2);
+  const ig=new THREE.ShapeGeometry(sh,40);ig.rotateX(-Math.PI/2);
+  const isl=new THREE.Mesh(ig,new THREE.MeshLambertMaterial({color:'#9cbf7e'}));isl.position.set(ISLAND.x,0.6,ISLAND.z);isl.rotation.y=0.12;scene.add(isl);
+}
+function buildRoadsParks(){
+  const m=new THREE.MeshLambertMaterial({color:'#f2e8d2'});
+  ROADS.forEach(r=>scene.add(new THREE.Mesh(ribbon(densify(r,6),p=>height(p.x,p.z)+0.12,()=>3.2),m)));
+}
+function buildBridges(){
+  const list=[['Margit',47.5123,19.0438,'#d8c78a'],['Lánchíd',47.4990,19.0432,'#e6dccb',true],['Erzsébet',47.4910,19.0485,'#f4f4f4'],['Szabadság',47.4855,19.0552,'#5a9a6a'],['Petőfi',47.4775,19.0640,'#b8b8b8']];
+  list.forEach(([n,la,ln,color,towers])=>{
+    const c=toW(la,ln);const r=river(c.x,c.z);
+    const i=DANUBE.findIndex((p,k)=>k<DANUBE.length-1&&segDist(c,p,DANUBE[k+1]).d<=r.d+0.01);
+    const a=DANUBE[Math.max(0,i)],b=DANUBE[Math.min(DANUBE.length-1,i+1)];
+    const ang=Math.atan2(b.x-a.x,b.z-a.z);
+    const mat=new THREE.MeshLambertMaterial({color});nightMats.push({m:mat,col:'#ffd27a',k:.6});
+    const grp=new THREE.Group();grp.position.set(r.x,0,r.z);grp.rotation.y=ang+Math.PI/2;
+    const deck=new THREE.Mesh(new THREE.BoxGeometry(3.6,0.8,r.w+16),mat);deck.position.y=1.6;grp.add(deck);
+    if(towers)[-11,11].forEach(z=>{const t=new THREE.Mesh(new THREE.BoxGeometry(5,8,3),mat);t.position.set(0,4,z);grp.add(t)});
+    scene.add(grp);
+  });
+}
+function rand(s){return ()=>{s=(s*16807)%2147483647;return (s-1)/2147483646}}
+function buildCity(){
+  const R=rand(42);const items=[];
+  const roadsD=densify(ROADS.flat(),20);
+  const avoid=[...POIS.map(p=>toW(p.lat,p.lng)),toW(HOTEL.lat,HOTEL.lng)];
+  for(let ix=-30;ix<=48;ix++)for(let iz=-30;iz<=26;iz++){
+    if(ix%5===0||iz%5===0)continue;
+    const x=ix*9+(R()-.5)*2.5,z=iz*9+(R()-.5)*2.5;
+    const r=river(x,z);if(r.d<r.w/2+6)continue;
+    const west=x<r.x;if(west&&R()<.55)continue;
+    if(!west&&x>360&&R()<.6)continue;
+    if(inPoly({x,z},PARK)||inIsland(x,z))continue;
+    if(ROADS.some(rd=>lineInfo({x,z},rd).d<4))continue;
+    if(avoid.some(a=>Math.hypot(a.x-x,a.z-z)<5))continue;
+    if(g(x,z,-139,6,16,38)>.45||g(x,z,-66,148,30,30)>.35)continue;
+    items.push({x,z,y:height(x,z),w:4+R()*3.5,d:4+R()*3.5,h:west?0.7+R()*1.2:1.0+R()*1.8});
+  }
+  const geo=new THREE.BoxGeometry(1,1,1);geo.translate(0,.5,0);
+  const mat=new THREE.MeshLambertMaterial({color:'#ffffff'});
+  const mesh=new THREE.InstancedMesh(geo,mat,items.length);
+  const pal=['#ead9b9','#dcc4a2','#cfb28c','#efe4cf','#c9a07c','#bba78e','#e2c9a8'].map(c=>new THREE.Color(c));
+  const M=new THREE.Matrix4();
+  items.forEach((b,i)=>{M.compose(new THREE.Vector3(b.x,b.y,b.z),new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),(R()-.5)*.08),new THREE.Vector3(b.w,b.h,b.d));mesh.setMatrixAt(i,M);mesh.setColorAt(i,pal[Math.floor(R()*pal.length)])});
+  scene.add(mesh);nightMats.push({m:mat,col:'#5a4a35',k:.35});
+}
+function place(obj,la,ln,yOff=0){const p=toW(la,ln);obj.position.set(p.x,height(p.x,p.z)+yOff,p.z);scene.add(obj);return obj}
+function lm(color,glow){const m=new THREE.MeshLambertMaterial({color});if(glow)nightMats.push({m,col:glow,k:.8});return m}
+function buildLandmarks(){
+  const cream=lm('#efe6d2','#ffd98a'),red=lm('#b5523b','#ff9a5a'),white=lm('#f7f4ee','#fff0c0'),green=lm('#6f9f7a','#c8ffcf'),gold=lm('#d9b44a','#ffe08a');
+  // Parlamento
+  const parl=new THREE.Group();
+  const pb=new THREE.Mesh(new THREE.BoxGeometry(6,4,28),cream);pb.position.y=2;parl.add(pb);
+  const pr=new THREE.Mesh(new THREE.BoxGeometry(6.4,1,28.4),red);pr.position.y=4.5;parl.add(pr);
+  const dome=new THREE.Mesh(new THREE.SphereGeometry(3,16,12,0,Math.PI*2,0,Math.PI/2),red);dome.position.y=6;parl.add(dome);
+  const sp=new THREE.Mesh(new THREE.ConeGeometry(.6,4,8),cream);sp.position.y=10.5;parl.add(sp);
+  [-11,11].forEach(z=>{const t=new THREE.Mesh(new THREE.ConeGeometry(.5,4,6),cream);t.position.set(0,6.5,z);parl.add(t)});
+  parl.rotation.y=-0.05;place(parl,47.5071,19.0452);
+  // Basílica
+  const bas=new THREE.Group();const bb=new THREE.Mesh(new THREE.BoxGeometry(9,5,9),cream);bb.position.y=2.5;bas.add(bb);
+  const bd=new THREE.Mesh(new THREE.SphereGeometry(3.4,16,12,0,Math.PI*2,0,Math.PI/2),green);bd.position.y=5;bas.add(bd);
+  [[-3.5,-4.2],[3.5,-4.2]].forEach(([x,z])=>{const t=new THREE.Mesh(new THREE.BoxGeometry(2,8,2),cream);t.position.set(x,4,z);bas.add(t)});
+  place(bas,47.5008,19.0539);
+  // Palacio de Buda
+  const cas=new THREE.Group();const cb=new THREE.Mesh(new THREE.BoxGeometry(8,5,30),cream);cb.position.y=2.5;cas.add(cb);
+  const cd=new THREE.Mesh(new THREE.SphereGeometry(3,16,12,0,Math.PI*2,0,Math.PI/2),green);cd.position.y=5;cas.add(cd);
+  place(cas,47.4962,19.0393);
+  // Iglesia de Matías + Bastión
+  const ch=new THREE.Group();const cbx=new THREE.Mesh(new THREE.BoxGeometry(5,5,9),white);cbx.position.y=2.5;ch.add(cbx);
+  const spire=new THREE.Mesh(new THREE.ConeGeometry(1.4,10,8),lm('#c9773f','#ffb070'));spire.position.set(0,9,-3);ch.add(spire);
+  place(ch,47.5019,19.0342);
+  for(let i=0;i<7;i++){const a=-0.9+i*0.3;const t=new THREE.Group();const c1=new THREE.Mesh(new THREE.CylinderGeometry(.8,.9,3,8),white);c1.position.y=1.5;t.add(c1);const c2=new THREE.Mesh(new THREE.ConeGeometry(1,2.2,8),white);c2.position.y=4.1;t.add(c2);const p=toW(47.5019,19.0342);t.position.set(p.x+9*Math.cos(a),height(p.x,p.z),p.z+9*Math.sin(a));scene.add(t)}
+  // Plaza de los Héroes
+  const hs=new THREE.Group();const col=new THREE.Mesh(new THREE.CylinderGeometry(.5,.7,13,10),cream);col.position.y=6.5;hs.add(col);
+  const an=new THREE.Mesh(new THREE.SphereGeometry(.9,8,8),gold);an.position.y=13.5;hs.add(an);
+  for(let i=0;i<7;i++){const a=Math.PI*(.15+i*.7/6);const c=new THREE.Mesh(new THREE.BoxGeometry(1,4,1),cream);c.position.set(Math.cos(a)*8,2,-Math.sin(a)*8+4);hs.add(c)}
+  place(hs,47.5149,19.0778);
+  // Estatua de la Libertad (Gellért)
+  const lib=new THREE.Group();const ped=new THREE.Mesh(new THREE.BoxGeometry(2,6,2),cream);ped.position.y=3;lib.add(ped);const st=new THREE.Mesh(new THREE.CylinderGeometry(.3,.6,5,8),lm('#6f8f7f','#c8ffcf'));st.position.y=8.5;lib.add(st);
+  place(lib,47.4867,19.0472);
+  // Mercado Central
+  const mk=new THREE.Group();const mb=new THREE.Mesh(new THREE.BoxGeometry(12,4,8),lm('#d7b48a'));mb.position.y=2;mk.add(mb);
+  const roof=new THREE.Mesh(new THREE.CylinderGeometry(0.01,6.5,3,4,1),lm('#d06a3a','#ffb080'));roof.rotation.y=Math.PI/4;roof.scale.set(1.3,1,0.85);roof.position.y=5.5;mk.add(roof);
+  place(mk,47.4870,19.0587);
+  // Sinagoga Dohány
+  const sy=new THREE.Group();const sb=new THREE.Mesh(new THREE.BoxGeometry(6,4,9),lm('#c9845a'));sb.position.y=2;sy.add(sb);
+  [-2,2].forEach(x=>{const t=new THREE.Mesh(new THREE.CylinderGeometry(.6,.6,6,8),lm('#c9845a'));t.position.set(x,3,-4.5);sy.add(t);const o=new THREE.Mesh(new THREE.SphereGeometry(.9,10,8),gold);o.position.set(x,6.6,-4.5);sy.add(o)});
+  place(sy,47.4957,19.0608);
+  // Hungexpo (festival)
+  const hx=new THREE.Group();const hb=new THREE.Mesh(new THREE.BoxGeometry(30,5,20),lm('#6b4fa8','#b98cff'));hb.position.y=2.5;hx.add(hb);place(hx,47.4930,19.1280);
+  // Alojamiento
+  const ho=new THREE.Group();const hbx=new THREE.Mesh(new THREE.BoxGeometry(4,3.5,4),lm('#f0a050','#ffc070'));hbx.position.y=1.75;ho.add(hbx);
+  const hr=new THREE.Mesh(new THREE.ConeGeometry(3.4,2.5,4),lm('#a8432f','#ff8a60'));hr.rotation.y=Math.PI/4;hr.position.y=4.7;ho.add(hr);place(ho,HOTEL.lat,HOTEL.lng);
+  const hl=label('🏠 A57','#f0a050','#1b130b');hl.position.set(0,9,0);ho.add(hl);
+  const fl=label('🎧 Bónusz · Hungexpo','#6b4fa8','#fff');fl.position.set(0,12,0);hx.add(fl);
+}
+
+/* ---------- sprites ---------- */
+const CATCOL={comida:'#e07a3d',cafe:'#a8744f',vistas:'#e8a33d',ciudad:'#4f8fd0',historia:'#8b6fc9',ruin:'#d0559a'};
+const CATEMO={comida:'🍲',cafe:'☕',vistas:'🌇',ciudad:'🏛️',historia:'📜',ruin:'🍻'};
+function label(text,bg,fg,scale=1){
+  const c=document.createElement('canvas');const ctx=c.getContext('2d');ctx.font='600 40px Inter, system-ui, sans-serif';
+  const w=Math.ceil(ctx.measureText(text).width)+40;c.width=w;c.height=64;
+  ctx.font='600 40px Inter, system-ui, sans-serif';ctx.fillStyle=bg;rr(ctx,0,0,w,64,30);ctx.fill();ctx.fillStyle=fg;ctx.textBaseline='middle';ctx.fillText(text,20,34);
+  const tex=new THREE.CanvasTexture(c);tex.colorSpace=THREE.SRGBColorSpace;
+  const s=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,depthTest:false,transparent:true}));s.renderOrder=10;
+  s.scale.set(w/64*3.2*scale,3.2*scale,1);return s;
+}
+function icon(emoji,bg){
+  const c=document.createElement('canvas');c.width=c.height=128;const ctx=c.getContext('2d');
+  ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(64,64,60,0,7);ctx.fill();ctx.fillStyle=bg;ctx.beginPath();ctx.arc(64,64,52,0,7);ctx.fill();
+  ctx.font='64px serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(emoji,64,70);
+  const tex=new THREE.CanvasTexture(c);tex.colorSpace=THREE.SRGBColorSpace;
+  const s=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthTest:true}));return s;
+}
+function rr(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath()}
+
+/* ---------- marcadores ---------- */
+function buildMarkers(){
+  POIS.forEach(poi=>{
+    const grp=new THREE.Group();const p=toW(poi.lat,poi.lng);grp.position.set(p.x,height(p.x,p.z),p.z);
+    const stick=new THREE.Mesh(new THREE.CylinderGeometry(.18,.18,6,6),new THREE.MeshLambertMaterial({color:CATCOL[poi.cat]}));stick.position.y=3;grp.add(stick);
+    const sp=icon(CATEMO[poi.cat],CATCOL[poi.cat]);sp.position.y=7.2;sp.scale.set(3.6,3.6,1);sp.userData.poi=poi;grp.add(sp);
+    const ring=new THREE.Mesh(new THREE.RingGeometry(2.6,3.4,32),new THREE.MeshBasicMaterial({color:'#ffcc55',transparent:true,opacity:.85,side:THREE.DoubleSide,depthWrite:false}));
+    ring.rotation.x=-Math.PI/2;ring.position.y=.4;ring.visible=false;grp.add(ring);
+    scene.add(grp);markers.push({poi,group:grp,sprite:sp,stick,ring,label:null,rank:0});
+  });
+}
+function refresh(){
+  if(!started)return;
+  const t=now();
+  const ranked=POIS.map(p=>({p,...score(p,t)})).filter(x=>x.st.s!=='closed'&&!done.has(x.p.id)).sort((a,b)=>b.s-a.s).slice(0,6);
+  markers.forEach(m=>{
+    const r=ranked.findIndex(x=>x.p.id===m.poi.id)+1;const isDone=done.has(m.poi.id);const closed=openState(m.poi,t).s==='closed';
+    m.rank=r;m.ring.visible=r>0;
+    const sc=r?(r===1?5.4:4.6):isDone?2.2:3;m.sprite.scale.set(sc,sc,1);
+    m.sprite.material.opacity=isDone||closed?.45:1;
+    if(m.labelRank!==r){if(m.label){m.group.remove(m.label);m.label.material.map.dispose();m.label=null}
+      if(r){m.label=label(r+' · '+m.poi.name,r===1?'#e8a33d':'#14110fdd',r===1?'#1b130b':'#f3ebe1',.8);m.label.position.y=11.5;m.group.add(m.label)}
+      m.labelRank=r}
+  });
+  dayNight(t);hud(t,ranked);
+}
+
+/* ---------- personajes ---------- */
+function makeAvatar(o){
+  const g=new THREE.Group();const M=(c)=>new THREE.MeshLambertMaterial({color:c});
+  const skin=M('#f1c7a5'),shirt=M(o.shirt),pants=M(o.pants),hair=M(o.hair),shoe=M('#2b2b2b');
+  const legs=[-.42,.42].map(x=>{const pivot=new THREE.Group();pivot.position.set(x,1.7,0);const l=new THREE.Mesh(new THREE.CylinderGeometry(.32,.28,1.6,10),pants);l.position.y=-.8;pivot.add(l);const s=new THREE.Mesh(new THREE.BoxGeometry(.5,.25,.8),shoe);s.position.set(0,-1.62,.15);pivot.add(s);g.add(pivot);return pivot});
+  const body=new THREE.Mesh(new THREE.CapsuleGeometry(.78,1.2,6,12),shirt);body.position.y=2.9;g.add(body);
+  const arms=[-1.05,1.05].map(x=>{const pivot=new THREE.Group();pivot.position.set(x,3.55,0);const a=new THREE.Mesh(new THREE.CapsuleGeometry(.22,1.1,4,8),shirt);a.position.y=-.75;pivot.add(a);const h=new THREE.Mesh(new THREE.SphereGeometry(.24,8,8),skin);h.position.y=-1.45;pivot.add(h);pivot.rotation.z=x<0?.12:-.12;g.add(pivot);return pivot});
+  const head=new THREE.Mesh(new THREE.SphereGeometry(.78,18,14),skin);head.position.y=4.75;g.add(head);
+  const hcap=new THREE.Mesh(new THREE.SphereGeometry(.83,18,10,0,Math.PI*2,0,Math.PI/2.1),hair);hcap.position.y=4.8;hcap.rotation.x=-.25;g.add(hcap);
+  if(o.long){const back=new THREE.Mesh(new THREE.CapsuleGeometry(.62,1.1,4,10),hair);back.position.set(0,4.1,-.42);back.scale.z=.6;g.add(back)}
+  [-.28,.28].forEach(x=>{const e=new THREE.Mesh(new THREE.SphereGeometry(.09,6,6),M('#1a1a1a'));e.position.set(x,4.85,.7);g.add(e)});
+  const shadow=new THREE.Mesh(new THREE.CircleGeometry(1.4,20),new THREE.MeshBasicMaterial({color:'#000',transparent:true,opacity:.25,depthWrite:false}));shadow.rotation.x=-Math.PI/2;shadow.position.y=.08;g.add(shadow);
+  const tag=label(o.name,o.shirt,'#fff',.36);tag.position.set(o.side*.5,6.3,0);g.add(tag);
+  g.scale.setScalar(2.3);scene.add(g);
+  return {group:g,legs,arms,body,phase:Math.random()*6,speed:0,side:o.side};
+}
+function buildAvatars(){
+  avatars=[makeAvatar({name:'Mati',shirt:'#2f6fd6',pants:'#2a2a35',hair:'#3a2a1e',side:-1}),
+           makeAvatar({name:'Paz',shirt:'#e05a6b',pants:'#3b3b55',hair:'#6a4126',long:true,side:1})];
+}
+function avatarTarget(){const p=toW(pos.lat,pos.lng);return {x:p.x,z:p.z,y:height(p.x,p.z)}}
+let heading=0;
+function moveAvatars(dt){
+  const tg=avatarTarget();
+  const mid=new THREE.Vector3();avatars.forEach(a=>mid.add(a.group.position));mid.multiplyScalar(.5);
+  const dx=tg.x-mid.x,dz=tg.z-mid.z,dist=Math.hypot(dx,dz);
+  const moving=dist>0.6;
+  if(moving)heading=Math.atan2(dx,dz);
+  const step=Math.min(dist,Math.max(12,dist*1.8)*dt);
+  const nx=moving?mid.x+dx/dist*step:tg.x,nz=moving?mid.z+dz/dist*step:tg.z;
+  const px=Math.cos(heading)*2.8,pz=-Math.sin(heading)*2.8; // perpendicular
+  avatars.forEach(a=>{
+    const x=nx+px*a.side,z=nz+pz*a.side;
+    a.group.position.set(x,height(x,z),z);
+    let dr=heading-a.group.rotation.y;dr=Math.atan2(Math.sin(dr),Math.cos(dr));a.group.rotation.y+=dr*Math.min(1,dt*8);
+    a.speed+=((moving?1:0)-a.speed)*Math.min(1,dt*6);
+    a.phase+=dt*(moving?9:2.2);
+    const sw=Math.sin(a.phase)*.65*a.speed;
+    a.legs[0].rotation.x=sw;a.legs[1].rotation.x=-sw;a.arms[0].rotation.x=-sw*.8;a.arms[1].rotation.x=sw*.8;
+    a.body.position.y=2.9+Math.abs(Math.sin(a.phase))*.12*a.speed+Math.sin(a.phase)*.03*(1-a.speed);
+  });
+  if(moving||!trail.length)addTrail(tg);
+  return new THREE.Vector3(nx,height(nx,nz),nz);
+}
+
+/* ---------- recorrido ---------- */
+function buildTrail(){
+  trail=(store.get('trail',[])||[]).filter(p=>p&&isFinite(p.lat));
+  trailLine=new THREE.Line(new THREE.BufferGeometry(),new THREE.LineDashedMaterial({color:'#e8a33d',dashSize:2,gapSize:1.5,depthTest:false,transparent:true,opacity:.9}));
+  trailLine.renderOrder=5;scene.add(trailLine);drawTrail();
+}
+function addTrail(tg){
+  const last=trail[trail.length-1];const lp=last?toW(last.lat,last.lng):null;
+  if(lp&&Math.hypot(lp.x-tg.x,lp.z-tg.z)<3)return;
+  trail.push({lat:pos.lat,lng:pos.lng});if(trail.length>3000)trail.shift();store.set('trail',trail);drawTrail();
+}
+function drawTrail(){
+  const v=[];trail.forEach(p=>{const w=toW(p.lat,p.lng);v.push(w.x,height(w.x,w.z)+.6,w.z)});
+  trailLine.geometry.dispose();trailLine.geometry=new THREE.BufferGeometry();trailLine.geometry.setAttribute('position',new THREE.Float32BufferAttribute(v,3));trailLine.computeLineDistances();
+}
+
+/* ---------- día / noche ---------- */
+const SKY={day:new THREE.Color('#9fc4e8'),gold:new THREE.Color('#f2a868'),dusk:new THREE.Color('#40406e'),night:new THREE.Color('#0e1528')};
+function dayNight(t){
+  const sun_=SUNSET[t.d]??SUNSET[0];const m=t.m;let sky=new THREE.Color(),k;
+  if(m<H('6:30')||m>sun_+60){sky.copy(SKY.night);k=0}
+  else if(m<H('7:30')){sky.copy(SKY.night).lerp(SKY.day,(m-H('6:30'))/60);k=(m-H('6:30'))/60}
+  else if(m<sun_-60){sky.copy(SKY.day);k=1}
+  else if(m<sun_+10){const f=(m-(sun_-60))/70;sky.copy(SKY.day).lerp(SKY.gold,f);k=1-.35*f}
+  else {const f=(m-(sun_+10))/50;sky.copy(SKY.gold).lerp(SKY.dusk,Math.min(1,f*.6)).lerp(SKY.night,Math.max(0,f-.4));k=.65-.65*f}
+  k=Math.max(0,Math.min(1,k));
+  scene.background=sky;scene.fog.color.copy(sky);box.style.background='#'+sky.getHexString();
+  hemi.intensity=.35+.8*k;sun.intensity=.15+1.1*k;
+  sun.color.set(m>sun_-60&&m<sun_+20?'#ffb070':'#ffffff');
+  water.color.set(k>.5?'#4f8fc0':'#1d3a5c');
+  water.emissive=new THREE.Color(k>.5?'#000':'#0b1e33');
+  const night=1-k;
+  nightMats.forEach(o=>{o.m.emissive=new THREE.Color(o.col).multiplyScalar(night*o.k)});
+}
+
+/* ---------- interfaz ---------- */
+function hud(t,ranked){
+  const sun_=SUNSET[t.d]??SUNSET[0];const toSun=sun_-t.m;const na=nextAnchor(t,false);
+  document.getElementById('hud').innerHTML=
+    `<span class="pill">🌇 <b>${fmt(sun_)}</b> ${toSun>0?'· en '+dur(toSun):'· de noche'}</span>`+
+    (na?`<span class="pill">⏱️ ${na.label} · <b>${dur(abs(na)-abs(t))}</b></span>`:'')+
+    (t.simulated?`<span class="pill">🧪 ${DAYNAME[t.d]} ${fmt(t.m)} simulado</span>`:'');
+  document.getElementById('mapHint').innerHTML=pos.src==='gps'
+    ?`🛰️ GPS activo: os movéis solos. ⭐ Top: <b>${ranked[0]?ranked[0].p.name:'—'}</b>`
+    :`👆 Tocad el mapa para moveros allí · tocad un icono para ver el sitio`;
+}
+function updateFollowBtn(){document.getElementById('btnFollow').style.borderColor=followMode?'var(--acc)':'var(--line)'}
+document.getElementById('btnFollow').onclick=()=>{followMode=true;updateFollowBtn();const a=avatarTarget();camera.position.set(a.x+28,a.y+55,a.z+70)};
+document.getElementById('btnOverview').onclick=()=>{followMode=false;updateFollowBtn();controls.target.set(-10,0,0);camera.position.set(60,420,380)};
+function openSheet(poi){
+  selected=poi;const t=now();const x=score(poi,t);const st=x.st;
+  const stTxt=st.s==='open'?'<span class="tag ok">Abierto</span>':st.s==='closed'?'<span class="tag bad">Cerrado</span>':'<span class="tag unk">Horario dudoso</span>';
+  const sh=document.getElementById('sheet');sh.hidden=false;
+  sh.innerHTML=`<button class="x" id="shX">✕</button><h3>${CATEMO[poi.cat]} ${esc(poi.name)}</h3>
+   <div class="meta"><span class="tag">🚶 ${x.w} min</span><span class="tag">~${dur(poi.dur)}</span>${stTxt}${x.hint.length?`<span class="tag acc">${x.hint.join(' · ')}</span>`:''}</div>
+   <div class="why">${esc(poi.why)}</div><div class="tip">💡 ${esc(poi.tip)}</div>
+   <div class="actions"><a class="go" href="https://www.google.com/maps/dir/?api=1&destination=${poi.lat},${poi.lng}&travelmode=walking" target="_blank" rel="noopener">Cómo llegar</a>
+   <button id="shDone">${done.has(poi.id)?'↺ Desmarcar':'✓ Hecho'}</button>
+   ${pos.src!=='gps'?'<button id="shGo">🚶 Movernos aquí</button>':''}</div>`;
+  document.getElementById('shX').onclick=()=>{sh.hidden=true;selected=null};
+  document.getElementById('shDone').onclick=()=>{done.has(poi.id)?done.delete(poi.id):done.add(poi.id);store.set('done',[...done]);render();refresh();openSheet(poi)};
+  const g=document.getElementById('shGo');if(g)g.onclick=()=>{setManual(poi.lat,poi.lng,'Cerca de '+poi.name);sh.hidden=true;followMode=true;updateFollowBtn()};
+}
+function setManual(lat,lng,lbl){pos={lat,lng,label:lbl,src:'manual'};store.set('pos',pos);render();refresh()}
+function setupTap(){
+  const ray=new THREE.Raycaster();const el=renderer.domElement;let down=null;
+  el.addEventListener('pointerdown',e=>{down={x:e.clientX,y:e.clientY,t:performance.now()}});
+  el.addEventListener('pointerup',e=>{
+    if(!down)return;const moved=Math.hypot(e.clientX-down.x,e.clientY-down.y);const dt=performance.now()-down.t;down=null;
+    if(moved>8||dt>450)return;
+    const r=el.getBoundingClientRect();const v=new THREE.Vector2(((e.clientX-r.left)/r.width)*2-1,-((e.clientY-r.top)/r.height)*2+1);
+    ray.setFromCamera(v,camera);
+    const hit=ray.intersectObjects(markers.map(m=>m.sprite))[0];
+    if(hit){openSheet(hit.object.userData.poi);return}
+    const gh=ray.intersectObject(ground)[0];
+    if(gh){
+      if(pos.src==='gps'){toast('Con el GPS activo os movéis solos 🛰️');return}
+      const ll=toLL(gh.point.x,gh.point.z);setManual(ll.lat,ll.lng,'Punto elegido en el mapa');followMode=true;updateFollowBtn();
+      document.getElementById('sheet').hidden=true;
+    }
+  });
+}
+function toast(msg){const h=document.getElementById('mapHint');h.textContent=msg;setTimeout(()=>refresh(),2500)}
+
+/* ---------- bucle ---------- */
+let lastMid=null;
+function loop(){
+  requestAnimationFrame(loop);
+  if(currentView!=='map'||document.hidden)return;
+  const dt=Math.min(.05,clock.getDelta());const el=clock.elapsedTime;
+  const mid=moveAvatars(dt);
+  if(followMode){
+    if(lastMid){const d=mid.clone().sub(lastMid);camera.position.add(d);controls.target.add(d)}
+    controls.target.lerp(mid,Math.min(1,dt*3));
+  }
+  lastMid=mid.clone();
+  markers.forEach(m=>{if(m.rank){m.sprite.position.y=7.6+Math.sin(el*3+m.rank)*.6;const s=1+.25*Math.sin(el*4);m.ring.scale.set(s,s,s)}else m.sprite.position.y=7.2});
+  controls.update();renderer.render(scene,camera);
+}
+document.addEventListener('brj:view',e=>{if(e.detail==='map'){init();resize();refresh()}});
+if(currentView==='map')init();
+</script>
+</body>
+</html>
