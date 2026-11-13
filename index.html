@@ -32,6 +32,15 @@ header h1 span{color:var(--acc)}
 .banner{border-radius:14px;padding:12px 14px;margin-bottom:10px;background:var(--card);border:1px solid var(--line)}
 .banner.sun{background:linear-gradient(135deg,#4a2a14,#2a1a12);border-color:#7a4a22}
 .banner.warn{background:#3a1d1a;border-color:#7a3a33}
+.banner.ask{background:#20271c;border-color:#4d6a3a}
+.banner.pend{background:#2a2013;border-color:#b98a2e}
+.psb{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.psb button,.psb a{font-size:13px;padding:6px 10px}
+.pitem{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:6px 0;font-size:14px}.pitem .psb{margin:0;flex-wrap:nowrap}.pitem a{color:var(--acc)}
+.latebar{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:6px 0}.latebar span{font-size:13px;color:var(--mut);margin-right:2px}.latebar button{font-size:13px;padding:6px 10px}
+.pst{font-size:11px;border-radius:999px;padding:1px 7px;margin-left:6px;font-weight:700;white-space:nowrap}.pst.ok{background:#2f5a2a;color:#d6f5c8}.pst.no{background:#5a2a2a;color:#f5c8c8}.pst.pe{background:#5a4314;color:#ffe7a6}.pst.late{background:#1f3550;color:#bfe0ff}
+.step .ctl{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}.step .ctl button{font-size:12px;padding:4px 9px}.step .ctl button.on{background:var(--acc);color:#1b130b;border-color:var(--acc)}
+.step.skipped b{text-decoration:line-through}
+.toastb{position:fixed;left:12px;right:12px;bottom:calc(84px + env(safe-area-inset-bottom));z-index:90;box-shadow:0 6px 24px #000a}
 .banner.test{background:#1b2633;border-color:#2f4a66;font-size:13px}
 .banner b{color:var(--acc)}
 .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
@@ -293,6 +302,10 @@ body.mapmode #map3d{height:calc(100dvh - 92px - env(safe-area-inset-bottom))}
   </div>
 </dialog>
 
+<dialog id="rpDlg"><h3 style="margin:0 0 4px">⇄ Cambiar de sitio</h3><p class="muted" id="rpTitle" style="margin:0 0 10px"></p>
+  <select id="rpSel" style="width:100%;font-size:16px"></select>
+  <p class="muted" style="margin:10px 0 6px">¿Y lo que teníais previsto?</p>
+  <div style="display:flex;flex-direction:column;gap:8px"><button class="pri" id="rpPend">↪ Cambiar y dejarlo pendiente</button><button id="rpSkip">✗ Cambiar: no vamos a ir</button><button id="rpX">Cancelar</button></div></dialog>
 <dialog id="simDlg">
   <h3 style="margin-bottom:8px">Simular hora (para probar)</h3>
   <div class="row">
@@ -541,7 +554,7 @@ const PL={kalvin:L(47.48960,19.06140),mercado:L(47.48700,19.05870),gellertter:L(
   hotel:L(47.5010,19.0663),szimpla:L(47.49700,19.06330),blaha:L(47.49650,19.07050),hungexpo:L(47.49300,19.12800),pillango:L(47.50190,19.10910),
   dohany:L(47.49570,19.06080),voros:L(47.49690,19.05095),bastion:L(47.50210,19.03470),cadenas:L(47.49900,19.04360),pier:L(47.49500,19.04820),
   basilica:L(47.50070,19.05400),opera:L(47.50250,19.05830)};
-const PLAN=[
+const PLAN_BASE=[
  {id:'land',d:0,t:'12:05',title:'Aterrizaje en Budapest',note:'Vuelo W62376. Salir del aeropuerto hacia las 12:45.'},
  {id:'bus',d:0,t:'13:00',title:'Bus 100E hasta Kálvin tér',note:'40 min · 2.500 HUF por persona (billete especial, aparte).',loc:PL.kalvin},
  {id:'mercado',d:0,t:'13:35',title:'Gran Mercado (Fővám tér)',note:'Lángos y gulash en la planta alta. Cierra de 15:00 a 16:00: salir antes de las 14:40.',loc:PL.mercado,poi:'mercado'},
@@ -579,11 +592,35 @@ const PLAN=[
  {id:'taxi',d:2,t:'3:30',star:true,anchor:true,title:'Taxi o Bolt al aeropuerto',note:'33–45 €. Pedirlo antes.'},
  {id:'vuelo',d:2,t:'6:00',star:true,anchor:true,title:'Vuelo W62375 BUD → BCN',note:'Llegada a las 8:40.'},
 ].map(p=>({...p,m:H(p.t)}));
-const ANCHORS=PLAN.filter(p=>p.anchor).map(p=>({d:p.d,m:p.m,label:p.title,hard:true,id:p.id}));
+/* El plan real: el cronograma de base + cambios del viaje (retrasos, cambios de sitio, añadidos). */
+const PLAN=[],ANCHORS=[];
+// hora fija (vuelos, festival, crucero y los dos atardeceres): no se mueven
+const FIXED=new Set(['land','citadella','bastion','salida','bonusz','aot','fideles','kdv','mathame','muelle','crucero','fincrucero','despertar','taxi','vuelo']);   // hora fija: no se mueven
+const VISIT=p=>!!(p.loc&&!p.fest&&!p.task&&(p.poi||p.extra||p.repl||['crucero','bonusz','castillo'].includes(p.id)));
+let pst=null;const PST=()=>pst||(pst=store.get('pst',{}));
+function setPst(id,v){const o=PST();if(v)o[id]=v;else delete o[id];store.set('pst',o)}
+function rebuildPlan(){
+  const sh=store.get('shift',{}),rp=store.get('repl',{}),ex=store.get('extras',[]);
+  const out=PLAN_BASE.map(b=>{let p={...b};const poi=rp[b.id]&&POIS.find(z=>z.id===rp[b.id]);
+    if(poi)p={...p,title:poi.name,orig:b.title,origLoc:b.loc,note:'Cambio de plan: en lugar de «'+b.title+'».',loc:{lat:poi.lat,lng:poi.lng},poi:poi.id,repl:true,star:false,anchor:false};
+    const off=sh[b.id]||0;if(off){const a=b.d*1440+b.m+off;p.d=Math.floor(a/1440);p.m=a%1440;p.t=fmt(p.m);p.late=off}
+    return p});
+  (ex||[]).forEach(e=>out.push({...e,m:H(e.t),extra:true}));
+  out.sort((a,b)=>abs(a)-abs(b));
+  PLAN.length=0;PLAN.push(...out);
+  ANCHORS.length=0;ANCHORS.push(...PLAN.filter(p=>p.anchor).map(p=>({d:p.d,m:p.m,label:p.title,hard:true,id:p.id})));
+}
+function pendList(){   // lo que dejasteis para más tarde
+  const o=PST(),L=[];
+  PLAN.forEach(p=>{if(o[p.id]==='pend')L.push({key:p.id,title:p.title,loc:p.loc,poi:p.poi,t:p.t,d:p.d});
+    if(p.repl&&o['o:'+p.id]==='pend'){const b=PLAN_BASE.find(x=>x.id===p.id);L.push({key:'o:'+p.id,title:p.orig,loc:p.origLoc,poi:b.poi,t:b.t,d:b.d})}});
+  return L.filter(x=>x.loc);
+}
 function planNow(t){
   const T=abs(t);let cur=null,next=null;
-  for(const p of PLAN){if(p.task)continue;if(abs(p)<=T)cur=p;else if(!next)next=p}
-  const nextStar=PLAN.find(p=>p.star&&abs(p)>T)||null;
+  const o=PST();
+  for(const p of PLAN){if(p.task||o[p.id]==='skip')continue;if(abs(p)<=T)cur=p;else if(!next&&o[p.id]!=='done')next=p}
+  const nextStar=PLAN.find(p=>p.star&&abs(p)>T&&!o[p.id])||null;
   return {cur,next,nextStar};
 }
 function findTarget(id){
@@ -591,7 +628,9 @@ function findTarget(id){
   if(id.startsWith('plan:')){const p=PLAN.find(x=>x.id===id.slice(5));return p&&p.loc?{id,name:(p.star?'⭐ ':'')+p.title,lat:p.loc.lat,lng:p.loc.lng,plan:p}:null}
   return POIS.find(p=>p.id===id)||null;
 }
-let tasks=null;const getTasks=()=>tasks||(tasks=new Set(store.get('tasks',[])));
+let tasks=null;
+setTimeout(()=>{$('rpPend').onclick=()=>doRepl('pend');$('rpSkip').onclick=()=>doRepl('skip');$('rpX').onclick=()=>$('rpDlg').close()},0);
+const getTasks=()=>tasks||(tasks=new Set(store.get('tasks',[])));
 
 
 /* ================= GUION DE LA PELÍCULA =================
@@ -615,9 +654,11 @@ function budNow(dt){
   const p=Object.fromEntries(new Intl.DateTimeFormat('en-CA',{timeZone:TZ,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).formatToParts(dt||new Date()).map(x=>[x.type,x.value]));
   return {date:`${p.year}-${p.month}-${p.day}`,m:(Number(p.hour)%24)*60+Number(p.minute)};
 }
+const LIVE=()=>budNow().date>=TRIP[0];   // desde el sábado 14: solo hora real y GPS
 function now(){
-  if(sim) return {...sim,simulated:true};
+  if(sim&&!LIVE()) return {...sim,simulated:true};
   const n=budNow();const d=TRIP.indexOf(n.date);
+  if(d===-1&&LIVE()) return {d:2,m:H('9:00'),simulated:false,over:true};
   if(d===-1) return {d:0,m:H('14:00'),simulated:true,auto:true};
   return {d,m:n.m,simulated:false};
 }
@@ -632,6 +673,7 @@ function sunset(dateStr,lat=47.4979,lng=19.0402){
   return Math.round(720-4*(lng-ha)-eq+60);
 }
 const SUNSET=TRIP.map(d=>sunset(d));
+rebuildPlan();
 function tsToAbs(ts){const n=budNow(new Date(ts));const d=TRIP.indexOf(n.date);return d<0?null:d*1440+n.m}
 let weather=null;
 async function loadWeather(){
@@ -667,7 +709,7 @@ function openState(p,t){
   return {s:'closed',opensIn:next!==undefined?next-t.m:null};
 }
 function nextAnchor(t,hardOnly){
-  return ANCHORS.filter(a=>(!hardOnly||a.hard)&&abs(a)>abs(t)).sort((a,b)=>abs(a)-abs(b))[0];
+  return ANCHORS.filter(a=>(!hardOnly||a.hard)&&abs(a)>abs(t)&&PST()[a.id]!=='skip').sort((a,b)=>abs(a)-abs(b))[0];
 }
 
 /* ================= RECOMENDADOR ================= */
@@ -694,7 +736,8 @@ function score(p,t){
   const pn=planNow(t);
   if(pn.next&&pn.next.poi===p.id&&abs(pn.next)-abs(t)<120){s+=40;why.push('en vuestro plan')}
   else if(pn.next&&pn.next.loc&&abs(pn.next)-abs(t)<150&&walkMin(p,pn.next.loc)<=6&&p.dur<=45){s+=10;why.push('de camino al plan')}
-  if(done.has(p.id)){s-=500}
+  if(pendList().some(x=>x.poi===p.id)){s+=30;why.push('os quedó pendiente')}
+  if(done.has(p.id)||PLAN.some(x=>x.poi===p.id&&PST()[x.id]==='done')){s-=500}
   return {s,w,st,fits,remaining,hint:why};
 }
 
@@ -705,7 +748,8 @@ function render(){
   $('clk').textContent=fmt(t.m);
   $('day').textContent=(DAYNAME[t.d]||'')+(t.simulated?' · simulado':'');
   const tb=$('testBanner');
-  if(t.simulated){tb.hidden=false;tb.innerHTML=(t.auto?(budNow().date>TRIP[2]?'El viaje ya terminó: estoy simulando <b>sábado 14:00</b>. ':'Aún no estáis en Budapest: estoy simulando <b>sábado 14:00</b>. '):'Hora simulada. ')+'<button id="simBtn" style="padding:4px 8px;font-size:12px">Cambiar hora</button>';$('simBtn').onclick=()=>$('simDlg').showModal();}
+  if(t.over){tb.hidden=false;tb.innerHTML='💛 El viaje terminó. Vuestra película os espera en <b>🎬 Película</b>.'}
+  else if(t.simulated&&!LIVE()){tb.hidden=false;tb.innerHTML=(t.auto?(budNow().date>TRIP[2]?'El viaje ya terminó: estoy simulando <b>sábado 14:00</b>. ':'Aún no estáis en Budapest: estoy simulando <b>sábado 14:00</b>. '):'Hora simulada. ')+'<button id="simBtn" style="padding:4px 8px;font-size:12px">Cambiar hora</button>';$('simBtn').onclick=()=>$('simDlg').showModal();}
   else tb.hidden=true;
 
   // anclas
@@ -725,6 +769,13 @@ function render(){
     const views=POIS.filter(p=>p.best==='sunset'&&!done.has(p.id)).map(p=>({p,w:walkMin(pos,p)})).filter(x=>x.w<toSun-5).sort((a,b)=>a.w-b.w).slice(0,3);
     al.push(`<div class="banner sun">🌅 <b>Atardecer en ${dur(toSun)}</b> (${fmt(sun)}). ${views.length?'Llegáis a tiempo a: '+views.map(x=>`<b>${x.p.name}</b> (${x.w} min)`).join(', ')+'.':'Ningún mirador queda a menos de '+dur(toSun)+' a pie: buscad el río más cercano o coged un taxi.'}</div>`);
   }
+  autoPlan(t);
+  {const T=abs(t),o=PST();   // ¿fuisteis o no?
+   const asks=PLAN.filter(p=>{if(!VISIT(p)||o[p.id]||abs(p)>T)return false;const nx=PLAN.find(q=>!q.task&&abs(q)>abs(p));return nx&&abs(nx)<=T}).slice(-2);
+   asks.forEach(p=>al.push(`<div class="banner ask">🤔 ¿Fuisteis a <b>${esc(p.title)}</b> (${p.t})?<div class="psb"><button data-ps="${p.id}:done">✓ Sí</button><button data-ps="${p.id}:skip">✗ No fuimos</button><button data-ps="${p.id}:pend">↪ Lo dejamos pendiente</button></div></div>`));
+   const nh0=nextAnchor(t,true),rem=nh0?abs(nh0)-T:600;
+   const gap=pendList().map(x=>({x,w:walkMin(pos,x.loc),poi:x.poi&&POIS.find(z=>z.id===x.poi)})).filter(o_=>o_.w<=20&&(!o_.poi||openState(o_.poi,t).s!=='closed')&&o_.w*2+(o_.poi?o_.poi.dur:30)<=rem).sort((a,b)=>a.w-b.w)[0];
+   if(gap)al.push(`<div class="banner pend">↪ Tenéis hueco: <b>${esc(gap.x.title)}</b> os quedó pendiente y está a 🚶 ${gap.w} min.<div class="psb"><a class="go" href="${mapsUrl(gap.x.loc)}" target="_blank" rel="noopener">Cómo llegar</a><button data-ps="${gap.x.key}:done">✓ Hecho</button></div></div>`);}
   const nh=nextAnchor(t,true);
   if(nh){const r=abs(nh)-abs(t);if(r<=120&&r>0){
     const back=walkMin(pos,HOTEL);
@@ -735,7 +786,7 @@ function render(){
 
   renderPlanCard(t);if(currentView==='plan')renderPlan();if(homeOn)drawHome();
   // ubicación
-  $('locLine').innerHTML=`📍 ${pos.src==='gps'?'GPS':'Ubicación manual'}: <b>${esc(pos.label||'')}</b> <button id="chLoc" style="padding:4px 8px;font-size:12px">Cambiar</button>`+(weather?` · 🌡️ ${Math.round(weather.temp)}°C en Budapest${weather.rain?' ☔':weather.snow?' ❄️':''}`:'')+(gpsFar?`<br>🛰️ GPS activo, pero estáis a ~${gpsFar} km de Budapest: modo prueba hasta que lleguéis.`:'');
+  $('locLine').innerHTML=`📍 ${pos.src==='gps'?'GPS':'Ubicación manual'}: <b>${esc(pos.label||'')}</b> <button id="chLoc" style="padding:4px 8px;font-size:12px">Cambiar</button>`+(weather?` · 🌡️ ${Math.round(weather.temp)}°C en Budapest${weather.rain?' ☔':weather.snow?' ❄️':''}`:'')+(gpsFar?(LIVE()?`<br>🛰️ GPS activo · aún fuera de Budapest (~${gpsFar} km). Al llegar os sigue solo.`:`<br>🛰️ GPS activo, pero estáis a ~${gpsFar} km de Budapest: modo prueba hasta que lleguéis.`):'');
   $('chLoc').onclick=openLoc;
 
   // lista
@@ -806,25 +857,86 @@ function renderPlanCard(t){
   if(cur&&!cur.task)h+=`<div class="lbl">Ahora en el plan · desde las ${cur.t}</div><div class="big">${cur.star?'<span class="star">⭐</span> ':''}${esc(cur.title)}</div>${cur.note?`<div class="tip">${esc(cur.note)}</div>`:''}`;
   else h+=`<div class="lbl">Vuestro plan</div><div class="big">${t.d===0&&t.m<H('12:05')?'Aún no habéis aterrizado':'Tiempo libre'}</div>`;
   if(pending.length)h+='<div class="sep"></div><div class="lbl">Pendiente</div>'+pending.map(taskHtml).join('');
+  const pl=pendList();
+  if(pl.length)h+='<div class="sep"></div><div class="lbl">↪ Os queda pendiente</div>'+pl.map(x=>`<div class="pitem"><span>${esc(x.title)} <span class="muted">· ${travelHint(x.loc,true)}</span></span><span class="psb"><a href="${mapsUrl(x.loc)}" target="_blank" rel="noopener">Ir</a><button data-ps="${x.key}:done">✓</button><button data-ps="${x.key}:skip" title="Ya no vamos">✗</button></span></div>`).join('');
   if(next){h+=`<div class="sep"></div><div class="lbl">Siguiente · ${next.t} · <span class="cnt">en ${dur(abs(next)-abs(t))}</span>${next.loc?` · ${travelHint(next.loc,true)}`:''}</div><div class="big">${next.star?'<span class="star">⭐</span> ':''}${esc(next.title)}</div>${next.note?`<div class="tip">${esc(next.note)}</div>`:''}${stepActs(next)}`}
   if(nextStar&&nextStar!==next)h+=`<div class="sep"></div><div class="lbl">Próximo imprescindible · ${nextStar.t} · <span class="cnt">en ${dur(abs(nextStar)-abs(t))}</span></div><div><span class="star">⭐</span> <b>${esc(nextStar.title)}</b>${nextStar.loc?`<br><span class="muted">${travelHint(nextStar.loc)}</span>`:''}</div>`;
   const late=(t.d===1&&t.m>=H('4:00')&&t.m<H('9:00'))||(t.d===0&&t.m>=H('23:00'));
+  const mvb=movable(t);
+  h+=`<div class="sep"></div><div class="latebar"><span>⏰ ¿Vais tarde?</span>${mvb.length?'<button data-late="15">+15</button><button data-late="30">+30</button><button data-late="60">+60</button>':''}<button data-addnow="1">＋ Añadir</button></div>`;
   h+=`<div class="planbtns"><button id="seePlan">📅 Cronograma</button><button id="pcHome" ${late?'class="pri"':''}>🏠 Llevadme a casa</button><button id="pcReto">🎲 Reto</button><button id="pcMovie">🎬 Película</button></div></div>`;
   el.innerHTML=h;bindPlanBtns(el);$('seePlan').onclick=()=>go('plan');
   $('pcHome').onclick=openHome;$('pcReto').onclick=openReto;$('pcMovie').onclick=()=>{go('map');setTimeout(()=>document.dispatchEvent(new CustomEvent('brj:movie')),80)};
 }
 
+/* ================= CAMBIOS DEL PLAN ================= */
+function movable(t){   // lo que se puede retrasar: hasta la próxima actividad de hora fija
+  const T=abs(t),nf=PLAN.find(p=>FIXED.has(p.id)&&abs(p)>T&&PST()[p.id]!=='skip');
+  return {nf,list:PLAN.filter(p=>abs(p)>T&&(!nf||abs(p)<abs(nf))&&!FIXED.has(p.id)&&!p.task&&!p.extra&&!PST()[p.id])}.list.map(x=>x);
+}
+function lateBy(mins){
+  const t=now(),T=abs(t),nf=PLAN.find(p=>FIXED.has(p.id)&&abs(p)>T&&PST()[p.id]!=='skip');
+  const mv=movable(t);if(!mv.length)return;
+  const lim=nf?abs(nf)-10:Infinity,sh=store.get('shift',{});let tight=null;
+  mv.forEach(p=>{const c=abs(p),n=Math.min(c+mins,Math.max(c,lim));if(n<c+mins)tight=p;sh[p.id]=(sh[p.id]||0)+(n-c)});
+  store.set('shift',sh);rebuildPlan();refreshPlanUi();
+  toastTop(tight?`⚠️ <b>${esc(nf.t)} ${esc(nf.title)}</b> no se mueve: lo anterior queda apretado justo antes. Id con tiempo.`:`⏰ Retrasado ${mins} min todo hasta ${nf?esc(nf.t)+' '+esc(nf.title):'el final del día'}.`);
+}
+function nearestPlaceName(){let best='',bd=.15;POIS.forEach(p=>{const k=kmBetween(pos,p);if(k<bd){bd=k;best=p.name}});return best}
+function addNow(){
+  const txt=(prompt('¿Qué estáis haciendo? (se apunta en el plan con la hora y el sitio)',nearestPlaceName())||'').trim();if(!txt)return;
+  const t=now(),ex=store.get('extras',[]);ex.push({id:'x'+Date.now(),d:t.d,t:fmt(t.m),title:txt,loc:{lat:pos.lat,lng:pos.lng}});
+  store.set('extras',ex);rebuildPlan();setPst(ex[ex.length-1].id,'done');refreshPlanUi();toastTop('＋ Apuntado en el plan: <b>'+esc(txt)+'</b>');
+}
+function openRepl(id){
+  const p=PLAN.find(x=>x.id===id);if(!p)return;
+  const opts=[...POIS].map(z=>({z,w:walkMin(pos,z)})).sort((a,b)=>a.w-b.w);
+  $('rpTitle').textContent=`${p.t} · en lugar de «${p.title}»`;
+  $('rpSel').innerHTML=opts.map(o=>`<option value="${o.z.id}">${o.z.paz?'💖 ':''}${esc(o.z.name)} · ${o.w} min</option>`).join('');
+  $('rpDlg').dataset.id=id;$('rpDlg').showModal();
+}
+function doRepl(fate){
+  const id=$('rpDlg').dataset.id,rp=store.get('repl',{});rp[id]=$('rpSel').value;store.set('repl',rp);
+  setPst('o:'+id,fate);setPst(id,'');$('rpDlg').close();rebuildPlan();refreshPlanUi();
+  toastTop(fate==='pend'?'⇄ Cambiado. Lo original queda en «Os queda pendiente».':'⇄ Cambiado.');
+}
+function autoPlan(t){   // con GPS: lo que pisáis queda hecho solo
+  if(pos.src!=='gps'||t.simulated)return;const T=abs(t),o=PST();let ch=false;
+  PLAN.forEach(p=>{if(!VISIT(p)||o[p.id]==='done'||o[p.id]==='skip')return;
+    if(kmBetween(pos,p.loc)*1000<150&&(o[p.id]==='pend'||(T>=abs(p)-90&&T<=abs(p)+300))){o[p.id]='done';ch=true}});
+  pendList().forEach(x=>{if(kmBetween(pos,x.loc)*1000<120){o[x.key]='done';ch=true}});
+  if(ch)store.set('pst',o);
+}
+function refreshPlanUi(){render();if(currentView==='plan')renderPlan()}
+function toastTop(html){const d=document.createElement('div');d.className='banner toastb';d.innerHTML=html;document.body.appendChild(d);setTimeout(()=>d.remove(),4200)}
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-ps],[data-late],[data-unlate],[data-addnow],[data-repl],[data-unrepl],[data-delx]');if(!b)return;
+  if(b.dataset.ps!==undefined){const i=b.dataset.ps.lastIndexOf(':');setPst(b.dataset.ps.slice(0,i),b.dataset.ps.slice(i+1));refreshPlanUi()}
+  else if(b.dataset.late)lateBy(+b.dataset.late);
+  else if(b.dataset.unlate){store.set('shift',{});rebuildPlan();refreshPlanUi();toastTop('↺ Horario original recuperado.')}
+  else if(b.dataset.addnow)addNow();
+  else if(b.dataset.repl)openRepl(b.dataset.repl);
+  else if(b.dataset.unrepl){const rp=store.get('repl',{});delete rp[b.dataset.unrepl];store.set('repl',rp);setPst('o:'+b.dataset.unrepl,'');rebuildPlan();refreshPlanUi()}
+  else if(b.dataset.delx){if(!confirm('¿Quitar esto del plan?'))return;store.set('extras',store.get('extras',[]).filter(x=>x.id!==b.dataset.delx));setPst(b.dataset.delx,'');rebuildPlan();refreshPlanUi()}
+});
+
 /* ================= PLAN ================= */
 function renderPlan(){
   const t=now();const T=abs(t);const {cur}=planNow(t);
   const days=[['Sábado 14 de noviembre',0],['Domingo 15 de noviembre',1],['Lunes 16 de noviembre',2]];
-  let h=`<div class="banner">Vuestro cronograma. No hace falta seguirlo al pie de la letra: la pestaña <b>Ahora</b> y el mapa os recolocan según la hora y dónde estéis. <span class="star">⭐</span> = sí o sí.</div>`;
+  const nsh=Object.keys(store.get('shift',{})).length;
+  let h=`<div class="banner">Vuestro cronograma real. <span class="star">⭐</span> = sí o sí. En cada actividad: <b>✓</b> hecho, <b>✗</b> no fuimos, <b>↪</b> pendiente y <b>⇄</b> cambiar de sitio. Con GPS se marcan solas al pasar por allí.</div>
+   <div class="latebar"><span>⏰ ¿Vais tarde?</span>${movable(t).length?'<button data-late="15">+15</button><button data-late="30">+30</button><button data-late="60">+60</button>':''}${nsh?'<button data-unlate="1">↺ Quitar retrasos</button>':''}<button data-addnow="1">＋ Añadir</button></div>`;
   days.forEach(([name,d])=>{
     h+=`<h2>${name}</h2>`;
     PLAN.filter(p=>p.d===d).forEach(p=>{
-      const past=p.task?getTasks().has(p.id):(abs(p)<T&&p!==cur),isNow=p===cur;
-      const cls=['step',p.star?'isstar':'',past?'past':'',isNow?'now':'',p.fest?'fest':''].join(' ');
-      const body=p.task?taskHtml(p):`<b>${p.star?'<span class="star">⭐</span> ':''}${p.fest?'🎧 ':''}${esc(p.title)}</b>${isNow?'<span class="nowtag">AHORA</span>':''}${p.note?`<p>${esc(p.note)}</p>`:''}${past?'':stepActs(p)}`;
+      const st=PST()[p.id];
+      const past=p.task?getTasks().has(p.id):(st==='done'||st==='skip'||(abs(p)<T&&p!==cur)),isNow=p===cur;
+      const cls=['step',p.star?'isstar':'',past?'past':'',isNow?'now':'',p.fest?'fest':'',st==='skip'?'skipped':''].join(' ');
+      const chip=st==='done'?'<span class="pst ok">✓ Hecho</span>':st==='skip'?'<span class="pst no">✗ No fuimos</span>':st==='pend'?'<span class="pst pe">↪ Pendiente</span>':'';
+      const late=p.late?`<span class="pst late">+${p.late} min</span>`:'';
+      const ctl=p.task||p.fest?'':`<div class="ctl">${VISIT(p)?`<button data-ps="${p.id}:${st==='done'?'':'done'}" class="${st==='done'?'on':''}">✓</button><button data-ps="${p.id}:${st==='skip'?'':'skip'}" class="${st==='skip'?'on':''}">✗</button><button data-ps="${p.id}:${st==='pend'?'':'pend'}" class="${st==='pend'?'on':''}">↪</button>`:''}${FIXED.has(p.id)?'':(p.repl?`<button data-unrepl="${p.id}">↺ Volver a «${esc(p.orig)}»</button>`:p.extra?`<button data-delx="${p.id}">🗑</button>`:`<button data-repl="${p.id}">⇄ Cambiar</button>`)}</div>`;
+      const body=p.task?taskHtml(p):`<b>${p.star?'<span class="star">⭐</span> ':''}${p.fest?'🎧 ':''}${p.extra?'＋ ':''}${esc(p.title)}</b>${isNow?'<span class="nowtag">AHORA</span>':''}${chip}${late}${p.note?`<p>${esc(p.note)}</p>`:''}${past?'':stepActs(p)}${ctl}`;
       h+=`<div class="${cls}"><time>${p.t}</time><div>${body}</div></div>`;
     });
   });
@@ -875,11 +987,12 @@ function renderInfo(){
    </ul>
    <button class="pri" id="gpxBtn" style="width:100%;margin-top:6px">📥 Importar recorrido (GPX)</button>
    <p class="muted" id="gpxMsg" style="margin:8px 0 0"></p></div>
-  <div class="card"><h3>Probar la app</h3><button id="simOpen">Simular otra hora</button> <button id="resetDone">Borrar “hechos”</button> <button id="resetTrail">Borrar recorrido del mapa</button></div>`;
+  ${LIVE()?'':'<div class="card"><h3>Probar la app</h3><p class="muted" style="margin:0 0 8px">Desaparece el sábado 14: desde entonces, solo hora real y GPS.</p><button id="simOpen">Simular otra hora</button> <button id="resetDone">Borrar “hechos”</button> <button id="resetTrail">Borrar recorrido del mapa</button></div>'}`;
   $('gpxBtn').onclick=()=>$('gpxIn').click();
+  if(!LIVE()){
   $('resetTrail').onclick=()=>{store.set('trail',[]);document.dispatchEvent(new CustomEvent('brj:cleartrail'))};
   $('simOpen').onclick=()=>$('simDlg').showModal();
-  $('resetDone').onclick=()=>{done.clear();store.set('done',[]);render()};
+  $('resetDone').onclick=()=>{done.clear();store.set('done',[]);['pst','shift','repl','extras'].forEach(k=>store.set(k,k==='extras'?[]:{}));pst=null;rebuildPlan();render()};}
 }
 
 /* ================= UBICACIÓN ================= */
@@ -976,7 +1089,7 @@ function drawHome(){
   const w=walkMin(pos,st.loc);
   $('hnSub').innerHTML=(arrived?'A descansar 💤':`${w<=25?'🚶 '+w+' min a pie':'🚇 Mejor en transporte (a pie serían '+w+' min)'} · hacia el ${RUMBO[Math.round(br/45)%8]}<br>${esc(st.note)}`)+
     (devHead==null?'<br><span style="color:#8a7d70">Sin brújula: la flecha marca la dirección con el norte arriba.</span>':'')+
-    (gpsFar?'<br><span style="color:#8a7d70">Modo prueba: aún no estáis en Budapest.</span>':'');
+    (gpsFar?'<br><span style="color:#8a7d70">'+(LIVE()?'Aún no estáis en Budapest.':'Modo prueba: aún no estáis en Budapest.')+'</span>':'');
   $('hnMaps').href=`https://www.google.com/maps/dir/?api=1&destination=${st.loc.lat},${st.loc.lng}&travelmode=${w>25?'transit':'walking'}`;
   $('hnNext').hidden=homeStage>=homeStages.length-1;
 }
@@ -1120,7 +1233,8 @@ $('showClosed').onchange=render;
 
 (function tripReset(){
   const n=budNow();if(!TRIP.includes(n.date)||store.get('tripReset',false))return;
-  ['trail','flags','medals','done','tasks','moments'].forEach(k=>store.set(k,[]));store.set('dest',null);store.set('tripReset',true);
+  ['trail','flags','medals','done','tasks','moments','extras'].forEach(k=>store.set(k,[]));['pst','shift','repl'].forEach(k=>store.set(k,{}));store.set('dest',null);store.set('tripReset',true);
+  pos={lat:HOTEL.lat,lng:HOTEL.lng,label:HOTEL.name,src:'manual'};store.set('pos',pos);pst=null;rebuildPlan();
   done=new Set();tasks=null;
 })();
 renderPlan();renderInfo();render();startGPS(false);
@@ -2612,7 +2726,7 @@ function drawHud(o){
 function moviePath(){
   let pts=(store.get('trail',[])||[]).filter(inTrip);let demo=false;
   let len=0;for(let i=1;i<pts.length;i++){const a=toW(pts[i-1].lat,pts[i-1].lng),b=toW(pts[i].lat,pts[i].lng);len+=Math.hypot(a.x-b.x,a.z-b.z)}
-  if(pts.length<15||len<60){demo=true;pts=PLAN.filter(p=>p.loc&&!p.task&&onMap(p.loc)).map(p=>({lat:p.loc.lat,lng:p.loc.lng,ta:abs(p)}))}
+  if(pts.length<15||len<60){demo=true;pts=PLAN.filter(p=>p.loc&&!p.task&&PST()[p.id]!=='skip'&&onMap(p.loc)).map(p=>({lat:p.loc.lat,lng:p.loc.lng,ta:abs(p)}))}
   else{const tas=pts.map(p=>p.t?tsToAbs(p.t):null);const ok=tas.filter(v=>v!==null).length>pts.length*.6;
     pts=pts.map((p,i)=>({...p,ta:ok?tas[i]:null}))}
   const w=[];pts.forEach(p=>{const q=toW(p.lat,p.lng);const prev=w[w.length-1];if(prev&&Math.hypot(prev.x-q.x,prev.z-q.z)<2)return;w.push({x:q.x,z:q.z,ta:p.ta})});
@@ -2678,7 +2792,7 @@ function updateMovie(dt,el){
   else{M.ang+=dt*.16;controls.target.lerp(mid,Math.min(1,dt*2.2));want=mid.clone().add(new THREE.Vector3(Math.sin(M.ang)*62,52,Math.cos(M.ang)*62))}
   camera.position.lerp(want,Math.min(1,dt*1.4));camera.lookAt(controls.target);
   // rótulos
-  if(!M.scene)PLAN.forEach(p=>{if(!p.star||!p.loc||M.shown.has(p.id))return;const w=toW(p.loc.lat,p.loc.lng);if(Math.hypot(w.x-M.cur.x,w.z-M.cur.z)<26&&M.t>TT){M.shown.add(p.id);M.cap='⭐ '+p.title;M.capT=3.4}});
+  if(!M.scene)PLAN.forEach(p=>{if(!p.star||!p.loc||M.shown.has(p.id)||PST()[p.id]==='skip')return;const w=toW(p.loc.lat,p.loc.lng);if(Math.hypot(w.x-M.cur.x,w.z-M.cur.z)<26&&M.t>TT){M.shown.add(p.id);M.cap='⭐ '+p.title;M.capT=3.4}});
   M.capT-=dt;
   const km=(M.len*10/1000).toFixed(1).replace('.',',');
   const over=s>=1&&!M.scene&&M.si>=M.scenes.length;if(over){M.endT+=dt;if(!M.fwDone){M.fwDone=1;fireworks(mid)}}
@@ -2907,7 +3021,7 @@ function hud(t,ranked){
   document.getElementById('hud').innerHTML=
     (nx?`<span class="pill" style="border-color:#b98a2e">📅 ${nx.t} ${nx.star?'⭐ ':''}${esc(nx.title)} · <b>${dur(abs(nx)-abs(t))}</b>${nx.loc?' · '+travelHint(nx.loc,true):''}</span>`:'')+
     (dp?`<span class="pill" style="border-color:#39d0ff">🎯 ${esc(dp.name)} · <b>${travelHint(dp,true)}</b></span>`:'')+
-    `<span class="pill">${pos.src==='gps'?'🛰️ GPS':gpsFar?'🧪 Prueba · tocad el mapa':'👆 Manual · tocad el mapa'}</span>`+
+    `<span class="pill">${pos.src==='gps'?'🛰️ GPS':gpsFar?(LIVE()?'🛰️ GPS · fuera de Budapest':'🧪 Prueba · tocad el mapa'):(LIVE()?'📍 Sin GPS · tocad el mapa':'👆 Manual · tocad el mapa')}</span>`+
     (t.simulated?`<span class="pill">🧪 ${DAYNAME[t.d]} ${fmt(t.m)}</span>`:'');
 }
 function fullPill(t){
@@ -3001,7 +3115,7 @@ function openSheet(poi){
    <div class="actions"><a class="go" href="https://www.google.com/maps/dir/?api=1&destination=${poi.lat},${poi.lng}&travelmode=walking" target="_blank" rel="noopener">Cómo llegar</a>
    <button id="shDone">${done.has(poi.id)?'↺ Desmarcar':'✓ Hecho'}</button>
    <button id="shDest">${dest===poi.id?'✕ Quitar objetivo':'🎯 Ir aquí'}</button>
-   ${pos.src!=='gps'?'<button id="shGo">🚶 Movernos aquí</button>':''}</div>`;
+   ${pos.src!=='gps'&&!(LIVE()&&gpsFar)?'<button id="shGo">🚶 Movernos aquí</button>':''}</div>`;
   document.getElementById('shDest').onclick=()=>{setDest(dest===poi.id?null:poi.id);sh.hidden=true;selected=null;if(dest){followMode=true;updateFollowBtn()}};
   document.getElementById('shX').onclick=()=>{sh.hidden=true;selected=null};
   document.getElementById('shDone').onclick=()=>{done.has(poi.id)?done.delete(poi.id):done.add(poi.id);store.set('done',[...done]);render();refresh();openSheet(poi)};
@@ -3027,6 +3141,7 @@ function setupTap(){
     const gh=ray.intersectObject(ground)[0];
     if(gh){
       if(pos.src==='gps'){toast('Con el GPS activo os movéis solos 🛰️');return}
+      if(LIVE()&&gpsFar){toast('Al llegar a Budapest el GPS os moverá solos 🛰️');return}
       const ll=toLL(gh.point.x,gh.point.z);setManual(ll.lat,ll.lng,'Punto elegido en el mapa');followMode=true;updateFollowBtn();
       document.getElementById('sheet').hidden=true;
     }
