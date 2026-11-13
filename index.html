@@ -2734,13 +2734,13 @@ const ACTIONS={
       if(!(av===M&&mateHolder===M))poseArm(av,0,.15,-.05,-.1,wh);poseArm(av,1,.15,.05,-.1,wh)});
     if(t>.6)once(A,'yawn',()=>floatIcon(P,'🥱'));
     // 2) Paz lo dice todo de corrido
-    if(t>3)once(A,'bd',()=>{bubble(P,'Buendiabuendiabuendiabuendiaaaaaaaa',3);say('Buendiabuendiabuendiabuendiaaaaaaaa','Paz')});
+    if(t>3)once(A,'bd',()=>{bubble(P,'Buendíabuendíabuendíabuendíaaaaaaaa',3);say('Buendíabuendíabuendíabuendíaaaaaaaa','Paz')});
     const wf=Wt(t,3,9.6,.4,.4);La(P.group,faceAng(P,M),wf);
     // 3) Mati la mira y salta de felicidad
     const wm=Wt(t,5.8,9.6,.3,.5);
     if(wm>0){La(M.group,faceAng(M,P),Math.min(1,wm*2));
       if(t>6.4){La(M.group,camAng(M),Wt(t,6.4,9.6,.3,.5));poseArmsUp(M,Wt(t,6.4,9.5,.25,.4));jump(M,t,6.4,9.3,Wt(t,6.4,9.5,.2,.4))}}
-    if(t>6.4)once(A,'mati',()=>{bubble(M,'¡Buendiaaaaaaaa! ☀️',2.8);say('¡Buendiaaaaaaaa!','Mati')});
+    if(t>6.4)once(A,'mati',()=>{bubble(M,'¡Buendíaaaaaaaa! ☀️',2.8);say('¡Buendíaaaaaaaa!','Mati')});
   }},
   pis:{dur:20,run(A,t,dt,el){
     const M=A.mati,P=A.paz;
@@ -3869,9 +3869,9 @@ document.getElementById('agStop').onclick=()=>stopSpeak();
 document.getElementById('agRep').onclick=()=>{if(!VO.text)return;document.getElementById('agPause').style.visibility='';document.getElementById('agPause').textContent='⏸';speak(VO.text,VO.who,{guide:true})};
 /* ---------- voces reales en las animaciones del mapa ---------- */
 const VOICE_LINES=[
- ['Paz','Ah, menos mal que no tenías ganas, un río'],['Paz','Buendiabuendiabuendiabuendiaaaaaaaa'],['Mati','Bueno, yo también'],['Paz','Dame tu mano'],
+ ['Paz','Ah, menos mal que no tenías ganas, un río'],['Paz','Buendíabuendíabuendíabuendíaaaaaaaa'],['Mati','Bueno, yo también'],['Paz','Dame tu mano'],
  ['Paz','Estoy muerta, no puedo más'],['Paz','Me hago pis'],['Mati','Mira este reel'],['Mati','No... bueno'],['Mati','Taca taca taca'],['Mati','¡Ay!'],
- ['Mati','¡Buendiaaaaaaaa!'],['Mati','¡Chipá! ¡Chipá! ¡Chipá!'],['Paz','¡Corran putitas!'],['Mati','¡Dale, dale!'],['Paz','¡Dale, dale!'],['Mati','¡Jajajajaja!'],
+ ['Mati','¡Buendíaaaaaaaa!'],['Mati','¡Chipá! ¡Chipá! ¡Chipá!'],['Paz','¡Corran putitas!'],['Mati','¡Dale, dale!'],['Paz','¡Dale, dale!'],['Mati','¡Jajajajaja!'],
  ['Paz','¡Soy yo, soy yo, soy yoooooooooooo!'],['Paz','¡Sí!'],['Paz','¡Uh, temazo!'],['Paz','¡Ñam! ¡Qué rico!'],['Mati','¿Otra vez?'],['Mati','¿Qué mirás?'],['Mati','¿Tenés hambre?']];
 const VC={mem:new Map(),pool:[],busy:new Set(),talk:{},cacheName:'brj-voces'};
 const vKey=(t,w)=>'https://voces.brujula/'+w.toLowerCase()+'/'+encodeURIComponent(t);
