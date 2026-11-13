@@ -2013,10 +2013,10 @@ function faceAng(from,to){return Math.atan2(to.group.position.x-from.group.posit
 function camAng(av){return Math.atan2(camera.position.x-av.group.position.x,camera.position.z-av.group.position.z)}
 const once=(A,k,fn)=>{if(!A['_'+k]){A['_'+k]=1;fn()}};
 const ACTIONS={
-  food:{dur:12,run(A,t0,dt,el){
+  food:{dur:13,run(A,t0,dt,el){
     const M=A.mati,P=A.paz,OFF=3.6;
     // 1) Paz se tira al suelo, muerta de cansancio
-    const wl=t0<OFF?Wt(t0,.25,99,.9,.1):1-smooth(OFF+1.95,OFF+2.45,t0);
+    const wl=t0<OFF?Wt(t0,.25,99,.9,.1):1-smooth(OFF+2.55,OFF+3.35,t0);   // se levanta despacio después del mordisco
     if(t0<OFF){
       La(M.group,faceAng(M,P),Wt(t0,0,9));La(P.group,faceAng(P,M)+Math.PI,Wt(t0,0,9,.3));
       once(A,'tired',()=>{bubble(P,'Estoy muerta… 😩',2.4);say('Estoy muerta, no puedo más','Paz')});
@@ -2034,9 +2034,9 @@ const ACTIONS={
     if(t0<OFF)return;
     const t=t0-OFF;
     // 2) Mati le da la comida y Paz sale corriendo
-    if(t>1.95&&t<2.5)once(A,'up',()=>sfx('boing'));
+    if(t>2.6&&t<3.3)once(A,'up',()=>sfx('boing'));
     Lr(M.head.rotation,'x',0,Math.min(1,dt*3));
-    const wf=Wt(t,0,2.5);La(M.group,faceAng(M,P),wf);La(P.group,faceAng(P,M)+(wl>.5?Math.PI:0),wf);
+    const wf=Wt(t,0,3.4);La(M.group,faceAng(M,P),wf);if(t<3.4)La(P.group,faceAng(P,M)+Math.PI,Math.min(1,dt*6));
     once(A,'s',()=>{A.sandwich=makeProp('sandwich');holdProp(A,A.sandwich,M.elbows[1]);sfx('pop')});
     poseArm(M,1,-1.25,.05,-.25,Wt(t,.2,1.6));
     poseArm(P,1,-1.15,-.05,-.3,Wt(t,1.0,1.8,.3,.3));
@@ -2045,20 +2045,22 @@ const ACTIONS={
     if(t>2.0)once(A,'bite',()=>{sfx('crunch');bubble(P,'¡Ñam! 😋',2);say('¡Ñam! ¡Qué rico!','Paz')});
     if(A.sandwich)eatProp(A.sandwich,t,2.0);
     // Paz corre en círculos alrededor de Mati; Mati se agarra la cabeza
-    const wr=Wt(t,2.45,7.55,.45,.6);
+    const wr=Wt(t,3.35,8.6,.7,.6);
     if(wr>0){
       if(A.th0===undefined){A.th0=Math.atan2(P.group.position.x-M.group.position.x,P.group.position.z-M.group.position.z);A.r0=Math.hypot(P.group.position.x-M.group.position.x,P.group.position.z-M.group.position.z)}
-      const th=A.th0+(t-2.45)*4.4,R=Math.max(A.r0,1.35*avScale);
+      const th=A.th0+Math.max(0,t-3.35)*4.4*Math.min(1,(t-3.35)/.8+.15),R=Math.max(A.r0,1.35*avScale);
       const cx=M.group.position.x+Math.sin(th)*R,cz=M.group.position.z+Math.cos(th)*R;
       P.group.position.x+=(cx-P.group.position.x)*wr;P.group.position.z+=(cz-P.group.position.z)*wr;P.group.position.y=height(P.group.position.x,P.group.position.z)+.5+Math.abs(Math.sin(el*14))*.06*avScale*wr;
-      La(P.group,th+Math.PI/2,wr);
+      La(P.group,th+Math.PI/2,wr*Math.min(1,dt*12));
       const sw=Math.sin(el*14)*1.05;P.legs[0].rotation.x+=(sw-P.legs[0].rotation.x)*wr;P.legs[1].rotation.x+=(-sw-P.legs[1].rotation.x)*wr;
       P.knees[0].rotation.x+=(Math.max(0,sw)*1.3-P.knees[0].rotation.x)*wr;P.knees[1].rotation.x+=(Math.max(0,-sw)*1.3-P.knees[1].rotation.x)*wr;
       poseArm(P,1,-1.0,-.2,-1.6,wr);if(mateHolder!==P)poseArm(P,0,sw*.9,-.1,-1.2,wr);
       poseHandsHead(M,wr,el);
-      once(A,'run',()=>{bubble(M,'😱',4.5);bubble(P,'¡Wiiiii! 🥪',4.5)});
+      once(A,'run',()=>{bubble(M,'😱',4.5);bubble(P,'¡Wiiiii! 🥪',4.5);   // la cámara se aleja para verla correr
+        const d=camera.position.clone().sub(controls.target);d.y=0;d.normalize();const m=M.group.position;flyTo(m.x,m.y+avScale*.9,m.z,{dist:avScale*8.8,height:avScale*2.6,dur:1.1,dir:d})});
+      if(camAnim)A.cam0=null;
     }
-    if(A.sandwich&&t>7.5)once(A,'gone',()=>{A.sandwich.visible=false;sfx('pop')});
+    if(A.sandwich&&t>8.4)once(A,'gone',()=>{A.sandwich.visible=false;sfx('pop')});
   }},
   crack:{dur:10.6,run(A,t,dt,el){
     const M=A.mati,P=A.paz;
