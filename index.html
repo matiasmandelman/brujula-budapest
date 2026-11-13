@@ -1044,6 +1044,7 @@ function renderPlan(){
 /* ================= BÁSICOS ================= */
 function renderInfo(){
   $('v-info').innerHTML=`
+  <div class="card"><h3>🎙️ Voces de Mati y Paz</h3><p class="muted" style="margin:4px 0 8px">Descarga una vez, con wifi, las frases de las animaciones con vuestra voz real. Después suenan también sin datos.</p><button class="pri" id="vcPrep">Preparar voces</button><p class="muted" id="vcState" style="margin:6px 0 0;font-size:12px"></p></div>
   <div class="card"><h3>Moverse</h3><ul class="tight">
    <li>Aeropuerto → centro: bus <b>100E</b> hasta Kálvin tér (~40 min, 2.500 HUF por persona, billete especial aparte).</li>
    <li>Vuelta al aeropuerto el lunes: taxi o Bolt a las 3:30 (33–45 €). Pedidlo con antelación.</li>
@@ -2372,7 +2373,6 @@ function makeAvatar(o){
   }else{
     // pelo largo recogido: raya al medio, laterales detrás de las orejas y trenza por la espalda
     add(head,new THREE.SphereGeometry(.121,18,12,0,Math.PI*2,0,Math.PI/2.15),hairM,0,.035,-.012);
-    add(head,new THREE.BoxGeometry(.004,.025,.08),skin,0,.155,.03);       // raya
     [-1,1].forEach(sd=>{const side=add(head,sph(.06),hairM,sd*.09,.0,-.04);side.scale.set(.45,1.25,1)});
     add(head,sph(.075),hairM,0,-.02,-.085).scale.set(1,1.1,.8);          // volumen en la nuca
     add(head,sph(.012),M('#e8d9a8',.3),-.1,-.035,.012);                  // pendiente
@@ -2468,7 +2468,11 @@ function sfx(type){
   }catch(e){}
 }
 function say(text,who){
-  if(!soundOn||!window.speechSynthesis)return;
+  if(!soundOn)return;const w=who==='Paz'?'Paz':'Mati',t=speechText(text);if(!t)return;
+  voiceClip(t,w).then(c=>{if(c)playClip(c,w,t);else{phoneSay(t,w);voiceFetchBg(t,w)}});
+}
+function phoneSay(text,who){
+  if(!window.speechSynthesis)return;
   try{const u=new SpeechSynthesisUtterance(text);u.lang='es-ES';u.pitch=who==='Paz'?1.7:.8;u.rate=who==='Paz'?1.2:1;
     const v=speechSynthesis.getVoices().find(v=>/^es/i.test(v.lang));if(v)u.voice=v;speechSynthesis.speak(u)}catch(e){}
 }
@@ -3621,7 +3625,7 @@ function loop(){
   if(currentView!=='map'||document.hidden)return;
   const dt=Math.min(.05,clock.getDelta());const el=clock.elapsedTime;
   updateMovie(dt,el);updateTraffic(dt,el);
-  const mid=moveAvatars(dt);cityU.uMid.value.copy(mid);updateAmbient(dt,el,mid);updateMarkets(dt,el,mid);updateCrowd(dt,el,mid);updateRealCity(dt,mid);sun.target.position.copy(mid);sun.position.copy(mid).add(sunDir);updateMate(dt);updateLife(dt,el,mid);runAction(dt);updateBubbles(dt);updateFloats(dt,el);updateDest(mid,el);updateNear(mid,dt);
+  const mid=moveAvatars(dt);cityU.uMid.value.copy(mid);updateAmbient(dt,el,mid);updateMarkets(dt,el,mid);updateCrowd(dt,el,mid);updateRealCity(dt,mid);sun.target.position.copy(mid);sun.position.copy(mid).add(sunDir);updateMate(dt);updateLife(dt,el,mid);runAction(dt);updateBubbles(dt);updateMouths();updateFloats(dt,el);updateDest(mid,el);updateNear(mid,dt);
   waterU.uTime.value=el;updateNightFx(el);
   sky.position.copy(camera.position);stars.position.copy(camera.position);
   const anim=movie?true:updateCam(dt);
@@ -3863,6 +3867,53 @@ document.getElementById('agFree').oninput=()=>{document.querySelector('#agSheet 
 document.getElementById('agPause').onclick=pauseSpeak;
 document.getElementById('agStop').onclick=()=>stopSpeak();
 document.getElementById('agRep').onclick=()=>{if(!VO.text)return;document.getElementById('agPause').style.visibility='';document.getElementById('agPause').textContent='⏸';speak(VO.text,VO.who,{guide:true})};
+/* ---------- voces reales en las animaciones del mapa ---------- */
+const VOICE_LINES=[
+ ['Paz','Ah, menos mal que no tenías ganas, un río'],['Paz','Buendiabuendiabuendiabuendiaaaaaaaa'],['Mati','Bueno, yo también'],['Paz','Dame tu mano'],
+ ['Paz','Estoy muerta, no puedo más'],['Paz','Me hago pis'],['Mati','Mira este reel'],['Mati','No... bueno'],['Mati','Taca taca taca'],['Mati','¡Ay!'],
+ ['Mati','¡Buendiaaaaaaaa!'],['Mati','¡Chipá! ¡Chipá! ¡Chipá!'],['Paz','¡Corran putitas!'],['Mati','¡Dale, dale!'],['Paz','¡Dale, dale!'],['Mati','¡Jajajajaja!'],
+ ['Paz','¡Soy yo, soy yo, soy yoooooooooooo!'],['Paz','¡Sí!'],['Paz','¡Uh, temazo!'],['Paz','¡Ñam! ¡Qué rico!'],['Mati','¿Otra vez?'],['Mati','¿Qué mirás?'],['Mati','¿Tenés hambre?']];
+const VC={mem:new Map(),pool:[],busy:new Set(),talk:{},cacheName:'brj-voces'};
+const vKey=(t,w)=>'https://voces.brujula/'+w.toLowerCase()+'/'+encodeURIComponent(t);
+async function clipFromBuf(buf){return {url:URL.createObjectURL(new Blob([buf],{type:'audio/mpeg'})),env:await envelope(buf)}}
+async function voiceClip(t,w){
+  const k=vKey(t,w);if(VC.mem.has(k))return VC.mem.get(k);
+  try{if(!window.caches)return null;const c=await caches.open(VC.cacheName),r=await c.match(k);if(!r)return null;
+    const clip=await clipFromBuf(await r.arrayBuffer());VC.mem.set(k,clip);return clip}catch(e){return null}}
+async function voiceDownload(t,w){
+  const pass=store.get('aipass','');if(!pass||!navigator.onLine||sampleFn)return false;
+  const r=await fetch(AI_URL,{method:'POST',headers:{'content-type':'application/json','x-brujula-pass':pass},body:JSON.stringify({tts:t,voice:w.toLowerCase()})});
+  if(!r.ok||!(r.headers.get('content-type')||'').includes('audio'))return false;
+  const buf=await r.arrayBuffer();if(buf.byteLength<200)return false;
+  try{if(window.caches)await (await caches.open(VC.cacheName)).put(vKey(t,w),new Response(buf.slice(0),{headers:{'content-type':'audio/mpeg'}}))}catch(e){}
+  VC.mem.set(vKey(t,w),await clipFromBuf(buf));return true}
+function voiceFetchBg(t,w){const k=vKey(t,w);if(VC.busy.has(k))return;VC.busy.add(k);voiceDownload(t,w).catch(()=>{}).finally(()=>VC.busy.delete(k))}
+function voicePool(){   // reproductores que se "despiertan" con el primer toque (necesario en iPhone)
+  if(VC.pool.length)return;for(let i=0;i<3;i++){const a=new Audio();a.setAttribute('playsinline','');VC.pool.push(a)}}
+function unlockPool(){voicePool();const sl=VO.silent||(VO.silent=silentWav());VC.pool.forEach(a=>{if(a.paused&&!a.dataset.used){a.src=sl;a.play().then(()=>{a.dataset.used='1'}).catch(()=>{})}})}
+['pointerdown','touchend','click'].forEach(ev=>document.addEventListener(ev,unlockPool,{capture:true,passive:true}));
+function playClip(c,w,t){
+  voicePool();const a=VC.pool.find(x=>x.paused&&!Object.values(VC.talk).some(tk=>tk&&tk.el===x))||VC.pool[0];
+  try{a.pause()}catch(e){}a.src=c.url;a.currentTime=0;VC.talk[w]={el:a,env:c.env};
+  a.onended=()=>{if(VC.talk[w]&&VC.talk[w].el===a)VC.talk[w]=null};a.play().catch(()=>{VC.talk[w]=null;phoneSay(t,w)})}
+function updateMouths(){
+  avatars.forEach(a=>{if(!a.mouth)return;const tk=VC.talk[a.name];let op=0;
+    if(tk&&tk.el&&!tk.el.paused){const e=tk.env,i=Math.floor((tk.el.currentTime+.04)/.025);op=e?(e[i]||0):.4*Math.abs(Math.sin(clock.elapsedTime*11))}
+    a.mouthOp=(a.mouthOp||0)+(op-(a.mouthOp||0))*.5;const o=a.mouthOp;
+    a.mouth.visible=o>.04;a.mouth.scale.y=.08+o*.95;a.smile.visible=o<.4})}
+async function prepVoices(){
+  const st=document.getElementById('vcState'),btn=document.getElementById('vcPrep');
+  if(sampleFn){st.textContent='Esto solo funciona desde vuestra web de GitHub.';return}
+  if(!navigator.onLine){st.textContent='Sin conexión: hace falta wifi o datos.';return}
+  if(!aiPass(false)){st.textContent='Hace falta la contraseña del viaje.';return}
+  const lines=[...VOICE_LINES];(typeof GUION!=='undefined'?GUION:[]).forEach(e=>(e.bubbles||[]).forEach(b=>{const t=speechText(b.text);if(t)lines.push([b.who==='Paz'?'Paz':'Mati',t])}));
+  btn.disabled=true;let ok=0,fail=0,i=0;
+  for(const [w,t0] of lines){i++;const t=speechText(t0);st.textContent=`Preparando ${i} de ${lines.length}…`;
+    if(await voiceClip(t,w)){ok++;continue}
+    try{(await voiceDownload(t,w))?ok++:fail++}catch(e){fail++}}
+  btn.disabled=false;st.textContent=fail?`Listas ${ok} de ${lines.length}. Algunas fallaron: pulsad otra vez para reintentar.`:`✅ Listas las ${ok} frases. Ya suenan con vuestra voz, también sin datos.`}
+document.addEventListener('click',e=>{if(e.target&&e.target.id==='vcPrep')prepVoices()});
+
 if(window.speechSynthesis&&speechSynthesis.onvoiceschanged!==undefined)speechSynthesis.onvoiceschanged=()=>{};
 if(currentView==='ai'){setWho(ST.who);stageStart()}
 </script>

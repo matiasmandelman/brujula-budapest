@@ -1,7 +1,7 @@
 /* Brújula Budapest: funciona sin cobertura (metro, festival, roaming lento).
    - La app: primero red y, si no hay, la copia guardada.
    - three.js y el mapa de OpenStreetMap: copia guardada primero (no cambian). */
-const V='brujula-v4',APP=['./','./index.html','./manifest.json','./icon-192.png','./icon-512.png'];
+const V='brujula-v5',APP=['./','./index.html','./manifest.json','./icon-192.png','./icon-512.png'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(V).then(c=>c.addAll(APP)).then(()=>self.skipWaiting()))});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==V).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
 self.addEventListener('fetch',e=>{
