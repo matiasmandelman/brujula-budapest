@@ -1371,29 +1371,29 @@ function height(x,z){
 }
 
 /* ---------- cartografía real (OpenStreetMap) para el centro ---------- */
-const TZOOM=15,TN=8,TILE_N=2**TZOOM;
+const TZOOM=15,TN=8,TNX=12,TILE_N=2**TZOOM;   // 12 columnas: llega hasta Hungexpo (Bónusz)
 const lng2x=l=>Math.floor((l+180)/360*TILE_N);
 const lat2y=l=>{const r=l*Math.PI/180;return Math.floor((1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2*TILE_N)};
 const x2lng=x=>x/TILE_N*360-180,y2lat=y=>Math.atan(Math.sinh(Math.PI*(1-2*y/TILE_N)))*180/Math.PI;
 const TX0=lng2x(19.012),TY0=lat2y(47.5305);
-const CORE=(()=>{const a=toW(y2lat(TY0),x2lng(TX0)),b=toW(y2lat(TY0+TN),x2lng(TX0+TN));return {x0:a.x,z0:a.z,x1:b.x,z1:b.z}})();
+const CORE=(()=>{const a=toW(y2lat(TY0),x2lng(TX0)),b=toW(y2lat(TY0+TN),x2lng(TX0+TNX));return {x0:a.x,z0:a.z,x1:b.x,z1:b.z}})();
 const inCore=(x,z)=>x>CORE.x0&&x<CORE.x1&&z>CORE.z0&&z<CORE.z1;
 const hash=(x,z)=>{const v=Math.sin(x*127.1+z*311.7)*43758.5453;return v-Math.floor(v)};
 const vnoise=(x,z)=>{const xi=Math.floor(x),zi=Math.floor(z),fx=x-xi,fz=z-zi,u=fx*fx*(3-2*fx),v=fz*fz*(3-2*fz);return (hash(xi,zi)*(1-u)+hash(xi+1,zi)*u)*(1-v)+(hash(xi,zi+1)*(1-u)+hash(xi+1,zi+1)*u)*v};
 let tilesOn=false,cityCore=null,roadMeshes=[];
 const waterU={uTime:{value:0},uNight:{value:0}};
 function loadTiles(){
-  const cv=document.createElement('canvas');cv.width=cv.height=TN*256;const ctx=cv.getContext('2d',{willReadFrequently:true});
+  const cv=document.createElement('canvas');cv.width=TNX*256;cv.height=TN*256;const ctx=cv.getContext('2d',{willReadFrequently:true});
   ctx.fillStyle='#f2efe9';ctx.fillRect(0,0,cv.width,cv.height);
   const jobs=[];
-  for(let i=0;i<TN;i++)for(let j=0;j<TN;j++)jobs.push(new Promise(res=>{
+  for(let i=0;i<TNX;i++)for(let j=0;j<TN;j++)jobs.push(new Promise(res=>{
     const im=new Image();im.crossOrigin='anonymous';
     im.onload=()=>{try{ctx.drawImage(im,i*256,j*256,256,256);res(true)}catch(e){res(false)}};
     im.onerror=()=>res(false);
     im.src=`https://tile.openstreetmap.org/${TZOOM}/${TX0+i}/${TY0+j}.png`;
   }));
   Promise.race([Promise.all(jobs),new Promise(r=>setTimeout(()=>r(null),20000))]).then(r=>{
-    if(!r||r.filter(Boolean).length<TN*TN*.85)return;        // sin mapa real: se queda la maqueta
+    if(!r||r.filter(Boolean).length<TNX*TN*.85)return;        // sin mapa real: se queda la maqueta
     try{applyTiles(cv,ctx)}catch(e){}
   });
 }
@@ -1426,15 +1426,15 @@ function applyTiles(cv,ctx){
   tilesOn=true;if(cityCore)cityCore.visible=false;roadMeshes.forEach(m=>m.visible=false);
   document.getElementById('attrib').hidden=false;
   let px=null;try{px=ctx.getImageData(0,0,cv.width,cv.height).data}catch(e){}
-  if(px)buildTileCity(px,cv.width);
+  if(px)buildTileCity(px,cv.width,cv.height);
 }
 const _M=new THREE.Matrix4(),_Q=new THREE.Quaternion(),_P=new THREE.Vector3(),_S=new THREE.Vector3();
 let near=null,nearMesh=null,roofMesh=null,nearT=1,nearLast=null;const NEAR_R=30,NEAR_CAP=2200,CLEAR_R=7.5;   // CLEAR_R: hueco libre alrededor vuestro (75 m)
 const cityU={uMid:{value:new THREE.Vector3(0,0,0)}},_UP=new THREE.Vector3(0,1,0);
-function buildTileCity(d,W){
+function buildTileCity(d,W,Hh){
   // Detecta en el mapa real dónde hay edificios; solo se levantan los que quedan cerca de vosotros
-  const sx=W/(CORE.x1-CORE.x0),sz=W/(CORE.z1-CORE.z0);
-  const isB=(x,y)=>{if(x<0||y<0||x>=W||y>=W)return false;const k=(y*W+x)*4;return Math.abs(d[k]-217)<10&&Math.abs(d[k+1]-208)<10&&Math.abs(d[k+2]-201)<10};
+  const sx=W/(CORE.x1-CORE.x0),sz=Hh/(CORE.z1-CORE.z0);
+  const isB=(x,y)=>{if(x<0||y<0||x>=W||y>=Hh)return false;const k=(y*W+x)*4;return Math.abs(d[k]-217)<10&&Math.abs(d[k+1]-208)<10&&Math.abs(d[k+2]-201)<10};
   const avoid=[...POIS.map(p=>({...toW(p.lat,p.lng),r:3.2})),{...toW(HOTEL.lat,HOTEL.lng),r:4},
     ...[[47.5071,19.0452,16],[47.5008,19.0539,8],[47.4962,19.0393,17],[47.5019,19.0342,11],[47.5149,19.0778,11],[47.4870,19.0587,9],[47.4957,19.0608,7],[47.4867,19.0472,6]].map(([a,b,r])=>({...toW(a,b),r}))];
   const CELL=2.4,xs=[],zs=[],hs=[],cs=[];
@@ -1450,7 +1450,7 @@ function buildTileCity(d,W){
   }
   near={xs:Float32Array.from(xs),zs:Float32Array.from(zs),hs:Float32Array.from(hs),cs:Uint8Array.from(cs),rs:Uint8Array.from(xs.map((x,i)=>Math.floor(hash(Math.floor(x/11)+1,Math.floor(zs[i]/11)+5)*4))),
     ro:Uint8Array.from(xs.map((x,i)=>hash(Math.floor(x/14)+9,Math.floor(zs[i]/14)+2)<.5?1:0)),pal,cell:CELL};
-  buildTrees(d,W,sx,sz);
+  buildTrees(d,W,sx,sz,Hh);
   const geo=new THREE.BoxGeometry(1,1,1);geo.translate(0,.5,0);
   const mat=new THREE.MeshLambertMaterial({color:'#ffffff'});
   mat.onBeforeCompile=sh=>{   // ventanas dibujadas en la fachada; de noche algunas se encienden
@@ -1483,8 +1483,8 @@ function buildTileCity(d,W){
 }
 /* árboles otoñales donde el mapa marca parques y bosque */
 let treeMesh=null;
-function buildTrees(d,W,sx,sz){
-  const isG=(x,y)=>{if(x<0||y<0||x>=W||y>=W)return false;const k=(y*W+x)*4,r=d[k],gg=d[k+1],b=d[k+2];return gg-r>=24&&gg-b>=18&&gg>140};
+function buildTrees(d,W,sx,sz,Hh){
+  const isG=(x,y)=>{if(x<0||y<0||x>=W||y>=Hh)return false;const k=(y*W+x)*4,r=d[k],gg=d[k+1],b=d[k+2];return gg-r>=24&&gg-b>=18&&gg>140};
   const avoid=[...POIS.map(p=>({...toW(p.lat,p.lng),r:2.5})),{...toW(HOTEL.lat,HOTEL.lng),r:3}];
   const T=[];const STEP=3.3;
   for(let x=CORE.x0+2;x<CORE.x1;x+=STEP)for(let z=CORE.z0+2;z<CORE.z1;z+=STEP){
@@ -1492,7 +1492,7 @@ function buildTrees(d,W,sx,sz){
     const px=Math.round((jx-CORE.x0)*sx),py=Math.round((jz-CORE.z0)*sz);
     if(!isG(px,py)||!isG(px+3,py)||!isG(px-3,py)||!isG(px,py+3)||!isG(px,py-3))continue;
     if(avoid.some(a=>Math.abs(a.x-jx)<a.r&&Math.abs(a.z-jz)<a.r))continue;
-    T.push([jx,jz]);if(T.length>=4200)break;
+    T.push([jx,jz]);if(T.length>=5600)break;
   }
   if(!T.length)return;
   const crown=new THREE.IcosahedronGeometry(1,0);crown.scale(1,1.15,1);crown.translate(0,1.75,0);
@@ -1525,6 +1525,7 @@ function updateNear(mid,dt){
   const {xs,zs,hs,cs,rs,ro,pal,roofPal,cell}=near;let k=0;
   for(let i=0;i<xs.length&&k<NEAR_CAP;i++){
     const dx=xs[i]-mid.x;if(dx>NEAR_R||dx<-NEAR_R)continue;const dz=zs[i]-mid.z;if(dz>NEAR_R||dz<-NEAR_R)continue;
+    if(realCells.size&&realCells.has(cellKeyW(xs[i],zs[i])))continue;
     const dd=Math.sqrt(dx*dx+dz*dz);if(dd>NEAR_R||dd<CLEAR_R)continue;
     const f=smooth(NEAR_R,NEAR_R*.45,dd)*smooth(CLEAR_R,CLEAR_R+3,dd);if(f<.04)continue;
     const gy=height(xs[i],zs[i]);
@@ -1537,6 +1538,72 @@ function updateNear(mid,dt){
   _Q.identity();
   nearMesh.count=k;roofMesh.count=k;nearMesh.instanceMatrix.needsUpdate=true;roofMesh.instanceMatrix.needsUpdate=true;
   if(nearMesh.instanceColor)nearMesh.instanceColor.needsUpdate=true;if(roofMesh.instanceColor)roofMesh.instanceColor.needsUpdate=true;
+}
+
+/* ---------- edificios reales (OpenStreetMap vía Overpass) alrededor vuestro ---------- */
+const CELL_LAT=.004,CELL_LNG=.006,realCells=new Map(),cellBusy=new Set();let realMat=null,cellQ=[],cellT=0;
+const cellKey=(lat,lng)=>Math.floor(lat/CELL_LAT)+':'+Math.floor(lng/CELL_LNG);
+function cellKeyW(x,z){return cellKey(LAT0-z/KZ,LNG0+x/KX)}
+function realBuildingMat(){
+  if(realMat)return realMat;
+  realMat=new THREE.MeshLambertMaterial({color:'#ffffff',vertexColors:true});
+  realMat.onBeforeCompile=sh=>{
+    sh.uniforms.uNight=waterU.uNight;sh.uniforms.uMid=cityU.uMid;
+    sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nattribute vec3 cen;uniform vec3 uMid;varying vec3 vWp;varying float vWall;')
+      .replace('#include <begin_vertex>',`#include <begin_vertex>
+        float fd=smoothstep(${CLEAR_R.toFixed(1)},${(CLEAR_R+3).toFixed(1)},distance(cen.xz,uMid.xz));   // hueco libre alrededor vuestro
+        transformed.y=cen.y+(transformed.y-cen.y)*max(fd,.001);`)
+      .replace('#include <project_vertex>','#include <project_vertex>\nvWp=(modelMatrix*vec4(transformed,1.0)).xyz;vWall=1.0-abs(normal.y);');
+    sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nuniform float uNight;varying vec3 vWp;varying float vWall;')
+      .replace('#include <color_fragment>',`#include <color_fragment>
+        float fu=fract((vWp.x+vWp.z)*2.6),fv=fract(vWp.y*3.1);
+        float win=step(.5,vWall)*step(.25,fu)*step(fu,.7)*step(.3,fv)*step(fv,.78)*step(.35,vWp.y-floor(vWp.y/30.0));
+        vec2 cid=floor(vec2((vWp.x+vWp.z)*2.6,vWp.y*3.1));float lit=step(.52,fract(sin(dot(cid,vec2(12.9898,78.233)))*43758.5453));
+        diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.28,.33,.4),win*.75);`)
+      .replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\ntotalEmissiveRadiance+=win*lit*uNight*vec3(1.0,.68,.32)*.9;');
+  };
+  return realMat;
+}
+const FACADES=['#e8d3a8','#efe2c4','#d9b98b','#e3c9a3','#f1e6cf','#d6c7b0','#e9cdb5','#cfd6d2','#e7d7b9'].map(c=>new THREE.Color(c));
+const ROOFC=[new THREE.Color('#5d636c'),new THREE.Color('#7a4636'),new THREE.Color('#6b5a4a')];
+function buildRealCell(key,els){
+  const pos=[],nor=[],col=[],cen=[];const skip=[...LMS.map(l=>({x:l.x,z:l.z,r:l.r*.9})),...markets.map(m=>({x:m.c.x,z:m.c.z,r:8.5}))];
+  els.forEach(e=>{
+    if(e.type!=='way'||!e.geometry||e.geometry.length<4)return;const tg=e.tags||{};
+    if(['roof','construction','ruins','canopy'].includes(tg.building))return;
+    const pts=e.geometry.map(g=>toW(g.lat,g.lon));let cx=0,cz=0;pts.forEach(p=>{cx+=p.x;cz+=p.z});cx/=pts.length;cz/=pts.length;
+    if(skip.some(k=>Math.hypot(k.x-cx,k.z-cz)<k.r))return;
+    let area=0;for(let i=0;i<pts.length-1;i++)area+=pts[i].x*pts[i+1].z-pts[i+1].x*pts[i].z;if(Math.abs(area/2)<.15)return;   // <15 m²
+    const lv=parseFloat(tg['building:levels']),hm=parseFloat(tg.height);
+    const h=(isFinite(hm)?hm:isFinite(lv)?lv*3.3+1.5:(tg.building==='house'||tg.building==='garage'?6:17))/10;
+    const shape=new THREE.Shape(pts.map(p=>new THREE.Vector2(p.x,-p.z)));
+    let geo;try{geo=new THREE.ExtrudeGeometry(shape,{depth:h,bevelEnabled:false});}catch(err){return}
+    geo.rotateX(-Math.PI/2);const gy=Math.max(height(cx,cz)+.14,.3);geo.translate(0,gy,0);geo=geo.toNonIndexed();geo.computeVertexNormals();
+    const fc=FACADES[Math.floor(hash(cx*.7,cz*.7)*FACADES.length)],rc=ROOFC[Math.floor(hash(cz,cx)*ROOFC.length)];
+    const P_=geo.attributes.position,N_=geo.attributes.normal;
+    for(let i=0;i<P_.count;i++){pos.push(P_.getX(i),P_.getY(i),P_.getZ(i));nor.push(N_.getX(i),N_.getY(i),N_.getZ(i));const c=N_.getY(i)>.5?rc:fc;col.push(c.r,c.g,c.b);cen.push(cx,gy,cz)}
+    geo.dispose();
+  });
+  if(!pos.length){realCells.set(key,null);return}
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setAttribute('normal',new THREE.Float32BufferAttribute(nor,3));
+  g.setAttribute('color',new THREE.Float32BufferAttribute(col,3));g.setAttribute('cen',new THREE.Float32BufferAttribute(cen,3));
+  const m=new THREE.Mesh(g,realBuildingMat());m.castShadow=true;m.receiveShadow=true;m.frustumCulled=true;g.computeBoundingSphere();scene.add(m);realCells.set(key,m);
+  if(near)nearLast=null;   // recalcular las casitas genéricas
+}
+async function loadRealCell(key){
+  if(realCells.has(key)||cellBusy.has(key))return;cellBusy.add(key);
+  const [a,b]=key.split(':').map(Number),S=a*CELL_LAT,W=b*CELL_LNG,N=S+CELL_LAT,E=W+CELL_LNG;
+  const q=`[out:json][timeout:25];way["building"](${S.toFixed(5)},${W.toFixed(5)},${N.toFixed(5)},${E.toFixed(5)});out geom tags;`;
+  try{
+    const r=await fetch('https://overpass-api.de/api/interpreter?data='+encodeURIComponent(q));if(!r.ok)throw new Error(r.status);
+    const j=await r.json();buildRealCell(key,j.elements||[]);
+  }catch(e){}finally{cellBusy.delete(key)}
+}
+function updateRealCity(dt,mid){
+  const tn=performance.now();if(tn<cellT||!started)return;cellT=tn+1200;
+  const lat=LAT0-mid.z/KZ,lng=LNG0+mid.x/KX;const [a,b]=cellKey(lat,lng).split(':').map(Number);
+  const want=[[0,0],[0,1],[0,-1],[1,0],[-1,0],[1,1],[1,-1],[-1,1],[-1,-1]].map(([i,j])=>(a+i)+':'+(b+j));
+  const next=want.find(k=>!realCells.has(k)&&!cellBusy.has(k));if(next&&cellBusy.size<1)loadRealCell(next);
 }
 
 /* ---------- tráfico: barcos que van y vienen, coches por puentes y muelles ---------- */
@@ -1617,6 +1684,46 @@ function updateTraffic(dt,el){
   cars.forEach(C=>{const L=C.l;C.d=(C.d+L.dir*C.sp*dt+L.P.len)%L.P.len;const p=atPath(L.P,C.d);
     _Q.setFromAxisAngle(_UP,p.ang+(L.dir<0?Math.PI:0));_P.set(p.x,L.y(p),p.z);_S.set(1.8,1.8,1.8);_M.compose(_P,_Q,_S);carMesh.setMatrixAt(C.k,_M)});
   _Q.identity();carMesh.instanceMatrix.needsUpdate=true;
+}
+
+/* ---------- personitas: caminan, comen sentadas o bailan ---------- */
+let crowdMesh=null;const crowd=[];
+function buildCrowd(){
+  const body=new THREE.CylinderGeometry(.15,.19,.62,7);body.translate(0,.55,0);
+  const legs=new THREE.CylinderGeometry(.16,.13,.36,7);legs.translate(0,.18,0);
+  const head=new THREE.SphereGeometry(.15,8,6);head.translate(0,1.0,0);
+  const parts=[[body,1],[legs,.45],[head,-1]].map(([g,k])=>{const n=g.toNonIndexed(),c=[];for(let i=0;i<n.attributes.position.count;i++){if(k<0)c.push(.93,.76,.62);else c.push(k,k,k)}n.setAttribute('color',new THREE.Float32BufferAttribute(c,3));return n});
+  const geo=mergeGeo(parts);
+  const pal=['#c0392b','#2f6fd6','#e8b23a','#3fa36b','#8e44ad','#1f1f24','#e67e22','#ecf0f1','#16a085','#7f8c8d','#d35400','#2c3e50'].map(c=>new THREE.Color(c));
+  const add=(o)=>crowd.push({...o,ph:Math.random()*6,sp:o.sp||(.9+Math.random()*.6),k:crowd.length});
+  // por los muelles y los puentes
+  const quay=densify(DANUBE,5).filter(p=>p.z>CORE.z0+20&&p.z<CORE.z1-20);
+  [[1,2.2],[-1,2.2]].forEach(([sd,e])=>{const P=pathOf(offsetLine(quay,p=>sd*(p.w/2+e)));for(let i=0;i<22;i++)add({kind:'path',P,d:Math.random()*P.len,dir:Math.random()<.5?1:-1,y:p=>Math.max(height(p.x,p.z)+.1,.35)})});
+  BRIDGE_SEGS.forEach(sg=>[-1.45,1.45].forEach(o=>{const P=pathOf(offsetLine([{x:sg.a.x,z:sg.a.z},{x:sg.b.x,z:sg.b.z}],()=>o));for(let i=0;i<3;i++)add({kind:'path',P,d:Math.random()*P.len,dir:o>0?1:-1,y:()=>1.6})}));
+  // comiendo sentadas junto a los sitios de comida y café
+  POIS.filter(p=>p.cat==='comida'||p.cat==='cafe').forEach(p=>{const w=toW(p.lat,p.lng);for(let i=0;i<3;i++){const a=i*2.1+hash(w.x,w.z)*6;add({kind:'sit',x:w.x+2.2+Math.cos(a)*.55,z:w.z+1.2+Math.sin(a)*.55,face:a+Math.PI})}});
+  // bailando: Szimpla y Bónusz
+  const dance=(lat,lng,n,r)=>{const w=toW(lat,lng);for(let i=0;i<n;i++){const a=Math.random()*6.28,rr=r*Math.sqrt(Math.random());add({kind:'dance',x:w.x+Math.cos(a)*rr,z:w.z+Math.sin(a)*rr})}};
+  const sz=POIS.find(p=>p.id==='szimpla');if(sz)dance(sz.lat,sz.lng,18,2.6);dance(PL.hungexpo.lat,PL.hungexpo.lng,40,7);
+  // paseando por los mercados de Navidad
+  markets.forEach(M=>{for(let i=0;i<14;i++){const a=Math.random()*6.28,r=2+Math.random()*3;add({kind:'stroll',cx:M.c.x,cz:M.c.z,a,r,sp:.15+Math.random()*.2})}});
+  // alrededor vuestro, siempre a la vista
+  for(let i=0;i<16;i++)add({kind:'near',a:Math.random()*6.28,r:3.6+Math.random()*3.6,sp:(Math.random()<.5?-1:1)*(.05+Math.random()*.06)});
+  crowdMesh=new THREE.InstancedMesh(geo,new THREE.MeshLambertMaterial({color:'#ffffff',vertexColors:true}),crowd.length);crowdMesh.castShadow=true;crowdMesh.frustumCulled=false;
+  crowd.forEach(c=>crowdMesh.setColorAt(c.k,pal[Math.floor(Math.random()*pal.length)]));scene.add(crowdMesh);
+}
+const _E=new THREE.Euler();
+function updateCrowd(dt,el,mid){
+  if(!crowdMesh)return;const party=mood==='party';
+  crowd.forEach(c=>{let x,z,y,ry=0,sy=1,hop=0,rz=0;
+    if(c.kind==='path'){c.d=(c.d+c.dir*c.sp*dt+c.P.len)%c.P.len;const p=atPath(c.P,c.d);x=p.x;z=p.z;y=c.y(p);ry=p.ang+(c.dir<0?Math.PI:0);hop=Math.abs(Math.sin(el*7+c.ph))*.05}
+    else if(c.kind==='sit'){x=c.x;z=c.z;y=Math.max(height(x,z)+.1,.3)-.28;ry=c.face;sy=.85;rz=Math.sin(el*1.5+c.ph)*.06}
+    else if(c.kind==='dance'){x=c.x;z=c.z;y=Math.max(height(x,z)+.1,.3);ry=el*1.2+c.ph;hop=Math.abs(Math.sin(el*8.4+c.ph))*.3;rz=Math.sin(el*4.2+c.ph)*.15}
+    else if(c.kind==='stroll'){c.a+=c.sp*dt;x=c.cx+Math.cos(c.a)*c.r;z=c.cz+Math.sin(c.a)*c.r;y=Math.max(height(x,z)+.1,.3);ry=-c.a+(c.sp>0?0:Math.PI);hop=Math.abs(Math.sin(el*6+c.ph))*.04}
+    else{c.a+=c.sp*dt;x=mid.x+Math.cos(c.a)*c.r;z=mid.z+Math.sin(c.a)*c.r;y=Math.max(height(x,z)+.1,.3);
+      if(party){ry=el+c.ph;hop=Math.abs(Math.sin(el*8.4+c.ph))*.3;rz=Math.sin(el*4.2+c.ph)*.15}else{ry=-c.a+(c.sp>0?Math.PI:0);hop=Math.abs(Math.sin(el*7+c.ph))*.05}}
+    _P.set(x,y+hop,z);_Q.setFromEuler(_E.set(0,ry,rz));_S.set(1,sy,1);_M.compose(_P,_Q,_S);crowdMesh.setMatrixAt(c.k,_M)});
+  _Q.identity();crowdMesh.instanceMatrix.needsUpdate=true;
 }
 
 /* ---------- mercados de Navidad: Vörösmarty tér y Basílica ---------- */
@@ -1757,7 +1864,7 @@ function init(){
   renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);sun.shadow.bias=-.0015;sun.shadow.normalBias=.06;
   {const c=sun.shadow.camera;c.left=-34;c.right=34;c.top=34;c.bottom=-34;c.near=10;c.far=900;c.updateProjectionMatrix()}
 
-  buildSky();buildGround();buildWater();buildRoadsParks();buildBridges();buildLandmarks();buildMarkers();buildAvatars();buildTrail();buildDest();buildTraffic();buildAmbient();buildMarkets();
+  buildSky();buildGround();buildWater();buildRoadsParks();buildBridges();buildLandmarks();buildMarkers();buildAvatars();buildTrail();buildDest();buildTraffic();buildAmbient();buildMarkets();buildCrowd();
   resize();new ResizeObserver(resize).observe(box);
   setupTap();
   document.getElementById('mapLoading').remove();
@@ -2001,7 +2108,9 @@ function buildLandmarks(){
   [-2,2].forEach(x=>{M(new THREE.CylinderGeometry(.6,.6,6,8),lm('#c9845a'),x,3,-4.5,sy);M(new THREE.SphereGeometry(.9,10,8),gold,x,6.6,-4.5,sy)});
   place(sy,47.4957,19.0608,0,7);
   // ---- Hungexpo y alojamiento
-  const hx=new THREE.Group();M(new THREE.BoxGeometry(30,5,20),lm('#6b4fa8','#b98cff'),0,2.5,0,hx);place(hx,47.4930,19.1280,0,19);
+  const hx=new THREE.Group();{const wm=lm('#6b4fa8','#b98cff');   // pabellón sin techo: se ve la pista desde arriba
+    M(new THREE.BoxGeometry(30,4,.6),wm,0,2,-9.7,hx);M(new THREE.BoxGeometry(30,4,.6),wm,0,2,9.7,hx);M(new THREE.BoxGeometry(.6,4,20),wm,-14.7,2,0,hx);M(new THREE.BoxGeometry(.6,4,20),wm,14.7,2,0,hx);
+    M(new THREE.BoxGeometry(29,.1,19),lm('#1b1626','#3a2a5a'),0,.06,0,hx);M(new THREE.BoxGeometry(8,1,3),lm('#2a2233','#ff3d7f'),0,.5,-7.6,hx);}place(hx,47.4930,19.1280,0,19);
   const ho=new THREE.Group();M(new THREE.BoxGeometry(4,3.5,4),lm('#f0a050','#ffc070'),0,1.75,0,ho);
   const hr=M(new THREE.ConeGeometry(3.4,2.5,4),lm('#a8432f','#ff8a60'),0,4.7,0,ho);hr.rotation.y=Math.PI/4;place(ho,HOTEL.lat,HOTEL.lng,0,4);
   const hl=label('🏠 A57','#f0a050','#1b130b');hl.position.set(0,9,0);ho.add(hl);
@@ -3333,7 +3442,7 @@ function loop(){
   if(currentView!=='map'||document.hidden)return;
   const dt=Math.min(.05,clock.getDelta());const el=clock.elapsedTime;
   updateMovie(dt,el);updateTraffic(dt,el);
-  const mid=moveAvatars(dt);cityU.uMid.value.copy(mid);updateAmbient(dt,el,mid);updateMarkets(dt,el,mid);sun.target.position.copy(mid);sun.position.copy(mid).add(sunDir);updateMate(dt);updateLife(dt,el,mid);runAction(dt);updateBubbles(dt);updateFloats(dt,el);updateDest(mid,el);updateNear(mid,dt);
+  const mid=moveAvatars(dt);cityU.uMid.value.copy(mid);updateAmbient(dt,el,mid);updateMarkets(dt,el,mid);updateCrowd(dt,el,mid);updateRealCity(dt,mid);sun.target.position.copy(mid);sun.position.copy(mid).add(sunDir);updateMate(dt);updateLife(dt,el,mid);runAction(dt);updateBubbles(dt);updateFloats(dt,el);updateDest(mid,el);updateNear(mid,dt);
   waterU.uTime.value=el;updateNightFx(el);
   sky.position.copy(camera.position);stars.position.copy(camera.position);
   const anim=movie?true:updateCam(dt);
