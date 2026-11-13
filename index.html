@@ -2449,7 +2449,7 @@ const La=(o,v,w)=>{o.rotation.y+=Math.atan2(Math.sin(v-o.rotation.y),Math.cos(v-
 function sfx(type){
   if(!soundOn)return;
   try{
-    actx=actx||new (window.AudioContext||window.webkitAudioContext)();const t=actx.currentTime;
+    actx=actx||new (window.AudioContext||window.webkitAudioContext)();if(actx.state!=='running')actx.resume().catch(()=>{});const t=actx.currentTime;
     if(type==='kick'){const o=actx.createOscillator(),g=actx.createGain();o.type='sine';
       o.frequency.setValueAtTime(140,t);o.frequency.exponentialRampToValueAtTime(42,t+.14);
       g.gain.setValueAtTime(.55,t);g.gain.exponentialRampToValueAtTime(.001,t+.22);o.connect(g).connect(actx.destination);o.start(t);o.stop(t+.24);return}
@@ -3737,7 +3737,7 @@ function silentWav(){const n=800,b=new ArrayBuffer(44+n*2),v=new DataView(b),w=(
   return URL.createObjectURL(new Blob([b],{type:'audio/wav'}))}
 function unlockAudio(){   // en iPhone el audio tiene que "despertarse" dentro del toque
   if(!VO.audio){VO.audio=new Audio();VO.audio.setAttribute('playsinline','');VO.audio.preload='auto';VO.silent=silentWav()}
-  try{VO.actx=VO.actx||new (window.AudioContext||window.webkitAudioContext)();if(VO.actx.state!=='running')VO.actx.resume()}catch(e){}
+  try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();VO.actx=actx;if(actx.state!=='running')actx.resume().catch(()=>{})}catch(e){}
   if(VO.audio.paused){VO.audio.src=VO.silent;VO.audio.play().catch(()=>{})}
   if(window.speechSynthesis){try{speechSynthesis.cancel()}catch(e){}}
 }
@@ -3746,7 +3746,7 @@ function splitSpeech(text){
   const sents=(text.match(/[^.!?…\n]+[.!?…]+["”»)]*\s*|[^.!?…\n]+\n?|\n/g)||[text]).map(x=>x.trim()).filter(Boolean),out=[];let cur='';
   sents.forEach(x=>{if(cur&&(cur+' '+x).length>240){out.push(cur);cur=x}else cur=cur?cur+' '+x:x});if(cur)out.push(cur);return out}
 async function envelope(buf){
-  try{const ctx=VO.actx||new (window.AudioContext||window.webkitAudioContext)();VO.actx=ctx;
+  try{const ctx=actx||(actx=new (window.AudioContext||window.webkitAudioContext)());VO.actx=ctx;
     const ab=await new Promise((ok,ko)=>{const p=ctx.decodeAudioData(buf.slice(0),ok,ko);if(p&&p.then)p.then(ok,ko)});
     const d=ab.getChannelData(0),win=Math.floor(ab.sampleRate*.025),env=[];
     for(let i=0;i<d.length;i+=win){let q=0;const e=Math.min(d.length,i+win);for(let k=i;k<e;k+=2)q+=d[k]*d[k];env.push(Math.sqrt(q/((e-i)/2||1)))}
@@ -3890,7 +3890,7 @@ async function voiceDownload(t,w){
 function voiceFetchBg(t,w){const k=vKey(t,w);if(VC.busy.has(k))return;VC.busy.add(k);voiceDownload(t,w).catch(()=>{}).finally(()=>VC.busy.delete(k))}
 function voicePool(){   // reproductores que se "despiertan" con el primer toque (necesario en iPhone)
   if(VC.pool.length)return;for(let i=0;i<3;i++){const a=new Audio();a.setAttribute('playsinline','');VC.pool.push(a)}}
-function unlockPool(){voicePool();const sl=VO.silent||(VO.silent=silentWav());VC.pool.forEach(a=>{if(a.paused&&!a.dataset.used){a.src=sl;a.play().then(()=>{a.dataset.used='1'}).catch(()=>{})}})}
+function unlockPool(){try{if(navigator.audioSession&&navigator.audioSession.type!=='playback')navigator.audioSession.type='playback'}catch(e){}try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();if(actx.state!=='running')actx.resume().catch(()=>{})}catch(e){}voicePool();const sl=VO.silent||(VO.silent=silentWav());VC.pool.forEach(a=>{if(a.paused&&!a.dataset.used){a.src=sl;a.play().then(()=>{a.dataset.used='1'}).catch(()=>{})}})}
 ['pointerdown','touchend','click'].forEach(ev=>document.addEventListener(ev,unlockPool,{capture:true,passive:true}));
 function playClip(c,w,t){
   voicePool();const a=VC.pool.find(x=>x.paused&&!Object.values(VC.talk).some(tk=>tk&&tk.el===x))||VC.pool[0];
