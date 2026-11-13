@@ -2796,7 +2796,7 @@ const ACTIONS={
       if(t>16.3)once(A,'mira',()=>{bubble(M,'¿Qué mirás? 😒',1.6);say('¿Qué mirás?','Mati')});
     }
   }},
-  chipa:{dur:8,run(A,t,dt,el){
+  chipa:{dur:12.4,run(A,t,dt,el){
     const M=A.mati,P=A.paz;
     const wf=Wt(t,0,2.4);La(M.group,faceAng(M,P),wf);La(P.group,faceAng(P,M),wf);
     once(A,'c',()=>{A.chipa=makeProp('chipa');holdProp(A,A.chipa,P.elbows[1]);sfx('pop')});
@@ -2809,6 +2809,14 @@ const ACTIONS={
     const wj=Wt(t,2.4,7.5,.3,.5);
     if(wj>0){La(M.group,camAng(M),wj);poseArmsUp(M,wj);jump(M,t,2.4,7.5,wj);
       once(A,'yay',()=>{bubble(M,'¡Chipááá! 🙌',4.5);say('¡Chipá! ¡Chipá! ¡Chipá!','Mati')})}
+    // remate: Mati se gira hacia Paz y pide milanesas; Paz se agarra la cabeza
+    const wm=Wt(t,7.5,12.4,.5,.5);
+    if(wm>0){La(M.group,faceAng(M,P),wm);La(P.group,faceAng(P,M),wm);
+      if(t>8)once(A,'mila',()=>{bubble(M,'¡Ahora quiero milanesas! 🥩',3.4);say('¡Ahora quiero milanesas!','Mati')});
+      poseArm(M,1,-.75,.25,-1.2,Wt(t,8,11,.3,.4));Lr(M.head.rotation,'z',.12*Math.sin(el*3),Wt(t,8,11));
+      const wh=Wt(t,8.9,12.2,.35,.5);
+      poseArm(P,0,-2.55,-.75,-1.95,wh);poseArm(P,1,-2.55,.75,-1.95,wh);
+      Lr(P.head.rotation,'z',Math.sin(el*5)*.18,wh);Lr(P.head.rotation,'x',.12,wh)}
   }},
   sloth:{dur:6.6,run(A,t,dt,el){
     const w=Wt(t,0,6.6,.8,.8);
@@ -3872,7 +3880,7 @@ const VOICE_LINES=[
  ['Paz','Ah, menos mal que no tenías ganas, un río'],['Paz','Buendíabuendíabuendíabuendíaaaaaaaa'],['Mati','Bueno, yo también'],['Paz','Dame tu mano'],
  ['Paz','Estoy muerta, no puedo más'],['Paz','Me hago pis'],['Mati','Mira este reel'],['Mati','No... bueno'],['Mati','Taca taca taca'],['Mati','¡Ay!'],
  ['Mati','¡Buendíaaaaaaaa!'],['Mati','¡Chipá! ¡Chipá! ¡Chipá!'],['Paz','¡Corran putitas!'],['Mati','¡Dale, dale!'],['Paz','¡Dale, dale!'],['Mati','¡Jajajajaja!'],
- ['Paz','¡Soy yo, soy yo, soy yoooooooooooo!'],['Paz','¡Sí!'],['Paz','¡Uh, temazo!'],['Paz','¡Ñam! ¡Qué rico!'],['Mati','¿Otra vez?'],['Mati','¿Qué mirás?'],['Mati','¿Tenés hambre?']];
+ ['Paz','¡Soy yo, soy yo, soy yoooooooooooo!'],['Paz','¡Sí!'],['Paz','¡Uh, temazo!'],['Paz','¡Ñam! ¡Qué rico!'],['Mati','¿Otra vez?'],['Mati','¿Qué mirás?'],['Mati','¿Tenés hambre?'],['Mati','¡Ahora quiero milanesas!']];
 const VC={mem:new Map(),pool:[],busy:new Set(),talk:{},cacheName:'brj-voces'};
 const vKey=(t,w)=>'https://voces.brujula/'+w.toLowerCase()+'/'+encodeURIComponent(t);
 async function clipFromBuf(buf){return {url:URL.createObjectURL(new Blob([buf],{type:'audio/mpeg'})),env:await envelope(buf)}}
