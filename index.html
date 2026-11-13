@@ -138,12 +138,24 @@ nav button.on{color:var(--acc)}
 .step{display:grid;grid-template-columns:58px 1fr;gap:8px;padding:8px 0;border-bottom:1px dashed var(--line)}
 .step time{color:var(--acc);font-variant-numeric:tabular-nums;font-weight:600}
 .step p{margin:2px 0 0;color:var(--mut);font-size:13px}
-.chat{min-height:120px}
+.chat{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding:10px 2px 6px;-webkit-overflow-scrolling:touch}
+body.aimode header,body.aimode .anchors,body.aimode #locLine,body.aimode #alerts,body.aimode #testBanner{display:none!important}
+body.aimode #v-ai.on{position:fixed;top:0;left:0;right:0;bottom:var(--navh,70px);max-width:560px;margin:0 auto;padding:calc(6px + env(safe-area-inset-top)) 12px 6px;display:flex;flex-direction:column}
+.aibar{border-top:1px solid var(--line);padding-top:6px}
+.aibar .quick{flex-wrap:nowrap;overflow-x:auto;margin:0 0 6px;scrollbar-width:none}.aibar .quick::-webkit-scrollbar{display:none}.aibar .quick button{white-space:nowrap}
+.aiin{display:flex;gap:6px;align-items:flex-end}
+.aiin textarea{flex:1;resize:none;min-height:42px;max-height:120px;border-radius:21px;padding:10px 14px;font-size:16px;line-height:1.3}
+.aiin button{width:42px;height:42px;border-radius:50%;padding:0;font-size:18px;flex:none}
+#aiMic.rec{background:#c0392b;border-color:#c0392b;animation:micp 1s infinite}
+@keyframes micp{50%{box-shadow:0 0 0 7px #c0392b44}}
+#aiState{font-size:12px;min-height:0;margin-top:4px}#aiState:empty{display:none}
+.msg.typing{color:var(--mut)}
 .aipic{position:relative;margin:6px 0;display:inline-block}.aipic img{max-height:120px;border-radius:10px;display:block}.aipic button{position:absolute;top:4px;right:4px;padding:2px 8px;font-size:13px}
 .msg img{max-height:90px;border-radius:8px;display:block;margin-bottom:6px}
 .msg{padding:10px 12px;border-radius:12px;margin-bottom:8px;white-space:pre-wrap;line-height:1.45}
-.msg.u{background:var(--card2);margin-left:30px}
-.msg.a{background:var(--card);border:1px solid var(--line);margin-right:10px}
+.msg.u{background:#3a2c18;border:1px solid #6b5023;margin-left:44px;align-self:flex-end;border-bottom-right-radius:4px}
+.msg.a{background:var(--card);border:1px solid var(--line);margin-right:44px;align-self:flex-start;border-bottom-left-radius:4px}
+.msg{margin-bottom:0}
 .quick{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
 .quick button{font-size:13px;padding:6px 10px}
 .muted{color:var(--mut);font-size:13px}
@@ -247,21 +259,19 @@ body.mapmode #map3d{height:calc(100dvh - 92px - env(safe-area-inset-bottom))}
 
   <!-- GUIA IA -->
   <section class="view" id="v-ai">
-    <div class="card">
-      <h3>Pregúntale al guía</h3>
-      <p class="muted" style="margin:6px 0 0">Sabe dónde estáis, qué hora es, vuestro plan, lo pendiente, el tiempo y qué hay abierto cerca. Con 📷 entiende cartas, carteles y edificios.</p>
+    <div class="chat" id="chat"></div>
+    <div class="aibar">
       <div class="quick" id="quick"></div>
       <div id="aiPic" class="aipic" hidden><img id="aiPicImg" alt=""><button id="aiPicX" aria-label="Quitar foto">✕</button></div>
-      <textarea id="q" rows="3" placeholder="Ej: estamos cansados y con frío, ¿un café bonito a menos de 10 min?"></textarea>
-      <input type="file" id="aiPhoto" accept="image/*" capture="environment" hidden>
-      <div class="row" style="margin-top:8px">
-        <button class="pri" id="ask">Preguntar</button>
-        <button id="aiCam">📷 Foto</button>
-        <button id="copyQ">Copiar para Claude</button>
-        <span class="muted" id="aiState"></span>
+      <div class="aiin">
+        <button id="aiCam" aria-label="Foto">📷</button>
+        <textarea id="q" rows="1" placeholder="Preguntadle al guía…"></textarea>
+        <button id="aiMic" aria-label="Hablar">🎤</button>
+        <button class="pri" id="ask" aria-label="Enviar">➤</button>
       </div>
+      <div class="muted" id="aiState"></div>
+      <input type="file" id="aiPhoto" accept="image/*" capture="environment" hidden>
     </div>
-    <div class="chat" id="chat"></div>
   </section>
 
   <!-- BASICOS -->
@@ -1181,6 +1191,26 @@ const AI_URL='https://iufbanhlyqtonfnufpjz.supabase.co/functions/v1/brujula';
 const QUICK=[['¿Qué hacemos ahora mismo?'],['Reorganízanos lo que queda de hoy'],['📷 Traduce esta carta','Traduce esta carta y recomiéndanos qué pedir (y el precio aproximado en euros).',1],['📷 ¿Qué es esto?','¿Qué es esto que vemos? Cuéntanos su historia en pocas frases y si merece la pena entrar.',1],['Comida típica y barata cerca'],['Un café bonito cerca']];
 $('quick').innerHTML=QUICK.map((q,i)=>`<button data-qi="${i}">${q[0]}</button>`).join('');
 $('quick').querySelectorAll('button').forEach(b=>b.onclick=()=>{const q=QUICK[+b.dataset.qi];$('q').value=q[1]||q[0];if(q[2]){pendingAsk=true;$('aiPhoto').click()}else ask()});
+// pantalla de chat: el campo de texto crece con lo escrito y Enter envía
+$('q').addEventListener('input',()=>{const q=$('q');q.style.height='auto';q.style.height=Math.min(120,q.scrollHeight)+'px'});
+$('q').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();ask()}});
+document.addEventListener('brj:view',e=>{const on=e.detail==='ai';document.body.classList.toggle('aimode',on);
+  if(on){const n=document.querySelector('nav');document.documentElement.style.setProperty('--navh',(n?n.offsetHeight:70)+'px');
+    if(!$('chat').children.length)addMsg('assistant','¡Hola! Soy vuestro guía. Preguntadme lo que queráis, mandadme una foto 📷 de una carta o un edificio, o pulsad 🎤 y habladme.');
+    scrollChat()}});
+// micrófono: dictáis y, al terminar de hablar, se envía solo
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;let rec=null;
+$('aiMic').onclick=()=>{
+  if(rec){rec.stop();return}
+  if(!SR){$('aiState').textContent='Este navegador no deja dictar aquí: usad el micrófono del teclado.';$('q').focus();return}
+  if(!navigator.onLine){$('aiState').textContent='Sin conexión: el dictado necesita datos.';return}
+  rec=new SR();rec.lang='es-ES';rec.interimResults=true;rec.continuous=false;let final='';
+  rec.onresult=e=>{let txt='';for(let i=0;i<e.results.length;i++)txt+=e.results[i][0].transcript;final=txt;$('q').value=txt};
+  rec.onerror=e=>{$('aiState').textContent=e.error==='not-allowed'?'Dad permiso al micrófono para poder hablarle al guía.':e.error==='no-speech'?'No os he oído: probad otra vez.':'No pude escuchar ('+e.error+').'};
+  rec.onend=()=>{rec=null;$('aiMic').classList.remove('rec');if(final.trim()){$('q').value=final.trim();ask()}};
+  $('aiState').textContent='Escuchando… hablad y se envía solo.';$('aiMic').classList.add('rec');
+  try{rec.start()}catch(e){rec=null;$('aiMic').classList.remove('rec');$('aiState').textContent='No pude abrir el micrófono.'}
+};
 function context(){
   const t=now();const sun=SUNSET[t.d]??SUNSET[0];const nh=nextAnchor(t,true);const na=nextAnchor(t,false);const o=PST();
   const near=POIS.map(p=>({p,...score(p,t)})).sort((a,b)=>b.s-a.s).slice(0,14)
@@ -1202,7 +1232,8 @@ Reglas: responde en español rioplatense, breve y práctico (máx. ~120 palabras
 }
 let sampleFn=null;let history=[];let picData=null,pendingAsk=false;
 (async()=>{try{if(window.claude&&window.claude.use){sampleFn=await window.claude.use('sample');}}catch(e){sampleFn=null}})();
-function addMsg(role,text,img){const d=document.createElement('div');d.className='msg '+(role==='user'?'u':'a');if(img){const i=document.createElement('img');i.src=img;d.appendChild(i)}d.appendChild(document.createTextNode(text));$('chat').prepend(d);return d}
+function scrollChat(){const c=$('chat');requestAnimationFrame(()=>{c.scrollTop=c.scrollHeight})}
+function addMsg(role,text,img){const d=document.createElement('div');d.className='msg '+(role==='user'?'u':'a');if(img){const i=document.createElement('img');i.src=img;i.onload=scrollChat;d.appendChild(i)}const tx=document.createElement('span');tx.textContent=text;d.appendChild(tx);d.setText=t=>{tx.textContent=t;d.classList.remove('typing');scrollChat()};$('chat').appendChild(d);scrollChat();return d}
 // foto: se reduce en el móvil antes de mandarla (menos datos y menos coste)
 $('aiCam').onclick=()=>{pendingAsk=false;$('aiPhoto').click()};
 $('aiPicX').onclick=()=>{picData=null;$('aiPic').hidden=true};
@@ -1223,29 +1254,23 @@ let busy=false;
 async function ask(){
   let q=$('q').value.trim();if(busy)return;if(!q&&picData)q='¿Qué es esto? Si es una carta, tradúcela y recomiéndanos qué pedir.';if(!q)return;
   if(!sampleFn&&!navigator.onLine){$('aiState').textContent='Sin conexión: el guía necesita datos. El resto de la app sigue funcionando.';return}
-  busy=true;$('ask').disabled=true;$('aiState').textContent='Pensando…';
+  busy=true;$('ask').disabled=true;$('aiState').textContent='';
   const pic=picData;picData=null;$('aiPic').hidden=true;
-  addMsg('user',q,pic);const out=addMsg('assistant','…');$('q').value='';
+  addMsg('user',q,pic);const out=addMsg('assistant','escribiendo…');out.classList.add('typing');$('q').value='';$('q').style.height='';
   const content=pic?[{type:'image',source:{type:'base64',media_type:'image/jpeg',data:pic.split(',')[1]}},{type:'text',text:q}]:q;
   try{
     let text;
-    if(sampleFn){const r=await sampleFn([...history.slice(-6),{role:'user',content:context()+'\n\nPREGUNTA: '+q}],{cache:false,modelTier:'default',onText:({text})=>{out.textContent=text}});text=r.text}
+    if(sampleFn){const r=await sampleFn([...history.slice(-6),{role:'user',content:context()+'\n\nPREGUNTA: '+q}],{cache:false,modelTier:'default',onText:({text})=>{out.setText(text)}});text=r.text}
     else text=await callGuide([...history.slice(-6),{role:'user',content}],context());
-    out.textContent=text;history.push({role:'user',content:pic?'[foto] '+q:q},{role:'assistant',content:text});$('aiState').textContent='';
+    out.setText(text);history.push({role:'user',content:pic?'[foto] '+q:q},{role:'assistant',content:text});$('aiState').textContent='';
   }catch(e){
-    out.textContent=e&&e.code==='nopass'?'Necesito la contraseña del viaje para preguntar. Volved a intentarlo.':
-      (!navigator.onLine?'Sin conexión: el guía necesita datos.':'No he podido responder ahora ('+((e&&e.message)||'error')+'). Probad otra vez en un momento.');
+    out.setText(e&&e.code==='nopass'?'Necesito la contraseña del viaje para preguntar. Volved a intentarlo.':
+      (!navigator.onLine?'Sin conexión: el guía necesita datos.':'No he podido responder ahora ('+((e&&e.message)||'error')+'). Probad otra vez en un momento.'));
     $('aiState').textContent='';
   }finally{busy=false;$('ask').disabled=false}
 }
 $('ask').onclick=ask;
-async function copyQ(){
-  const q=$('q').value.trim()||'¿Qué hacemos ahora mismo?';
-  const txt=context()+'\n\nPREGUNTA: '+q;
-  try{await navigator.clipboard.writeText(txt);$('aiState').textContent='Copiado. Pegadlo en la app de Claude.'}
-  catch(e){$('q').value=txt;$('q').select();$('aiState').textContent='No pude copiar: el texto está seleccionado en el cuadro, copiadlo a mano.'}
-}
-$('copyQ').onclick=copyQ;
+
 
 /* ================= NAVEGACIÓN ================= */
 let currentView='now';
