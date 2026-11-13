@@ -209,6 +209,7 @@ body.mapmode #map3d{height:calc(100dvh - 92px - env(safe-area-inset-bottom))}
           <button data-act="crack">🫰 Crack<small>Paz → Mati</small></button>
           <button data-act="pis">🌳 Pis<small>Paz</small></button>
           <button data-act="fiesta">😎 Fiesta<small>Los dos</small></button>
+          <button data-act="buendia">☀️ Buen día<small>Paz → Mati</small></button>
         </div>
         <div class="extgrid">
           <button id="exReto">🎲 Reto</button>
@@ -1926,7 +1927,7 @@ function say(text,who){
 }
 function bubbleSprite(text){
   const c=document.createElement('canvas'),x=c.getContext('2d');const F='800 40px Inter, system-ui, sans-serif';x.font=F;
-  const lines=[];let l='';String(text).split(' ').forEach(wd=>{const t=l?l+' '+wd:wd;if(x.measureText(t).width>560&&l){lines.push(l);l=wd}else l=t});if(l)lines.push(l);
+  const lines=[];let l='';String(text).split(' ').flatMap(wd=>{const out=[];while(x.measureText(wd).width>560){let k=wd.length;while(k>1&&x.measureText(wd.slice(0,k)).width>560)k--;out.push(wd.slice(0,k));wd=wd.slice(k)}out.push(wd);return out}).forEach(wd=>{const t=l?l+' '+wd:wd;if(x.measureText(t).width>560&&l){lines.push(l);l=wd}else l=t});if(l)lines.push(l);
   const w=Math.ceil(Math.max(...lines.map(z=>x.measureText(z).width)))+48,bh=18+lines.length*46;c.width=w;c.height=bh+28;x.font=F;
   x.fillStyle='#fff';x.strokeStyle='#14110f';x.lineWidth=5;rr(x,3,3,w-6,bh,26);x.fill();x.stroke();
   x.beginPath();x.moveTo(w/2-14,bh);x.lineTo(w/2,bh+24);x.lineTo(w/2+14,bh);x.closePath();x.fill();x.stroke();
@@ -2136,6 +2137,29 @@ const ACTIONS={
     A.lights.forEach((g,i)=>{const a=el*1.4+i*2.1;g.position.set(A.mid.x+Math.cos(a)*2.4*avScale,A.mid.y+(2.1+Math.sin(el*3+i)*.4)*avScale,A.mid.z+Math.sin(a)*2.4*avScale);
       g.material.opacity=.38*wb*(.6+.4*Math.abs(Math.sin(el*4+i)));const k=(1.6+.5*Math.sin(el*8+i))*avScale;g.scale.set(k,k,1)});
   }},
+  buendia:{dur:9.6,run(A,t,dt,el){
+    const M=A.mati,P=A.paz;
+    // 1) caminan encorvados, arrastrando los pies
+    if(!A.dir){const h=M.group.rotation.y;A.dir={x:Math.sin(h),z:Math.cos(h)};A.h0=h}
+    const wt=Wt(t,0,3.6,.4,.5);
+    if(t<3.6){const sp=.32*avScale*dt*wt;
+      [M,P].forEach((av,j)=>{av.group.position.x+=A.dir.x*sp;av.group.position.z+=A.dir.z*sp;av.group.position.y=height(av.group.position.x,av.group.position.z)+.5;
+        La(av.group,A.h0,.2);const sw=Math.sin(el*4.2+j*1.3)*.32;
+        Lr(av.legs[0].rotation,'x',sw,wt);Lr(av.legs[1].rotation,'x',-sw,wt);Lr(av.knees[0].rotation,'x',.25+Math.max(0,sw)*.6,wt);Lr(av.knees[1].rotation,'x',.25+Math.max(0,-sw)*.6,wt);
+        av.group.position.y-=.05*avScale*wt})}
+    const wh=Wt(t,0,4.2,.5,.6);
+    [M,P].forEach((av,j)=>{const a=.5*wh,hh=.95;av.body.rotation.x=a;av.body.position.y+=hh*(1-Math.cos(a));av.body.position.z=-hh*Math.sin(a);Lr(av.head.rotation,'x',.35,wh);   // encorvados desde la cadera
+      if(!(av===M&&mateHolder===M))poseArm(av,0,.15,-.05,-.1,wh);poseArm(av,1,.15,.05,-.1,wh)});
+    if(t>.6)once(A,'yawn',()=>floatIcon(P,'🥱'));
+    // 2) Paz lo dice todo de corrido
+    if(t>3)once(A,'bd',()=>{bubble(P,'Buendiabuendiabuendiabuendiaaaaaaaa',3);say('Buendiabuendiabuendiabuendiaaaaaaaa','Paz')});
+    const wf=Wt(t,3,9.6,.4,.4);La(P.group,faceAng(P,M),wf);
+    // 3) Mati la mira y salta de felicidad
+    const wm=Wt(t,5.8,9.6,.3,.5);
+    if(wm>0){La(M.group,faceAng(M,P),Math.min(1,wm*2));
+      if(t>6.4){La(M.group,camAng(M),Wt(t,6.4,9.6,.3,.5));poseArmsUp(M,Wt(t,6.4,9.5,.25,.4));jump(M,t,6.4,9.3,Wt(t,6.4,9.5,.2,.4))}}
+    if(t>6.4)once(A,'mati',()=>{bubble(M,'¡Buendiaaaaaaaa! ☀️',2.8);say('¡Buendiaaaaaaaa!','Mati')});
+  }},
   pis:{dur:20,run(A,t,dt,el){
     const M=A.mati,P=A.paz;
     if(!A.tree){   // un árbol aparece detrás de la pareja, del lado de Paz
@@ -2269,7 +2293,7 @@ function pickMate(A){if(!A.mateDrop)return;A.mateDrop.add(mate);mate.position.co
 function endAction(A){
   pickMate(A);
   A.props.forEach(p=>p.parent&&p.parent.remove(p));
-  [A.mati,A.paz].forEach(av=>{av.body.rotation.set(0,0,0);av.arms.forEach((a,i)=>{a.rotation.z=SIDE[i]*.1});av.legs.forEach(l=>{l.rotation.z=0});av.head.rotation.set(0,0,0);av.lastHop=undefined;av.group.rotation.x=0;av.group.rotation.z=0});
+  [A.mati,A.paz].forEach(av=>{av.body.rotation.set(0,0,0);av.body.position.z=0;av.arms.forEach((a,i)=>{a.rotation.z=SIDE[i]*.1});av.legs.forEach(l=>{l.rotation.z=0});av.head.rotation.set(0,0,0);av.lastHop=undefined;av.group.rotation.x=0;av.group.rotation.z=0});
   if(!A.quiet)document.body.classList.remove('acting');
   if(action===A)action=null;
 }
@@ -2439,6 +2463,7 @@ function applyMood(m,dt,el,mid,w){
     poseArm(M,0,-1.25,.5,-1.45,w);poseArm(M,1,-1.25,-.5,-1.45,w);
     poseArm(P,0,-1.8,.45,-1.3,w);poseArm(P,1,-1.8,-.45,-1.3,w);
     Lr(M.head.rotation,'z',.18,w);Lr(P.head.rotation,'z',-.2,w);Lr(P.head.rotation,'x',-.15,w);
+    if(T%1.4<dt)floatIcon(Math.random()<.5?M:P,Math.random()<.5?'💛':'🧡');
   }
 }
 let umbrella=null;
