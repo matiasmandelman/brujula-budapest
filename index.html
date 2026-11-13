@@ -10,13 +10,13 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Brújula">
-<meta name="theme-color" content="#14110f">
+<meta name="theme-color" content="#0a1220">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#14110f;--card:#1e1a17;--card2:#26211d;--line:#3a322b;
-  --tx:#f3ebe1;--mut:#a89a8a;--acc:#e8a33d;--acc2:#c8553d;--ok:#6fbf73;--bad:#d9665b;--info:#6aa6d9;
+  --bg:#0a1220;--card:#121d31;--card2:#1a2843;--line:#2a3b5e;
+  --tx:#eef3fb;--mut:#8fa3c4;--acc:#f2b84b;--acc2:#c8553d;--ok:#6fbf73;--bad:#d9665b;--info:#6aa6d9;
 }
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--tx);font-family:Inter,system-ui,sans-serif;font-size:15px;-webkit-font-smoothing:antialiased}
@@ -33,7 +33,7 @@ header h1 span{color:var(--acc)}
 .banner.sun{background:linear-gradient(135deg,#4a2a14,#2a1a12);border-color:#7a4a22}
 .banner.warn{background:#3a1d1a;border-color:#7a3a33}
 .banner.ask{background:#20271c;border-color:#4d6a3a}
-.banner.pend{background:#2a2013;border-color:#b98a2e}
+.banner.pend{background:#1c2f52;border-color:#b98a2e}
 .psb{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.psb button,.psb a{font-size:13px;padding:6px 10px}
 .pitem{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:6px 0;font-size:14px}.pitem .psb{margin:0;flex-wrap:nowrap}.pitem a{color:var(--acc)}
 .latebar{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:6px 0}.latebar span{font-size:13px;color:var(--mut);margin-right:2px}.latebar button{font-size:13px;padding:6px 10px}
@@ -67,15 +67,15 @@ select,input,textarea{background:var(--card2);border:1px solid var(--line);borde
 .tag.bad{color:var(--bad);border-color:#6a3530}
 .tag.unk{color:var(--info);border-color:#2f4a66}
 .tag.acc{color:var(--acc);border-color:#7a5522}
-.plancard{background:linear-gradient(135deg,#2a2013,#1e1a17);border:1px solid #6b5124;border-radius:14px;padding:12px 14px;margin-bottom:10px}
+.plancard{background:linear-gradient(135deg,#1c2f52,#111b2f);border:1px solid #3c5488;border-radius:14px;padding:12px 14px;margin-bottom:10px}
 .plancard .lbl{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
 .plancard .big{font-family:Fraunces,Georgia,serif;font-size:19px;margin:2px 0 4px}
 .plancard .cnt{color:var(--acc);font-weight:600;font-variant-numeric:tabular-nums}
-.plancard .sep{border-top:1px dashed #4a3b22;margin:10px 0}
+.plancard .sep{border-top:1px dashed #2f436d;margin:10px 0}
 .star{color:#ffcf4a}
 .task{display:flex;gap:8px;align-items:flex-start;margin:6px 0;font-size:14px}
 .task input{width:auto;margin-top:3px}
-.step.isstar{background:#2a2112;border-radius:10px;padding:8px;border-bottom:none;margin:4px 0}
+.step.isstar{background:#1c2f52;border-radius:10px;padding:8px;border-bottom:none;margin:4px 0}
 .step.isstar b{color:#ffe7a6}
 .step.past{opacity:.45}
 .step.now{outline:2px solid var(--acc);border-radius:10px;padding:8px}
@@ -83,36 +83,36 @@ select,input,textarea{background:var(--card2);border:1px solid var(--line);borde
 .plancard .acts,.step .acts{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
 .plancard .acts a,.plancard .acts button,.step .acts a,.step .acts button{font-size:12px;padding:5px 9px;text-decoration:none;color:var(--tx);background:var(--card2);border:1px solid var(--line);border-radius:9px}
 .nowtag{font-size:11px;background:var(--acc);color:#1b130b;border-radius:999px;padding:1px 7px;margin-left:6px;font-weight:700}
-.mapchips button.plan{background:#2a2013;border-color:#b98a2e;color:#ffe7a6}
+.mapchips button.plan{background:#1c2f52;border-color:#b98a2e;color:#ffe7a6}
 body.noai nav button[data-v=ai],body.noai [data-ask]{display:none!important}
 body.mapfull #map3d{position:fixed;inset:0;height:100dvh;min-height:0;border-radius:0;border:none;z-index:60}
-body.mapfull header,body.mapfull nav,body.mapfull .hud,body.mapfull .mapchips,body.mapfull .maphint,body.mapfull .mapbtns button:not(#btnAct):not(#btnFollow){display:none!important}
+body.mapfull header,body.mapfull nav,body.mapfull .hud,body.mapfull .mapchips,body.mapfull .maphint,body.mapfull .mapbtns button.never{display:none!important}
 body.mapfull .mapbtns{bottom:calc(14px + env(safe-area-inset-bottom))}
 body.mapfull .attrib{bottom:calc(8px + env(safe-area-inset-bottom))}
-.fullpill{display:none;position:absolute;left:12px;right:64px;top:calc(12px + env(safe-area-inset-top));background:#14110fe8;border:1px solid #b98a2e;border-radius:16px;padding:10px 14px;font-size:15px;line-height:1.3;pointer-events:none;backdrop-filter:blur(6px)}
+.fullpill{display:none;position:absolute;left:12px;right:64px;top:calc(12px + env(safe-area-inset-top));background:#0b1322e8;border:1px solid #b98a2e;border-radius:16px;padding:10px 14px;font-size:15px;line-height:1.3;pointer-events:none;backdrop-filter:blur(6px)}
 .fullpill small{display:block;color:var(--mut);font-size:12px;margin-bottom:2px}
 .fullpill b{color:var(--acc);font-size:17px}
 body.mapfull .fullpill{display:block}
-#btnExitFull{display:none;position:absolute;right:12px;top:calc(12px + env(safe-area-inset-top));width:42px;height:42px;border-radius:50%;background:#14110fe8;font-size:18px;padding:0}
+#btnExitFull{display:none;position:absolute;right:12px;top:calc(12px + env(safe-area-inset-top));width:42px;height:42px;border-radius:50%;background:#0b1322e8;font-size:18px;padding:0}
 body.mapfull #btnExitFull{display:block}
 body.acting .hud,body.acting .mapbtns,body.acting .mapchips,body.acting .fullpill,body.acting #btnExitFull{opacity:0;pointer-events:none;transition:opacity .3s}
 .homenav{position:fixed;inset:0;z-index:200;background:#000;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:calc(18px + env(safe-area-inset-top)) 20px calc(22px + env(safe-area-inset-bottom));text-align:center}
 .homenav[hidden]{display:none}
 .homenav .stage{font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:#a89a8a}
 .homenav .dest{font-family:Fraunces,Georgia,serif;font-size:26px;margin:6px 0 0}
-.homenav .arrow{width:min(62vw,300px);height:min(62vw,300px);transition:transform .25s ease-out;filter:drop-shadow(0 0 22px #e8a33d)}
+.homenav .arrow{width:min(62vw,300px);height:min(62vw,300px);transition:transform .25s ease-out;filter:drop-shadow(0 0 22px #f2b84b)}
 .homenav .dist{font-size:54px;font-weight:700;font-variant-numeric:tabular-nums;color:#ffcf73;line-height:1}
 .homenav .sub{font-size:15px;color:#cfc4b6;margin-top:6px;max-width:420px}
 .homenav .btns{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
 .homenav .btns a,.homenav .btns button{background:#1c1814;color:#fff;border:1px solid #3a322b;border-radius:12px;padding:11px 14px;font-size:15px;text-decoration:none}
-.homenav .btns .pri{background:#e8a33d;color:#1b130b;border-color:#e8a33d;font-weight:700}
+.homenav .btns .pri{background:#f2b84b;color:#1b130b;border-color:#f2b84b;font-weight:700}
 .reto{font-family:Fraunces,Georgia,serif;font-size:22px;line-height:1.3;margin:10px 0 14px}
 .conv{display:flex;gap:8px;align-items:center;margin-top:10px}.conv label{flex:1;display:flex;align-items:center;gap:6px;font-weight:700;color:var(--acc)}.conv input{width:100%;font-size:17px}
 .extgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
-.momtxt{width:100%;box-sizing:border-box;min-height:74px;background:#0f0c0a;color:var(--ink,#f3ebe1);border:1px solid var(--line);border-radius:12px;padding:10px;font:inherit;font-size:15px;resize:vertical;margin-top:6px}
+.momtxt{width:100%;box-sizing:border-box;min-height:74px;background:#0a1220;color:var(--ink,#eef3fb);border:1px solid var(--line);border-radius:12px;padding:10px;font:inherit;font-size:15px;resize:vertical;margin-top:6px}
 .momwho{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
 .momlist{margin-top:12px;max-height:34vh;overflow:auto;display:flex;flex-direction:column;gap:6px}
-.momitem{display:flex;gap:8px;align-items:flex-start;background:#1b1714;border:1px solid var(--line);border-radius:12px;padding:8px 10px;font-size:14px}
+.momitem{display:flex;gap:8px;align-items:flex-start;background:#111c30;border:1px solid var(--line);border-radius:12px;padding:8px 10px;font-size:14px}
 .momitem .when{color:var(--acc);font-weight:600;white-space:nowrap}
 .momitem .txt{flex:1}
 .momitem button{padding:2px 8px;font-size:13px}
@@ -129,7 +129,7 @@ body.acting .hud,body.acting .mapbtns,body.acting .mapchips,body.acting .fullpil
 .actions{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
 .actions a,.actions button{font-size:13px;padding:7px 10px;text-decoration:none;color:var(--tx);background:var(--card2);border:1px solid var(--line);border-radius:10px}
 .actions a.go{background:var(--acc);color:#1b130b;border-color:var(--acc);font-weight:600}
-nav{position:fixed;left:0;right:0;bottom:0;background:#0f0d0bf2;border-top:1px solid var(--line);display:flex;justify-content:space-around;padding:8px 6px calc(8px + env(safe-area-inset-bottom));backdrop-filter:blur(8px);z-index:5}
+nav{position:fixed;left:0;right:0;bottom:0;background:#0a1220f2;border-top:1px solid var(--line);display:flex;justify-content:space-around;padding:8px 6px calc(8px + env(safe-area-inset-bottom));backdrop-filter:blur(8px);z-index:5}
 nav button{background:none;border:none;color:var(--mut);display:flex;flex-direction:column;align-items:center;font-size:11px;gap:2px;padding:4px 8px}
 nav button span{font-size:20px}
 nav button.on{color:var(--acc)}
@@ -153,7 +153,7 @@ body.aimode #v-ai.on{position:fixed;top:0;left:0;right:0;bottom:var(--navh,70px)
 .aipic{position:relative;margin:6px 0;display:inline-block}.aipic img{max-height:120px;border-radius:10px;display:block}.aipic button{position:absolute;top:4px;right:4px;padding:2px 8px;font-size:13px}
 .msg img{max-height:90px;border-radius:8px;display:block;margin-bottom:6px}
 .msg{padding:10px 12px;border-radius:12px;margin-bottom:8px;white-space:pre-wrap;line-height:1.45}
-.msg.u{background:#3a2c18;border:1px solid #6b5023;margin-left:44px;align-self:flex-end;border-bottom-right-radius:4px}
+.msg.u{background:#243a63;border:1px solid #3c5488;margin-left:44px;align-self:flex-end;border-bottom-right-radius:4px}
 .msg.a{background:var(--card);border:1px solid var(--line);margin-right:44px;align-self:flex-start;border-bottom-left-radius:4px}
 .msg{margin-bottom:0}
 .quick{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
@@ -173,26 +173,58 @@ body.mapmode #map3d{height:calc(100dvh - 92px - env(safe-area-inset-bottom))}
 #map3d{position:relative;height:calc(100dvh - 150px - env(safe-area-inset-bottom));min-height:420px;border-radius:16px;overflow:hidden;background:#9fc4e8;border:1px solid var(--line);touch-action:none}
 #map3d canvas{display:block;width:100%;height:100%}
 .hud{position:absolute;left:8px;right:8px;top:8px;display:flex;gap:6px;flex-wrap:wrap;pointer-events:none}
-.pill{background:#14110fd9;border:1px solid var(--line);border-radius:999px;padding:6px 10px;font-size:12px;font-variant-numeric:tabular-nums;backdrop-filter:blur(6px)}
+.pill{background:#0b1322d9;border:1px solid var(--line);border-radius:999px;padding:6px 10px;font-size:12px;font-variant-numeric:tabular-nums;backdrop-filter:blur(6px)}
 .pill b{color:var(--acc)}
 .mapbtns{position:absolute;right:8px;bottom:54px;display:flex;flex-direction:column;gap:6px}
 .mapchips{position:absolute;left:8px;right:8px;bottom:8px;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;touch-action:pan-x}
 .mapchips::-webkit-scrollbar{display:none}
-.mapchips button{white-space:nowrap;background:#14110fe6;border-radius:999px;font-size:13px;padding:8px 12px}
+.mapchips button{white-space:nowrap;background:#0b1322e6;border-radius:999px;font-size:13px;padding:8px 12px}
 .mapchips button.first{background:var(--acc);color:#1b130b;border-color:var(--acc);font-weight:600}
 .mapchips button.dest{border-color:#39d0ff;color:#bfefff}
-.attrib{position:absolute;left:10px;bottom:52px;font-size:10px;color:#14110f;background:#ffffffb0;border-radius:6px;padding:1px 5px;pointer-events:none}
-.mapbtns button{background:#14110fe6;font-size:13px;padding:8px 10px}
-.maphint{position:absolute;left:8px;bottom:74px;max-width:58%;font-size:12px;color:var(--tx);background:#14110fd0;border:1px solid var(--line);border-radius:10px;padding:6px 9px;pointer-events:none}
+.attrib{position:absolute;left:10px;bottom:52px;font-size:10px;color:#0b1322;background:#ffffffb0;border-radius:6px;padding:1px 5px;pointer-events:none}
+.mapbtns button{background:#0b1322e6;font-size:13px;padding:8px 10px}
+.maphint{position:absolute;left:8px;bottom:74px;max-width:58%;font-size:12px;color:var(--tx);background:#0b1322d0;border:1px solid var(--line);border-radius:10px;padding:6px 9px;pointer-events:none}
 .sheet{position:absolute;left:8px;right:8px;bottom:8px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;box-shadow:0 10px 30px #0008;z-index:3}
 .sheet .x{position:absolute;right:8px;top:8px;padding:4px 9px}
 .maploading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:20px;color:#1b130b;font-weight:600}
+
+/* ---- Danubio de noche ---- */
+html,body{background:radial-gradient(120% 55% at 85% -8%,#1d3a66 0%,#0a1220 58%) fixed,#0a1220}
+header h1{font-size:32px;letter-spacing:.3px;background:linear-gradient(92deg,#ffffff 10%,#f2b84b 95%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.clock b{font-size:24px}
+.card,.plancard,.anchor,.banner,.sheet,dialog{border-radius:20px;box-shadow:0 8px 28px #0007,inset 0 1px 0 #ffffff12}
+.card,.anchor,.banner{background:#121d31d9;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.plancard{background:linear-gradient(160deg,#1c2f52f2,#111b2ff2);border:1px solid #3c5488;padding:14px 16px}
+.plancard .big{font-size:21px}.plancard .lbl{color:#9db4dc}
+.banner.warn{background:linear-gradient(135deg,#4a2330,#1f1626);border-color:#8a4050}
+.banner.sun{background:linear-gradient(135deg,#5a3a14,#1f1a26);border-color:#8a6230}
+.banner.ask{background:linear-gradient(135deg,#1c3a36,#12202f);border-color:#3f7a6c}
+.banner.pend{background:linear-gradient(135deg,#3d3214,#16203a);border-color:#b98a2e}
+.banner.test{background:#12233dd9;border-color:#2f4a66}
+button{border-radius:14px;transition:transform .12s,background .2s}
+button.pri,.chip.on,a.go,.mapchips button.first,.step .ctl button.on{background:linear-gradient(135deg,#f7cf6b,#e89b2c);color:#1b130b;border-color:transparent;box-shadow:0 4px 16px #e89b2c44}
+a.go{border-radius:14px}
+.chip{background:#1a2843cc}
+nav{background:#0c1628eb;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-top:1px solid #2a3b5e;border-radius:22px 22px 0 0;box-shadow:0 -8px 24px #0006}
+nav button svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+nav button.on{color:var(--acc);filter:drop-shadow(0 0 8px #f2b84b77)}
+nav button.on::after{content:'';width:5px;height:5px;border-radius:50%;background:var(--acc);margin-top:1px}
+.pill{background:#0c1628d9;border-color:#2f436d}
+.step.isstar{background:linear-gradient(135deg,#1f3359,#16223b)}
+.step.now{outline-color:var(--acc)}
+.msg.a{background:#121d31}.aiin textarea{background:#121d31}
+#map3d{border-radius:22px;border-color:#2f436d;box-shadow:0 10px 30px #0008}
+/* botones del mapa: columna compacta de iconos */
+.mapbtns{right:10px;bottom:60px;gap:8px}
+.mapbtns button{width:46px;height:46px;border-radius:50%;padding:0;font-size:20px;background:#0c1628e6;border:1px solid #2f436d;box-shadow:0 4px 14px #0008;backdrop-filter:blur(8px)}
+.mapbtns button.on{border-color:var(--acc);box-shadow:0 0 0 2px #f2b84b55,0 4px 14px #0008}
+body.mapfull .mapbtns button:not(#btnAct):not(#btnFollow):not(#btnCompass){display:none!important}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
-    <h1>Brújula <span>Budapest</span></h1>
+    <h1>Budapest</h1>
     <div class="clock"><b id="clk">--:--</b><small id="day">—</small></div>
   </header>
 
@@ -221,10 +253,11 @@ body.mapmode #map3d{height:calc(100dvh - 92px - env(safe-area-inset-bottom))}
       <div class="attrib" id="attrib" hidden>© OpenStreetMap</div>
       <div class="mapchips" id="mapChips"></div>
       <div class="mapbtns">
-        <button id="btnAct">🎭 Acciones</button>
-        <button id="btnFull">⛶ Pantalla completa</button>
-        <button id="btnFollow">📍 Seguirnos</button>
-        <button id="btnOverview">🗺️ Vista general</button>
+        <button id="btnAct" aria-label="Acciones" title="Acciones">🎭</button>
+        <button id="btnCompass" aria-label="Brújula: girar el mapa hacia donde miráis" title="Brújula">🧭</button>
+        <button id="btnFull" aria-label="Pantalla completa" title="Pantalla completa">⛶</button>
+        <button id="btnFollow" aria-label="Seguirnos" title="Seguirnos">📍</button>
+        <button id="btnOverview" aria-label="Vista general" title="Vista general">🗺️</button>
       </div>
       <div class="fullpill" id="fullPill"></div>
       <button id="btnExitFull" aria-label="Salir de pantalla completa">✕</button>
@@ -279,11 +312,11 @@ body.mapmode #map3d{height:calc(100dvh - 92px - env(safe-area-inset-bottom))}
 </div>
 
 <nav>
-  <button class="on" data-v="now"><span>🧭</span>Ahora</button>
-  <button data-v="map"><span>🗺️</span>Mapa</button>
-  <button data-v="plan"><span>🗓️</span>Plan</button>
-  <button data-v="ai"><span>💬</span>Guía IA</button>
-  <button data-v="info"><span>ℹ️</span>Básicos</button>
+  <button class="on" data-v="now"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg>Ahora</button>
+  <button data-v="map"><svg viewBox="0 0 24 24"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2-6-2zM9 4v14M15 6v14"/></svg>Mapa</button>
+  <button data-v="plan"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M4 10h16M8 3v4M16 3v4"/></svg>Plan</button>
+  <button data-v="ai"><svg viewBox="0 0 24 24"><path d="M5 5h14a2 2 0 012 2v8a2 2 0 01-2 2h-7l-5 4v-4H5a2 2 0 01-2-2V7a2 2 0 012-2z"/></svg>Guía IA</button>
+  <button data-v="info"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></svg>Básicos</button>
 </nav>
 
 <dialog id="locDlg">
@@ -300,7 +333,7 @@ body.mapmode #map3d{height:calc(100dvh - 92px - env(safe-area-inset-bottom))}
 
 <div class="homenav" id="homeNav" hidden>
   <div><div class="stage" id="hnStage"></div><div class="dest" id="hnDest"></div></div>
-  <svg class="arrow" id="hnArrow" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="ag" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd27a"/><stop offset="1" stop-color="#e8a33d"/></linearGradient></defs><path d="M50 4 L84 74 L50 58 L16 74 Z" fill="url(#ag)" stroke="#fff3d6" stroke-width="2" stroke-linejoin="round"/></svg>
+  <svg class="arrow" id="hnArrow" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="ag" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd27a"/><stop offset="1" stop-color="#f2b84b"/></linearGradient></defs><path d="M50 4 L84 74 L50 58 L16 74 Z" fill="url(#ag)" stroke="#fff3d6" stroke-width="2" stroke-linejoin="round"/></svg>
   <div><div class="dist" id="hnDist">—</div><div class="sub" id="hnSub"></div></div>
   <div class="btns"><a id="hnMaps" target="_blank" rel="noopener" class="pri">Abrir en Google Maps</a><button id="hnNext">Siguiente paso</button><button id="hnClose">✕ Salir</button></div>
 </div>
@@ -1565,7 +1598,7 @@ async function alignBridges(){
     let mn=1e9,mx=-1e9;P_.forEach(p=>{const t=(p.x-cx)*ux+(p.z-cz)*uz;mn=Math.min(mn,t);mx=Math.max(mx,t)});
     const ccx=cx+ux*(mn+mx)/2,ccz=cz+uz*(mn+mx)/2,Lh=(mx-mn)/2+3,ang=Math.atan2(ux,uz);
     if(b.grp)scene.remove(b.grp);(b.decks||[]).forEach(d=>scene.remove(d));b.decks=[];
-    const m=bridgeModel(b,{x:ccx,z:ccz},ang,Lh,lamps);b.grp=m.grp;BRIDGE_SEGS[i]=m.seg;m.grp.userData.deck.visible=false;
+    const m=bridgeModel(b,{x:ccx,z:ccz},ang,Lh,lamps);b.grp=m.grp;m.grp.userData.info=BRIDGE_INFO[b.osm];BRIDGE_SEGS[i]=m.seg;m.grp.userData.deck.visible=false;
     // tablero siguiendo cada calle del puente, con su ancho
     ways.forEach(w=>{const wd=/foot|cycle|path|pedestrian|steps/.test(w.h)?.6:/tram|rail/.test(w.h)?.9:1.4;
       const line=densify(w.pts.map(p=>({x:p.x,z:p.z,w:0})),2);
@@ -1901,7 +1934,7 @@ function init(){
 
   buildSky();buildGround();buildWater();buildRoadsParks();buildBridges();buildLandmarks();buildMarkers();buildAvatars();buildTrail();buildDest();buildTraffic();buildAmbient();buildMarkets();buildCrowd();
   resize();new ResizeObserver(resize).observe(box);
-  setupTap();
+  setupTap();tagLandmarks();
   document.getElementById('mapLoading').remove();
   const s=avatarTarget();avatars.forEach(a=>{a.group.position.set(s.x,s.y,s.z)});
   controls.target.set(s.x,s.y,s.z);camera.position.set(s.x+22,s.y+44,s.z+56);
@@ -2161,7 +2194,7 @@ function buildLandmarks(){
 }
 
 /* ---------- sprites ---------- */
-const CATCOL={comida:'#e07a3d',cafe:'#a8744f',vistas:'#e8a33d',ciudad:'#4f8fd0',historia:'#8b6fc9',ruin:'#d0559a'};
+const CATCOL={comida:'#e07a3d',cafe:'#a8744f',vistas:'#f2b84b',ciudad:'#4f8fd0',historia:'#8b6fc9',ruin:'#d0559a'};
 const CATEMO={comida:'🍲',cafe:'☕',vistas:'🌇',ciudad:'🏛️',historia:'📜',ruin:'🍻'};
 function label(text,bg,fg,scale=1){
   const c=document.createElement('canvas');const ctx=c.getContext('2d');ctx.font='600 40px Inter, system-ui, sans-serif';
@@ -2203,7 +2236,7 @@ function refresh(){
     const sc=isDest?5.2:r?(r===1?4.8:4):isDone?1.6:2.3;m.sprite.scale.set(sc,sc,1);
     m.sprite.material.opacity=isDone||closed?.45:1;
     if(m.labelRank!==r){if(m.label){m.group.remove(m.label);m.label.material.map.dispose();m.label=null}
-      if(r){m.label=label(r+' · '+(m.poi.paz?'💖 ':'')+m.poi.name,r===1?'#e8a33d':'#14110fdd',r===1?'#1b130b':'#f3ebe1',.8);m.label.position.y=11.5;m.group.add(m.label)}
+      if(r){m.label=label(r+' · '+(m.poi.paz?'💖 ':'')+m.poi.name,r===1?'#f2b84b':'#0b1322dd',r===1?'#1b130b':'#eef3fb',.8);m.label.position.y=11.5;m.group.add(m.label)}
       m.labelRank=r}
   });
   if(!movie)dayNight(t);hud(t,ranked);chips(ranked);fullPill(t);
@@ -2391,10 +2424,10 @@ function bubbleSprite(text){
   const c=document.createElement('canvas'),x=c.getContext('2d');const F='800 40px Inter, system-ui, sans-serif';x.font=F;
   const lines=[];let l='';String(text).split(' ').flatMap(wd=>{const out=[];while(x.measureText(wd).width>560){let k=wd.length;while(k>1&&x.measureText(wd.slice(0,k)).width>560)k--;out.push(wd.slice(0,k));wd=wd.slice(k)}out.push(wd);return out}).forEach(wd=>{const t=l?l+' '+wd:wd;if(x.measureText(t).width>560&&l){lines.push(l);l=wd}else l=t});if(l)lines.push(l);
   const w=Math.ceil(Math.max(...lines.map(z=>x.measureText(z).width)))+48,bh=18+lines.length*46;c.width=w;c.height=bh+28;x.font=F;
-  x.fillStyle='#fff';x.strokeStyle='#14110f';x.lineWidth=5;rr(x,3,3,w-6,bh,26);x.fill();x.stroke();
+  x.fillStyle='#fff';x.strokeStyle='#0b1322';x.lineWidth=5;rr(x,3,3,w-6,bh,26);x.fill();x.stroke();
   x.beginPath();x.moveTo(w/2-14,bh);x.lineTo(w/2,bh+24);x.lineTo(w/2+14,bh);x.closePath();x.fill();x.stroke();
   x.fillStyle='#fff';x.fillRect(w/2-11,bh-4,22,6);
-  x.fillStyle='#14110f';x.textBaseline='middle';lines.forEach((z,i)=>x.fillText(z,24,37+i*46));
+  x.fillStyle='#0b1322';x.textBaseline='middle';lines.forEach((z,i)=>x.fillText(z,24,37+i*46));
   const tex=new THREE.CanvasTexture(c);tex.colorSpace=THREE.SRGBColorSpace;
   const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,depthTest:false,transparent:true}));sp.renderOrder=14;
   const k=.34/92;sp.scale.set(k*w,k*c.height,1);return sp;
@@ -2981,7 +3014,7 @@ let flags=new Set(),flagMeshes=[],medalMeshes=[];
 function plantFlag(p){
   const g=new THREE.Group();const w=toW(p.loc.lat,p.loc.lng);
   const pole=new THREE.Mesh(new THREE.CylinderGeometry(.12,.12,7,6),new THREE.MeshLambertMaterial({color:'#eeeeee'}));pole.position.y=3.5;g.add(pole);
-  const fl=new THREE.Mesh(new THREE.PlaneGeometry(3,1.8),new THREE.MeshLambertMaterial({color:'#e8a33d',side:THREE.DoubleSide}));fl.position.set(1.5,6,0);g.add(fl);
+  const fl=new THREE.Mesh(new THREE.PlaneGeometry(3,1.8),new THREE.MeshLambertMaterial({color:'#f2b84b',side:THREE.DoubleSide}));fl.position.set(1.5,6,0);g.add(fl);
   const st=emojiSprite('⭐');st.scale.set(1.3,1.3,1);st.position.set(1.5,6,.1);g.add(st);
   g.position.set(w.x+3,height(w.x,w.z),w.z+3);scene.add(g);flagMeshes.push({g,fl});
 }
@@ -3035,7 +3068,7 @@ function drawHud(o){
   if(hudCv.width!==W||hudCv.height!==Hh){hudCv.width=W;hudCv.height=Hh;const old=hudMesh.material.map;const tex=new THREE.CanvasTexture(hudCv);tex.colorSpace=THREE.SRGBColorSpace;hudMesh.material.map=tex;hudMesh.material.needsUpdate=true;if(old)old.dispose()}
   const x=hudCv.getContext('2d');x.clearRect(0,0,W,Hh);const u=Math.min(W,Hh)/400;
   const card=(t1,t2)=>{x.fillStyle='rgba(8,6,4,.62)';x.fillRect(0,0,W,Hh);x.textAlign='center';x.fillStyle='#ffe7a6';x.font=`700 ${44*u}px Fraunces, Georgia, serif`;x.fillText(t1,W/2,Hh/2);
-    x.fillStyle='#f3ebe1';x.font=`500 ${16*u}px Inter, system-ui, sans-serif`;
+    x.fillStyle='#eef3fb';x.font=`500 ${16*u}px Inter, system-ui, sans-serif`;
     const parts=t2.split(' · ');let line='',y=Hh/2+34*u;const maxW=W*.86;
     parts.forEach((pt,i)=>{const test=line?line+' · '+pt:pt;if(x.measureText(test).width>maxW&&line){x.fillText(line,W/2,y);y+=22*u;line=pt}else line=test});if(line)x.fillText(line,W/2,y)};
   if(o.title)card(o.title,o.sub||'');
@@ -3269,7 +3302,7 @@ document.addEventListener('brj:trailreload',()=>{trail=(store.get('trail',[])||[
 const inTrip=p=>p&&isFinite(p.lat)&&p.t&&tsToAbs(p.t)!==null&&onMap(p);
 function buildTrail(){
   trail=(store.get('trail',[])||[]).filter(inTrip);
-  trailLine=new THREE.Line(new THREE.BufferGeometry(),new THREE.LineDashedMaterial({color:'#e8a33d',dashSize:2,gapSize:1.5,depthTest:false,transparent:true,opacity:.9}));
+  trailLine=new THREE.Line(new THREE.BufferGeometry(),new THREE.LineDashedMaterial({color:'#f2b84b',dashSize:2,gapSize:1.5,depthTest:false,transparent:true,opacity:.9}));
   trailLine.renderOrder=5;scene.add(trailLine);drawTrail();
 }
 function addTrail(tg){
@@ -3392,20 +3425,42 @@ function buildDest(){
 }
 function setDest(id){dest=id;store.set('dest',dest);chipSig='';refresh()}
 function staleDest(t){const tg=findTarget(dest);if(tg&&tg.plan&&abs(t)>abs(tg.plan)+120){dest=null;store.set('dest',null);chipSig=''}}
+let route=null,routeKey='',routeFrom=null,routeBusy=false,routeMesh=null,routeInfo=null;
+function clearRoute(){if(routeMesh){scene.remove(routeMesh);routeMesh.geometry.dispose();routeMesh=null}route=null;routeKey='';routeInfo=null}
+async function fetchRoute(dp){
+  if(routeBusy||!navigator.onLine)return;routeBusy=true;const from={lat:pos.lat,lng:pos.lng},key=dp.id;
+  try{
+    const r=await fetch(`https://routing.openstreetmap.de/routed-foot/route/v1/foot/${from.lng.toFixed(5)},${from.lat.toFixed(5)};${dp.lng.toFixed(5)},${dp.lat.toFixed(5)}?overview=full&geometries=geojson`);
+    const j=await r.json();const rt=j.routes&&j.routes[0];if(!rt||dest!==key)return;
+    const line=rt.geometry.coordinates.map(([ln,la])=>{const w=toW(la,ln);return {x:w.x,z:w.z,w:0}});if(line.length<2)return;
+    clearRoute();route=line;routeKey=key;routeFrom=from;routeInfo={m:Math.round(rt.distance),min:Math.max(1,Math.round(rt.distance/75))};
+    const dl=densify(line,2);
+    routeMesh=new THREE.Mesh(ribbon(dl,p=>{const onBr=BRIDGE_SEGS.some(sg=>segDist(p,{...sg.a,w:0},{...sg.b,w:0}).d<2.5);return Math.max(height(p.x,p.z)+.5,onBr?2.15:.6)},()=>.9),
+      new THREE.MeshBasicMaterial({color:'#39d0ff',transparent:true,opacity:.8,depthTest:false,side:THREE.DoubleSide}));
+    routeMesh.renderOrder=6;routeMesh.frustumCulled=false;scene.add(routeMesh);
+  }catch(e){}finally{routeBusy=false}
+}
 function updateDest(mid,el){
   const dp=findTarget(dest);
-  if(!dp){destLine.visible=false;planPin.visible=false;return}
+  if(!dp){destLine.visible=false;planPin.visible=false;if(routeMesh)clearRoute();return}
+  if(routeKey!==dp.id||!routeFrom||kmBetween(routeFrom,pos)*1000>70){if(routeKey!==dp.id&&routeMesh)clearRoute();if(!routeBusy&&(!updateDest.t||performance.now()-updateDest.t>4000)){updateDest.t=performance.now();fetchRoute(dp)}}
+  if(routeMesh)routeMesh.material.opacity=.6+.25*Math.sin(el*4);
   if(dp.plan&&!dp.plan.poi){const w0=toW(dp.lat,dp.lng);planPin.visible=true;planPin.position.set(w0.x,height(w0.x,w0.z)+9+Math.sin(el*3)*.6,w0.z)}else planPin.visible=false;
   const w=toW(dp.lat,dp.lng),dx=w.x-mid.x,dz=w.z-mid.z,len=Math.hypot(dx,dz);
-  destLine.visible=len>2;destLine.position.set(mid.x,Math.max(mid.y,height(w.x,w.z))+1.2,mid.z);
+  destLine.visible=len>2&&!routeMesh;destLine.position.set(mid.x,Math.max(mid.y,height(w.x,w.z))+1.2,mid.z);
   destLine.rotation.y=Math.atan2(dx,dz);destLine.scale.set(.9,1,len);destLine.material.opacity=.55+.25*Math.sin(el*4);
 }
 function checkArrival(){
   const dp=findTarget(dest);if(!dp)return;
   if(kmBetween(pos,dp)*1000<60){dest=null;store.set('dest',null);chipSig='';toast('🎉 ¡Habéis llegado a '+dp.name.replace('⭐ ','')+'!');if(!dp.plan)openSheet(dp)}
 }
-function updateFollowBtn(){document.getElementById('btnFollow').style.borderColor=followMode?'var(--acc)':'var(--line)'}
+function updateFollowBtn(){document.getElementById('btnFollow').classList.toggle('on',followMode)}
 document.getElementById('btnFollow').onclick=()=>flyHome();
+let compassMode=false;
+document.getElementById('btnCompass').onclick=()=>{
+  compassMode=!compassMode;document.getElementById('btnCompass').classList.toggle('on',compassMode);
+  if(compassMode){startCompass();flyHome();setTimeout(()=>{if(compassMode&&devHead==null)toast('Sin brújula en este dispositivo: moved el móvil en forma de 8 o dad permiso de movimiento.')},2500);toast('🧭 El mapa gira hacia donde miráis')}
+};
 function setFull(on){
   document.body.classList.toggle('mapfull',on);
   try{if(on&&document.documentElement.requestFullscreen&&!document.fullscreenElement)document.documentElement.requestFullscreen().catch(()=>{});
@@ -3448,6 +3503,32 @@ function openSheet(poi){
   const g=document.getElementById('shGo');if(g)g.onclick=()=>{setManual(poi.lat,poi.lng,'Cerca de '+poi.name);sh.hidden=true;followMode=true;updateFollowBtn()};
 }
 function setManual(lat,lng,lbl){pos={lat,lng,label:lbl,src:'manual'};store.set('pos',pos);render();refresh()}
+const LM_INFO=[
+ [47.5071,19.0452,'🏛️ Parlamento','Sede del Parlamento húngaro, neogótico, obra de Imre Steindl. Se inauguró en 1902 tras casi veinte años de obras. Su cúpula mide 96 m, igual que la de la Basílica: ningún edificio debía superarlas. Dentro se guarda la Santa Corona de Hungría. De noche, iluminado y visto desde el río o desde Buda, es la postal de la ciudad.'],
+ [47.5008,19.0539,'⛪ Basílica de San Esteban','La mayor iglesia de Budapest, terminada en 1905 después de más de cincuenta años; la cúpula se derrumbó a mitad de la obra y hubo que rehacerla. Mide 96 m. Guarda la Santa Diestra, la mano momificada del rey San Esteban, fundador de Hungría. Se puede subir al mirador de la cúpula.'],
+ [47.4962,19.0393,'🏰 Castillo de Buda','El palacio de los reyes húngaros, sobre la colina desde el siglo XIII. Fue destruido y reconstruido varias veces; lo que veis es sobre todo la reconstrucción posterior a la Segunda Guerra Mundial. Hoy alberga la Galería Nacional y el Museo de Historia de Budapest. Sus terrazas tienen de las mejores vistas de Pest.'],
+ [47.5019,19.0342,'⛪ Iglesia de Matías','Iglesia de la coronación: aquí fueron coronados Francisco José y Sisi como reyes de Hungría en 1867. Su tejado de cerámica Zsolnay de colores es inconfundible. Durante la ocupación otomana fue mezquita. Está junto al Bastión de los Pescadores.'],
+ [47.4868,19.0466,'🗽 Citadella y Estatua de la Libertad','La fortaleza la levantaron los Habsburgo tras la revolución húngara de 1848, para vigilar la ciudad desde arriba. La Estatua de la Libertad, una mujer con una hoja de palma, es de 1947. Desde aquí se ven los puentes, el Castillo y el Parlamento: uno de los mejores atardeceres de Budapest.'],
+ [47.5149,19.0778,'🐎 Plaza de los Héroes','Construida para celebrar en 1896 los mil años de la llegada de los magiares. En el centro, la columna con el arcángel Gabriel y, a sus pies, los siete jefes de las tribus a caballo. A los lados, estatuas de reyes y figuras de la historia húngara.'],
+ [47.4870,19.0587,'🧺 Gran Mercado Central','El mayor mercado cubierto de Budapest, de 1897, obra de Samu Pecz, con tejado de cerámica Zsolnay. Abajo, puestos de pimentón, embutidos y verduras; arriba, comida para tomar allí (lángos, gulash) y recuerdos.'],
+ [47.4957,19.0608,'✡️ Gran Sinagoga de la calle Dohány','La mayor sinagoga de Europa, de 1859, de estilo neomorisco, con capacidad para unas tres mil personas. En su patio están el cementerio del gueto y el Árbol de la Vida, un sauce de metal con los nombres de víctimas del Holocausto en sus hojas.'],
+ [47.4930,19.1280,'🎧 Hungexpo · Bónusz','El recinto ferial de Budapest. Esta noche, vuestro festival: puerta 3, sin reentrada.'],
+ [HOTEL.lat,HOTEL.lng,'🏠 A57','Vuestro alojamiento en Akácfa utca 57, en el distrito VII, el antiguo barrio judío y hoy la zona de los ruin bars.']];
+const BRIDGE_INFO={
+ 'Lánchíd':['🌉 Puente de las Cadenas','El primer puente permanente entre Buda y Pest, inaugurado en 1849. Lo impulsó el conde Széchenyi, lo diseñó William Tierney Clark y dirigió la obra Adam Clark. Los leones de piedra guardan sus dos entradas. Fue volado en 1945 y reabierto en 1949, justo cien años después.'],
+ 'Erzsébet':['🌉 Puente de Isabel','Lleva el nombre de la emperatriz Isabel, Sisi, muy querida en Hungría. El original, de 1903, fue destruido en la guerra; el actual, blanco y sobrio, es de 1964.'],
+ 'Szabadság':['🌉 Puente de la Libertad','De 1896, verde y de hierro, uno de los más bonitos. En lo alto de sus torres hay aves Turul, el pájaro mítico de los magiares. El último remache lo colocó el propio emperador Francisco José. En verano a veces lo cierran al tráfico y la gente se sienta en él.'],
+ 'Margit':['🌉 Puente Margarita','De 1876, diseñado por el ingeniero francés Ernest Goüin. Tiene un codo en el centro, de donde sale el ramal que baja a la Isla Margarita.'],
+ 'Petőfi':['🌉 Puente Petőfi','Inaugurado en 1937 y dedicado al poeta Sándor Petőfi, héroe de la revolución de 1848.']};
+function tagLandmarks(){LMS.forEach(l=>{let best=null,bd=1e9;LM_INFO.forEach(i=>{const w=toW(i[0],i[1]),d=Math.hypot(w.x-l.x,w.z-l.z);if(d<bd){bd=d;best=i}});if(best&&bd<12)l.g.userData.info=[best[2],best[3]]});
+  BRIDGES.forEach(b=>{if(b.grp)b.grp.userData.info=BRIDGE_INFO[b.osm]})}
+function openInfo(info){
+  const am=document.getElementById('actMenu');if(am)am.hidden=true;const sh=document.getElementById('sheet');sh.hidden=false;
+  sh.innerHTML=`<button class="x" id="shX">✕</button><h3>${esc(info[0])}</h3><div class="why" style="margin-top:6px;line-height:1.5">${esc(info[1])}</div>
+   <div class="actions"><button class="pri" id="shGuide">🎧 Que nos lo cuente el guía</button></div>`;
+  document.getElementById('shX').onclick=()=>{sh.hidden=true};
+  document.getElementById('shGuide').onclick=()=>{sh.hidden=true;go('ai');$('q').value='Cuéntanos la historia de '+info[0].replace(/^\S+\s/,'')+' como si fueras nuestro guía.';ask()};
+}
 function setupTap(){
   const ray=new THREE.Raycaster();const el=renderer.domElement;let down=null;
   el.addEventListener('pointerdown',e=>{down={x:e.clientX,y:e.clientY,t:performance.now()}});
@@ -3464,6 +3545,11 @@ function setupTap(){
       const d=new Date(m.t);sh.innerHTML=`<button class="x" id="shX">✕</button><h3>🏅 Reto cumplido</h3><div class="why">${esc(m.text)}</div><p class="muted">${d.toLocaleDateString('es-ES',{weekday:'long',hour:'2-digit',minute:'2-digit'})}</p>`;
       document.getElementById('shX').onclick=()=>{sh.hidden=true};return}}
     if(hit){openSheet(hit.object.userData.poi);return}
+    {const tg=[...LMS.map(l=>l.g),...BRIDGES.map(b=>b.grp).filter(Boolean),...BRIDGES.flatMap(b=>b.decks||[])].filter(o=>o.visible);
+     const lh=ray.intersectObjects(tg,true)[0];
+     if(lh){let o=lh.object,info=null;while(o&&!info){info=o.userData.info;o=o.parent}
+       if(!info){const b=BRIDGES.find(b=>(b.decks||[]).includes(lh.object));if(b)info=BRIDGE_INFO[b.osm]}
+       if(info){openInfo(info);return}}}
     const gh=ray.intersectObject(ground)[0];
     if(gh){
       if(pos.src==='gps'){toast('Con el GPS activo os movéis solos 🛰️');return}
@@ -3490,12 +3576,17 @@ function loop(){
   LMS.forEach(l=>{l.g.visible=Math.hypot(mid.x-l.x,mid.z-l.z)>l.r;if(l.g.userData.show)l.g.userData.show.forEach((s_,i)=>{s_.position.set(-4.6,3+Math.sin(el*.7+i*2)*1.5,Math.sin(el*.5+i*2.1)*3);s_.material.opacity=waterU.uNight.value*.22})});
   const inScene=!!((movie&&movie.scene)||(action&&!action.quiet));if(inScene!==loop.sc){loop.sc=inScene;markers.forEach(m=>{m.group.visible=!inScene});momentPins.forEach(p=>{p.visible=!inScene})}
   medalMeshes.forEach((g,i)=>{g.rotation.y=el*1.2+i;g.position.y+=Math.sin(el*2+i)*.01});flagMeshes.forEach((f,i)=>{f.fl.rotation.y=Math.sin(el*2.5+i)*.25});
+  if(compassMode&&devHead!=null&&!anim&&!action){
+    const off=camera.position.clone().sub(controls.target),hd=Math.hypot(off.x,off.z),h=devHead*Math.PI/180;
+    const cur=Math.atan2(-off.x,off.z);let d=h-cur;d=Math.atan2(Math.sin(d),Math.cos(d));const a=cur+d*Math.min(1,dt*4);
+    camera.position.set(controls.target.x-Math.sin(a)*hd,camera.position.y,controls.target.z+Math.cos(a)*hd);camera.lookAt(controls.target);
+  }
   if(followMode&&!anim){
     if(lastMid){const d=mid.clone().sub(lastMid);camera.position.add(d);controls.target.add(d)}
     controls.target.lerp(mid,Math.min(1,dt*3));
   }
   lastMid=mid.clone();
-  markers.forEach(m=>{if(m.rank){m.sprite.position.y=7.6+Math.sin(el*3+m.rank)*.6;const s=1+.25*Math.sin(el*4);m.ring.scale.set(s,s,s)}else m.sprite.position.y=7.2});
+  markers.forEach(m=>{{const k=Math.max(.16,Math.min(1.5,camera.position.distanceTo(m.group.position)/95));m.group.scale.setScalar(k)}if(m.rank){m.sprite.position.y=7.6+Math.sin(el*3+m.rank)*.6;const s=1+.25*Math.sin(el*4);m.ring.scale.set(s,s,s)}else m.sprite.position.y=7.2});
   if(!movie)controls.update();
   renderer.clear();renderer.render(scene,camera);
   if(movie&&hudScene){renderer.clearDepth();renderer.render(hudScene,hudCam)}
