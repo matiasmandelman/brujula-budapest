@@ -210,6 +210,7 @@ body.mapmode #map3d{height:calc(100dvh - 92px - env(safe-area-inset-bottom))}
           <button data-act="pis">🌳 Pis<small>Paz</small></button>
           <button data-act="fiesta">😎 Fiesta<small>Los dos</small></button>
           <button data-act="buendia">☀️ Buen día<small>Paz → Mati</small></button>
+          <button data-act="run">🏃 Run<small>Los dos</small></button>
         </div>
         <div class="extgrid">
           <button id="exReto">🎲 Reto</button>
@@ -2137,6 +2138,35 @@ const ACTIONS={
     A.lights.forEach((g,i)=>{const a=el*1.4+i*2.1;g.position.set(A.mid.x+Math.cos(a)*2.4*avScale,A.mid.y+(2.1+Math.sin(el*3+i)*.4)*avScale,A.mid.z+Math.sin(a)*2.4*avScale);
       g.material.opacity=.38*wb*(.6+.4*Math.abs(Math.sin(el*4+i)));const k=(1.6+.5*Math.sin(el*8+i))*avScale;g.scale.set(k,k,1)});
   }},
+  run:{dur:8.6,run(A,t,dt,el){
+    const M=A.mati,P=A.paz,c=A.mid,R=1.05*avScale;
+    once(A,'cam',()=>{const d=camera.position.clone().sub(controls.target);d.y=0;d.normalize();flyTo(c.x,c.y+avScale*.9,c.z,{dist:avScale*7.2,height:avScale*1.9,dur:.9,dir:d})});if(camAnim)A.cam0=null;
+    if(A.th===undefined){A.th=Math.atan2(M.group.position.x-c.x,M.group.position.z-c.z);A.p0=[M.group.position.clone(),P.group.position.clone()]}
+    const w=Wt(t,0,8.6,.6,.7);A.th+=dt*1.25*w;   // vueltas en círculo
+    [[M,0],[P,-.75]].forEach(([av,off],j)=>{
+      const th=A.th+off,x=c.x+Math.sin(th)*R,z=c.z+Math.cos(th)*R;
+      av.group.position.x=A.p0[j].x+(x-A.p0[j].x)*w;av.group.position.z=A.p0[j].z+(z-A.p0[j].z)*w;
+      av.group.position.y=height(av.group.position.x,av.group.position.z)+.5;
+      La(av.group,th+Math.PI/2,Math.min(1,w*2));
+      const dance=av===P&&t>3.6&&t<7.8,wd=dance?Wt(t,3.6,7.8,.3,.4):0;
+      const ph=el*(dance?11:13)+j*1.7,sw=Math.sin(ph)*.95*w;
+      // zancada de corredor
+      Lr(av.legs[0].rotation,'x',sw,w);Lr(av.legs[1].rotation,'x',-sw,w);
+      Lr(av.knees[0].rotation,'x',.35+Math.max(0,sw)*1.4,w);Lr(av.knees[1].rotation,'x',.35+Math.max(0,-sw)*1.4,w);
+      av.group.position.y+=Math.abs(Math.sin(ph))*.07*avScale*w;
+      if(!(av===M&&mateHolder===M))poseArm(av,0,-sw*.9,-.12,-1.55,w*(1-wd));
+      poseArm(av,1,sw*.9,.12,-1.55,w*(1-wd));
+      if(wd>0){   // Paz corre bailando: brazos arriba, cadera y cabeza al ritmo
+        poseArm(P,0,-2.6+Math.sin(ph)*.5,-.4,-.5,wd);poseArm(P,1,-2.6-Math.sin(ph)*.5,.4,-.5,wd);
+        P.group.rotation.z=Math.sin(ph*.5)*.14*wd;Lr(P.head.rotation,'z',Math.sin(ph*.5)*.3,wd);
+        if(Math.sin(ph*.5)>.98&&A.lastSpin!==Math.floor(t))A.lastSpin=Math.floor(t);
+      }else if(av===P)P.group.rotation.z=0;
+    });
+    if(t>.4)once(A,'go',()=>floatIcon(M,'💨'));
+    if(t>3.2)once(A,'grito',()=>{bubble(P,'¡Corran putitas! 🏃‍♀️',2.6);say('¡Corran putitas!','Paz')});
+    if(t>5)once(A,'mus',()=>floatIcon(P,'🎶'));
+    if(t>6.5)once(A,'mus2',()=>floatIcon(P,'💃'));
+  }},
   buendia:{dur:9.6,run(A,t,dt,el){
     const M=A.mati,P=A.paz;
     // 1) caminan encorvados, arrastrando los pies
@@ -2994,7 +3024,7 @@ function loop(){
   sky.position.copy(camera.position);stars.position.copy(camera.position);
   const anim=movie?true:updateCam(dt);
   LMS.forEach(l=>{l.g.visible=Math.hypot(mid.x-l.x,mid.z-l.z)>l.r});
-  const inScene=!!(movie&&movie.scene);if(inScene!==loop.sc){loop.sc=inScene;markers.forEach(m=>{m.group.visible=!inScene});momentPins.forEach(p=>{p.visible=!inScene})}
+  const inScene=!!((movie&&movie.scene)||(action&&!action.quiet));if(inScene!==loop.sc){loop.sc=inScene;markers.forEach(m=>{m.group.visible=!inScene});momentPins.forEach(p=>{p.visible=!inScene})}
   medalMeshes.forEach((g,i)=>{g.rotation.y=el*1.2+i;g.position.y+=Math.sin(el*2+i)*.01});flagMeshes.forEach((f,i)=>{f.fl.rotation.y=Math.sin(el*2.5+i)*.25});
   if(followMode&&!anim){
     if(lastMid){const d=mid.clone().sub(lastMid);camera.position.add(d);controls.target.add(d)}
