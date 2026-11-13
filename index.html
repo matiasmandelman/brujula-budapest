@@ -1288,12 +1288,13 @@ $('aiMic').onclick=()=>{
   if(rec){rec.stop();return}
   if(!SR){$('aiState').textContent='Este navegador no deja dictar aquí: usad el micrófono del teclado.';$('q').focus();return}
   if(!navigator.onLine){$('aiState').textContent='Sin conexión: el dictado necesita datos.';return}
+  window.brjRec=true;try{if(navigator.audioSession)navigator.audioSession.type='play-and-record'}catch(e){}
   rec=new SR();rec.lang='es-ES';rec.interimResults=true;rec.continuous=false;let final='';
   rec.onresult=e=>{let txt='';for(let i=0;i<e.results.length;i++)txt+=e.results[i][0].transcript;final=txt;$('q').value=txt};
   rec.onerror=e=>{$('aiState').textContent=e.error==='not-allowed'?'Dad permiso al micrófono para poder hablarle al guía.':e.error==='no-speech'?'No os he oído: probad otra vez.':'No pude escuchar ('+e.error+').'};
-  rec.onend=()=>{rec=null;$('aiMic').classList.remove('rec');if(final.trim()){$('q').value=final.trim();ask()}};
+  rec.onend=()=>{window.brjRec=false;try{if(navigator.audioSession)navigator.audioSession.type='auto'}catch(e){}rec=null;$('aiMic').classList.remove('rec');if(final.trim()){$('q').value=final.trim();ask()}};
   $('aiState').textContent='Escuchando… hablad y se envía solo.';$('aiMic').classList.add('rec');
-  try{rec.start()}catch(e){rec=null;$('aiMic').classList.remove('rec');$('aiState').textContent='No pude abrir el micrófono.'}
+  try{rec.start()}catch(e){window.brjRec=false;rec=null;$('aiMic').classList.remove('rec');$('aiState').textContent='No pude abrir el micrófono.'}
 };
 /* Diario del viaje: lo que hicisteis de verdad (GPS, ✓, momentos, retos) para que el guía lo sepa todo */
 function tripLog(){
@@ -3898,7 +3899,7 @@ async function voiceDownload(t,w){
 function voiceFetchBg(t,w){const k=vKey(t,w);if(VC.busy.has(k))return;VC.busy.add(k);voiceDownload(t,w).catch(()=>{}).finally(()=>VC.busy.delete(k))}
 function voicePool(){   // reproductores que se "despiertan" con el primer toque (necesario en iPhone)
   if(VC.pool.length)return;for(let i=0;i<3;i++){const a=new Audio();a.setAttribute('playsinline','');VC.pool.push(a)}}
-function unlockPool(){try{if(navigator.audioSession&&navigator.audioSession.type!=='playback')navigator.audioSession.type='playback'}catch(e){}try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();if(actx.state!=='running')actx.resume().catch(()=>{})}catch(e){}voicePool();const sl=VO.silent||(VO.silent=silentWav());VC.pool.forEach(a=>{if(a.paused&&!a.dataset.used){a.src=sl;a.play().then(()=>{a.dataset.used='1'}).catch(()=>{})}})}
+function unlockPool(){try{if(!window.brjRec&&navigator.audioSession&&navigator.audioSession.type!=='playback')navigator.audioSession.type='playback'}catch(e){}try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();if(actx.state!=='running')actx.resume().catch(()=>{})}catch(e){}voicePool();const sl=VO.silent||(VO.silent=silentWav());VC.pool.forEach(a=>{if(a.paused&&!a.dataset.used){a.src=sl;a.play().then(()=>{a.dataset.used='1'}).catch(()=>{})}})}
 ['pointerdown','touchend','click'].forEach(ev=>document.addEventListener(ev,unlockPool,{capture:true,passive:true}));
 function playClip(c,w,t){
   voicePool();const a=VC.pool.find(x=>x.paused&&!Object.values(VC.talk).some(tk=>tk&&tk.el===x))||VC.pool[0];
