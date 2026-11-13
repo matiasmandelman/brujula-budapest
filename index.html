@@ -150,6 +150,33 @@ body.aimode #v-ai.on{position:fixed;top:0;left:0;right:0;bottom:var(--navh,70px)
 @keyframes micp{50%{box-shadow:0 0 0 7px #c0392b44}}
 #aiState{font-size:12px;min-height:0;margin-top:4px}#aiState:empty{display:none}
 .msg.typing{color:var(--mut)}
+.aistage{position:relative;height:200px;flex:none;margin:-6px -12px 0;border-bottom:1px solid var(--line);background:radial-gradient(ellipse at 50% 30%,#22395f 0%,#101d33 55%,#0a1220 100%);overflow:hidden;transition:height .35s}
+.aistage canvas{position:absolute;inset:0;width:100%!important;height:100%!important;display:block}
+body.aitype .aistage{height:0;border:0}
+.stwho{position:absolute;left:8px;bottom:8px;display:flex;gap:5px;align-items:center;z-index:2;font-size:12px;color:var(--mut)}
+.stwho span{margin-right:2px}
+.stwho button,.agopts button{padding:5px 12px;border-radius:999px;font-size:13px;background:#0a1220cc;border:1px solid var(--line);color:var(--mut)}
+.stwho button.on,.agopts button.on{color:#1a1205;background:var(--acc);border-color:var(--acc);font-weight:600}
+.agbtn{position:absolute;right:8px;bottom:8px;z-index:2;border-radius:999px;padding:7px 14px;background:var(--acc);color:#1a1205;border:0;font-weight:700;font-size:14px}
+.agmsg{position:absolute;top:8px;left:10px;right:10px;text-align:center;font-size:12px;color:var(--mut);z-index:2;pointer-events:none}
+.agsub{position:absolute;left:12px;right:12px;bottom:78px;z-index:2;background:#0a1220e0;border:1px solid var(--line);border-radius:14px;padding:12px 14px;font-size:17px;line-height:1.45;text-align:center;max-height:38%;overflow:auto}
+.agctl{position:absolute;left:0;right:0;bottom:14px;display:flex;justify-content:center;gap:16px;z-index:2}
+.agctl[hidden],.agsub[hidden],.agsheet[hidden]{display:none}
+.agctl button{width:50px;height:50px;border-radius:50%;font-size:20px;padding:0}
+body.aiplay .aistage{height:auto;flex:1;margin-bottom:-6px;border:0}
+body.aiplay #chat,body.aiplay .aibar,body.aiplay .stwho,body.aiplay .agbtn{display:none}
+.agsheet{position:absolute;inset:0;z-index:6;background:var(--bg);padding:calc(14px + env(safe-area-inset-top)) 16px 16px;overflow-y:auto}
+.agsheet h3{margin:0 0 8px}
+.aglbl{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut);margin:16px 0 8px}
+.agopts{display:flex;gap:8px;flex-wrap:wrap}
+.agopts button{font-size:15px;padding:8px 16px;display:flex;flex-direction:column;align-items:center;line-height:1.2}
+.agopts small{font-size:11px;opacity:.8;font-weight:400}
+.agrow{display:flex;gap:10px;align-items:flex-start;padding:9px 0;font-size:15px}.agrow input{width:auto;flex:none;margin-top:3px;accent-color:var(--acc)}.agrow span{flex:1}
+.agrow small{display:block;color:var(--mut);font-size:12px;margin-top:2px}
+.agsheet select,.agsheet input:not([type]){width:100%;margin:0 0 4px;font-size:16px;padding:10px 12px;border-radius:10px;background:var(--card);color:var(--tx);border:1px solid var(--line)}
+.agsheet .actions{display:flex;gap:10px;margin-top:22px}.agsheet .actions button{flex:1;padding:12px;font-size:16px}
+.msg .spk{display:inline-block;margin:6px 0 0;padding:2px 10px;border-radius:999px;font-size:12px;background:transparent;border:1px solid var(--line);color:var(--mut)}
+.msg.typing .spk{display:none}.msg .spk.on{color:#1a1205;background:var(--acc);border-color:var(--acc)}
 .aipic{position:relative;margin:6px 0;display:inline-block}.aipic img{max-height:120px;border-radius:10px;display:block}.aipic button{position:absolute;top:4px;right:4px;padding:2px 8px;font-size:13px}
 .msg img{max-height:90px;border-radius:8px;display:block;margin-bottom:6px}
 .msg{padding:10px 12px;border-radius:12px;margin-bottom:8px;white-space:pre-wrap;line-height:1.45}
@@ -292,6 +319,27 @@ body.mapfull .mapbtns button:not(#btnAct):not(#btnFollow):not(#btnCompass){displ
 
   <!-- GUIA IA -->
   <section class="view" id="v-ai">
+    <div class="aistage" id="aiStage">
+      <div class="agmsg" id="agMsg"></div>
+      <div class="stwho" id="stWho"><span>Os habla:</span><button data-who="Mati">Mati</button><button data-who="Paz">Paz</button></div>
+      <button class="agbtn" id="agOpen">🎧 Audioguía</button>
+      <div class="agsub" id="agSub" hidden></div>
+      <div class="agctl" id="agCtl" hidden><button id="agRep" aria-label="Repetir">↺</button><button class="pri" id="agPause" aria-label="Pausa">⏸</button><button id="agStop" aria-label="Parar">⏹</button></div>
+    </div>
+    <div class="agsheet" id="agSheet" hidden>
+      <h3>🎧 Audioguía</h3>
+      <div class="aglbl">¿Quién os lo cuenta?</div>
+      <div class="agopts" id="agWho"><button data-who="Mati">Mati</button><button data-who="Paz">Paz</button></div>
+      <div class="aglbl">¿De qué?</div>
+      <label class="agrow"><input type="radio" name="agT" value="near" checked> <span>📍 Lo que tenemos delante <small id="agNear"></small></span></label>
+      <label class="agrow"><input type="radio" name="agT" value="list"> <span>📚 Un sitio de la lista</span></label>
+      <select id="agList"></select>
+      <label class="agrow"><input type="radio" name="agT" value="free"> <span>✍️ Tema libre</span></label>
+      <input id="agFree" placeholder="Ej.: la historia de los ruin bars, Sisi, el gulash…">
+      <div class="aglbl">¿Cuánto tiempo?</div>
+      <div class="agopts" id="agLen"><button data-len="0">Corta<small>~1 min</small></button><button data-len="1">Media<small>~3 min</small></button><button data-len="2">Completa<small>~5–6 min</small></button></div>
+      <div class="actions"><button id="agCancel">Cancelar</button><button class="pri" id="agGo">Empezar</button></div>
+    </div>
     <div class="chat" id="chat"></div>
     <div class="aibar">
       <div class="quick" id="quick"></div>
@@ -1226,6 +1274,7 @@ $('quick').innerHTML=QUICK.map((q,i)=>`<button data-qi="${i}">${q[0]}</button>`)
 $('quick').querySelectorAll('button').forEach(b=>b.onclick=()=>{const q=QUICK[+b.dataset.qi];$('q').value=q[1]||q[0];if(q[2]){pendingAsk=true;$('aiPhoto').click()}else ask()});
 // pantalla de chat: el campo de texto crece con lo escrito y Enter envía
 $('q').addEventListener('input',()=>{const q=$('q');q.style.height='auto';q.style.height=Math.min(120,q.scrollHeight)+'px'});
+$('q').addEventListener('focus',()=>document.body.classList.add('aitype'));$('q').addEventListener('blur',()=>setTimeout(()=>document.body.classList.remove('aitype'),150));
 $('q').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();ask()}});
 document.addEventListener('brj:view',e=>{const on=e.detail==='ai';document.body.classList.toggle('aimode',on);
   if(on){const n=document.querySelector('nav');document.documentElement.style.setProperty('--navh',(n?n.offsetHeight:70)+'px');
@@ -1292,7 +1341,7 @@ Reglas: responde en español rioplatense, breve y práctico (máx. ~120 palabras
 let sampleFn=null;let history=store.get('chat',[])||[];let picData=null,pendingAsk=false;
 (async()=>{try{if(window.claude&&window.claude.use){sampleFn=await window.claude.use('sample');}}catch(e){sampleFn=null}})();
 function scrollChat(){const c=$('chat');requestAnimationFrame(()=>{c.scrollTop=c.scrollHeight})}
-function addMsg(role,text,img){const d=document.createElement('div');d.className='msg '+(role==='user'?'u':'a');if(img){const i=document.createElement('img');i.src=img;i.onload=scrollChat;d.appendChild(i)}const tx=document.createElement('span');tx.textContent=text;d.appendChild(tx);d.setText=t=>{tx.textContent=t;d.classList.remove('typing');scrollChat()};$('chat').appendChild(d);scrollChat();return d}
+function addMsg(role,text,img){const d=document.createElement('div');d.className='msg '+(role==='user'?'u':'a');if(img){const i=document.createElement('img');i.src=img;i.onload=scrollChat;d.appendChild(i)}const tx=document.createElement('span');tx.textContent=text;d.appendChild(tx);d.setText=t=>{tx.textContent=t;d.classList.remove('typing');scrollChat()};if(role!=='user'){const b=document.createElement('button');b.className='spk';b.textContent='🔊 Escuchar';b.onclick=()=>{if(window.brjSpeakMsg)window.brjSpeakMsg(tx.textContent,b)};d.appendChild(document.createElement('br'));d.appendChild(b)}$('chat').appendChild(d);scrollChat();return d}
 // foto: se reduce en el móvil antes de mandarla (menos datos y menos coste)
 $('aiCam').onclick=()=>{pendingAsk=false;$('aiPhoto').click()};
 $('aiPicX').onclick=()=>{picData=null;$('aiPic').hidden=true};
@@ -1303,10 +1352,10 @@ $('aiPhoto').onchange=e=>{const f=e.target.files&&e.target.files[0];e.target.val
     $('aiPicImg').src=picData;$('aiPic').hidden=false;if(pendingAsk){pendingAsk=false;ask()}};
   img.onerror=()=>{URL.revokeObjectURL(url);$('aiState').textContent='No pude leer esa foto.'};img.src=url};
 function aiPass(force){let p=store.get('aipass','');if(!p||force){p=(prompt(force?'Contraseña incorrecta. Escribid la contraseña del viaje:':'Contraseña del viaje (solo la primera vez; queda guardada en este móvil):')||'').trim();if(p)store.set('aipass',p)}return p}
-async function callGuide(msgs,sys,retry){
+async function callGuide(msgs,sys,retry,extra){
   const pass=aiPass(retry);if(!pass)throw Object.assign(new Error('Sin contraseña del viaje.'),{code:'nopass'});
-  const r=await fetch(AI_URL,{method:'POST',headers:{'content-type':'application/json','x-brujula-pass':pass},body:JSON.stringify({system:sys,messages:msgs})});
-  if(r.status===401){store.set('aipass','');if(!retry)return callGuide(msgs,sys,true);throw Object.assign(new Error('Contraseña incorrecta.'),{code:'nopass'})}
+  const r=await fetch(AI_URL,{method:'POST',headers:{'content-type':'application/json','x-brujula-pass':pass},body:JSON.stringify({system:sys,messages:msgs,...(extra||{})})});
+  if(r.status===401){store.set('aipass','');if(!retry)return callGuide(msgs,sys,true,extra);throw Object.assign(new Error('Contraseña incorrecta.'),{code:'nopass'})}
   const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.detail||j.error||('error '+r.status));return j.text||'';
 }
 let busy=false;
@@ -2249,7 +2298,7 @@ function makeAvatar(o){
   const M=(c,r=.85)=>new THREE.MeshStandardMaterial({color:c,roughness:r,metalness:0});
   const skin=M(o.skin,.7),hairM=M(o.hair,.9),dark=M('#141414');
   const add=(parent,geo,mat,x=0,y=0,z=0)=>{const m=new THREE.Mesh(geo,mat);m.position.set(x,y,z);parent.add(m);return m};
-  const cap=(r,l)=>new THREE.CapsuleGeometry(r,l,6,14),sph=(r)=>new THREE.SphereGeometry(r,18,14),cyl=(a,b,h)=>new THREE.CylinderGeometry(a,b,h,16);
+  const Q=o.hd?2:1,cap=(r,l)=>new THREE.CapsuleGeometry(r,l,6*Q,14*Q),sph=(r)=>new THREE.SphereGeometry(r,18*Q,14*Q),cyl=(a,b,h)=>new THREE.CylinderGeometry(a,b,h,16*Q);
 
   /* piernas con rodilla */
   const legs=[],knees=[];
@@ -2300,13 +2349,16 @@ function makeAvatar(o){
   add(head,sph(.024),skin,-.1,0,-.005).scale.set(.6,1,1);         // orejas
   add(head,sph(.024),skin,.1,0,-.005).scale.set(.6,1,1);
   const nose=add(head,new THREE.ConeGeometry(.018,.045,8),skin,0,-.01,.112);nose.rotation.x=Math.PI/2;
+  const brows=[];
   [-.038,.038].forEach(x=>{
     add(head,sph(.017),M('#f6f3ee',.4),x,.02,.098).scale.set(o.eyeX||1,o.eyeY||.8,.6);   // blanco del ojo
     add(head,sph(.011),M('#3b2618',.3),x,.02,.108).scale.set(1,o.irisY||1,1);                        // iris
     add(head,sph(.004),M('#ffffff',.2),x+.004,.024,.118);                  // brillo
-    const b=add(head,new THREE.BoxGeometry(.044,.011,.012),hairM,x,.05,.104);b.rotation.z=x<0?.12:-.12});
+    const b=add(head,new THREE.BoxGeometry(.044,.011,.012),hairM,x,.05,.104);b.rotation.z=x<0?.12:-.12;brows.push(b)});
   const lids=[-.038,.038].map(x=>{const l=add(head,sph(.0195),skin,x,.021,.099);l.scale.set((o.eyeX||1)*1.08,(o.eyeY||.8)*1.12,.64);l.visible=false;return l});   // párpados (parpadeo)
   const smile=add(head,new THREE.TorusGeometry(.026,.006,6,14,Math.PI),M('#9a4a40'),0,-.05,.104);smile.rotation.z=Math.PI;
+  const mouth=add(head,sph(.021),M('#3a1714',.7),0,-.056,.099);mouth.scale.set(1.15,.05,.45);mouth.visible=false;   // boca que se abre al hablar
+  if(o.hd){const tm=add(head,new THREE.BoxGeometry(.03,.006,.004),M('#f4efe6',.4),0,-.047,.104);tm.visible=false;mouth.userData.teeth=tm}
   if(o.style==='mati'){
     add(head,new THREE.BoxGeometry(.072,.015,.02),hairM,0,-.031,.108);   // bigote
     // pelo corto: solo arriba y detrás, despejando frente y ojos
@@ -2356,8 +2408,8 @@ function makeAvatar(o){
   shadow.rotation.x=-Math.PI/2;shadow.position.y=.01;g.add(shadow);
   g.userData.tag={visible:false};
   g.traverse(m=>{if(m.isMesh&&m!==shadow)m.castShadow=true});shadow.material.opacity=.12;
-  g.scale.setScalar(6.8*o.h);scene.add(g);
-  return {group:g,name:o.name,h:o.h,lids,blinkT:1+Math.random()*3,look:{y:0,x:0,ty:0,tx:0,t:1},head,scarf,legs,knees,arms,elbows,body:up,bodyBase:0,phase:Math.random()*6,speed:0,side:o.side};
+  g.scale.setScalar((o.parent?1:6.8)*o.h);(o.parent||scene).add(g);
+  return {group:g,name:o.name,h:o.h,lids,mouth,smile,brows,blinkT:1+Math.random()*3,look:{y:0,x:0,ty:0,tx:0,t:1},head,scarf,legs,knees,arms,elbows,body:up,bodyBase:0,phase:Math.random()*6,speed:0,side:o.side};
 }
 const MATE_P=new THREE.Vector3(0,-.3,-.045),MATE_Q=new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI/2,0,0));
 let mate=null,mateHolder=null,mateAnim=null;
@@ -3238,11 +3290,11 @@ function openMovieSheet(){
   const r=document.getElementById('mvRec');if(r)r.onclick=()=>{sh.hidden=true;startMovie(true)};
 }
 
+const AV_DEF=[
+  {name:'Mati',style:'mati',side:-1,h:1,skin:'#e5b593',hair:'#33241b',top:'#d7d9dc',jacket:'#18181b',bottoms:'#3e5f8a',bottoms2:'#34506f',shoes:'#161616',tag:'#2f6fd6',scarf:'#8f2f2f',hipW:.1,shW:.25,mate:true,armOffset:[-.08,0]},
+  {name:'Paz',style:'paz',side:1,h:.93,skin:'#e7b993',hair:'#3a271c',eyeX:1.12,eyeY:.66,irisY:.86,top:'#4a4d55',bottoms:'#ebe5d8',shoes:'#f4f4f4',tag:'#e05a6b',scarf:'#e9dcc0',hipW:.095,shW:.2}];
 function buildAvatars(){
-  avatars=[
-    makeAvatar({name:'Mati',style:'mati',side:-1,h:1,skin:'#e5b593',hair:'#33241b',top:'#d7d9dc',jacket:'#18181b',bottoms:'#3e5f8a',bottoms2:'#34506f',shoes:'#161616',tag:'#2f6fd6',scarf:'#8f2f2f',hipW:.1,shW:.25,mate:true,armOffset:[-.08,0]}),
-    makeAvatar({name:'Paz',style:'paz',side:1,h:.93,skin:'#e7b993',hair:'#3a271c',eyeX:1.12,eyeY:.66,irisY:.86,top:'#4a4d55',bottoms:'#ebe5d8',shoes:'#f4f4f4',tag:'#e05a6b',scarf:'#e9dcc0',hipW:.095,shW:.2}),
-  ];
+  avatars=AV_DEF.map(o=>makeAvatar(o));
   mate=makeMate();mateHolder=avatars.find(a=>a.name===store.get('mate','Mati'))||avatars[0];
   mateHolder.elbows[0].rotation.x=-Math.PI/2;mateHolder.elbows[0].add(mate);mate.position.copy(MATE_P);mate.quaternion.copy(MATE_Q);
 }
@@ -3525,9 +3577,9 @@ function tagLandmarks(){LMS.forEach(l=>{let best=null,bd=1e9;LM_INFO.forEach(i=>
 function openInfo(info){
   const am=document.getElementById('actMenu');if(am)am.hidden=true;const sh=document.getElementById('sheet');sh.hidden=false;
   sh.innerHTML=`<button class="x" id="shX">✕</button><h3>${esc(info[0])}</h3><div class="why" style="margin-top:6px;line-height:1.5">${esc(info[1])}</div>
-   <div class="actions"><button class="pri" id="shGuide">🎧 Que nos lo cuente el guía</button></div>`;
+   <div class="actions"><button class="pri" id="shGuide">🎧 Audioguía de este sitio</button></div>`;
   document.getElementById('shX').onclick=()=>{sh.hidden=true};
-  document.getElementById('shGuide').onclick=()=>{sh.hidden=true;go('ai');$('q').value='Cuéntanos la historia de '+info[0].replace(/^\S+\s/,'')+' como si fueras nuestro guía.';ask()};
+  document.getElementById('shGuide').onclick=()=>{sh.hidden=true;go('ai');openGuideSheet({name:info[0].replace(/^\S+\s/,''),info:info[1]})};
 }
 function setupTap(){
   const ray=new THREE.Raycaster();const el=renderer.domElement;let down=null;
@@ -3593,6 +3645,226 @@ function loop(){
 }
 document.addEventListener('brj:view',e=>{if(e.detail==='map'){init();resize();refresh()}});
 if(currentView==='map')init();
+/* ================= GUÍA: Mati y Paz en grande, con su voz ================= */
+const ST={r:null,sc:null,cam:null,av:{},who:store.get('voice','Mati')==='Paz'?'Paz':'Mati',talking:null,thinking:null,level:0,t:0,last:0,raf:0};
+const VO={audio:null,actx:null,cache:new Map(),queue:[],idx:0,who:'Mati',token:0,mode:'eleven',env:null,text:'',btn:null,guide:false,paused:false,phoneT:0};
+function stageEl(){return document.getElementById('aiStage')}
+function stageInit(){
+  if(ST.r)return true;const el=stageEl();if(!el)return false;
+  try{ST.r=new THREE.WebGLRenderer({antialias:true,alpha:true})}catch(e){return false}
+  ST.r.setPixelRatio(Math.min(devicePixelRatio,2));ST.r.setClearColor(0x000000,0);
+  el.prepend(ST.r.domElement);
+  const sc=ST.sc=new THREE.Scene();
+  ST.cam=new THREE.PerspectiveCamera(28,1,.05,30);
+  sc.add(new THREE.HemisphereLight(0xdfe8ff,0x1a2238,1.05));
+  const key=new THREE.DirectionalLight(0xfff1dc,1.7);key.position.set(1.1,2.6,2.6);sc.add(key);
+  const fill=new THREE.DirectionalLight(0xbcd2ff,.45);fill.position.set(-1.6,1.6,2);sc.add(fill);
+  const rim=new THREE.DirectionalLight(0xf2b84b,1.3);rim.position.set(-1.8,2.3,-1.7);sc.add(rim);
+  const rim2=new THREE.DirectionalLight(0x6fa8ff,1);rim2.position.set(1.9,2,-1.5);sc.add(rim2);
+  AV_DEF.forEach(o=>{
+    const a=makeAvatar({...o,parent:sc,hd:true});
+    a.group.traverse(m=>{if(m.isMesh&&m.geometry&&m.geometry.type==='CircleGeometry')m.visible=false});
+    const x=o.name==='Mati'?-.27:.27;a.group.position.set(x,0,0);a.baseX=x;a.turn=o.name==='Mati'?.24:-.24;a.group.rotation.y=a.turn;
+    a.armBase=a.arms.map(s=>({x:s.rotation.x,z:s.rotation.z}));a.lk={y:0,x:0,t:0};a.ph=Math.random()*6;
+    ST.av[o.name]=a;
+  });
+  const M=ST.av.Mati,mt=makeMate();M.elbows[0].add(mt);mt.position.copy(MATE_P);mt.quaternion.copy(MATE_Q);M.elbows[0].rotation.x=-Math.PI/2;
+  ST.r.domElement.addEventListener('click',e=>{const b=ST.r.domElement.getBoundingClientRect();if(document.body.classList.contains('aiplay'))return;setWho(e.clientX-b.left<b.width/2?'Mati':'Paz')});
+  return true;
+}
+function setWho(w){ST.who=w;store.set('voice',w);
+  document.querySelectorAll('#stWho button,#agWho button').forEach(b=>b.classList.toggle('on',b.dataset.who===w))}
+function envAt(t){const e=VO.env;if(!e)return 0;const i=Math.floor(t/.025);return i>=0&&i<e.length?e[i]:0}
+function talkLevel(){
+  if(!ST.talking)return 0;
+  if(VO.mode==='eleven'&&VO.audio&&!VO.audio.paused){if(VO.env)return envAt(VO.audio.currentTime+.04);return .35+.3*Math.abs(Math.sin(ST.t*11))*Math.abs(Math.sin(ST.t*3.7))}
+  if(VO.mode==='phone'&&window.speechSynthesis&&speechSynthesis.speaking&&!VO.paused){const k=Math.abs(Math.sin(ST.t*12.5))*(.5+.5*Math.abs(Math.sin(ST.t*2.9)));return Math.max(0,k-(ST.t-VO.phoneT<.05?0:.08))}
+  return 0;
+}
+function stageLoop(){
+  ST.raf=0;if(currentView!=='ai'||document.hidden||!ST.r)return;ST.raf=requestAnimationFrame(stageLoop);
+  const nowT=performance.now(),dt=Math.min(.05,(nowT-(ST.last||nowT))/1000);ST.last=nowT;ST.t+=dt;const t=ST.t;
+  const el=stageEl(),W=el.clientWidth,H=el.clientHeight;if(W<10||H<10)return;
+  if(ST.r.domElement.width!==Math.round(W*ST.r.getPixelRatio())||ST.r.domElement.height!==Math.round(H*ST.r.getPixelRatio())){ST.r.setSize(W,H,false);ST.cam.aspect=W/H;ST.cam.updateProjectionMatrix()}
+  const lv=talkLevel();ST.level+=(lv-ST.level)*Math.min(1,dt*(lv>ST.level?30:16));
+  for(const name of ['Mati','Paz']){
+    const a=ST.av[name],other=ST.av[name==='Mati'?'Paz':'Mati'],talk=ST.talking===name,think=ST.thinking===name,sel=ST.who===name;
+    const L=talk?ST.level:0,sd=name==='Mati'?1:-1;
+    // respiración y postura
+    a.body.position.y=Math.sin(t*1.7+a.ph)*.004+(talk?L*.006:0);
+    a.group.position.z+=((sel?.06:-.04)-a.group.position.z)*Math.min(1,dt*3);
+    a.group.position.x+=((a.baseX)-a.group.position.x)*Math.min(1,dt*3);
+    // parpadeo
+    a.blinkT-=dt;if(a.blinkT<-.13)a.blinkT=1.6+Math.random()*3.2;a.lids.forEach(l=>{l.visible=a.blinkT<0});
+    // mirada
+    a.lk.t-=dt;let ty,tx;
+    if(talk){ty=-a.turn+Math.sin(t*1.3+a.ph)*.12;tx=-L*.1+Math.sin(t*6.5)*.03*L}
+    else if(ST.talking){ty=sd*.55;tx=.03}
+    else if(think){ty=-a.turn+.25*sd;tx=-.18}
+    else{if(a.lk.t<=0){const r=Math.random();a.lk.y=r<.35?sd*.55:r<.7?-a.turn:(Math.random()-.5)*.8;a.lk.x=(Math.random()-.5)*.15;a.lk.t=1.4+Math.random()*2.6}ty=a.lk.y;tx=a.lk.x}
+    Lr(a.head.rotation,'y',ty,Math.min(1,dt*5));Lr(a.head.rotation,'x',tx,Math.min(1,dt*7));Lr(a.head.rotation,'z',talk?Math.sin(t*1.9)*.05:think?.12*sd:0,Math.min(1,dt*4));
+    // boca y cejas
+    const op=talk?L:0;a.mouth.visible=op>.04;a.mouth.scale.y=.08+op*.95;a.mouth.scale.x=1.15-op*.25;a.smile.visible=op<.4;
+    if(a.mouth.userData.teeth)a.mouth.userData.teeth.visible=op>.3;
+    a.brows.forEach(b=>{b.position.y=.05+(talk?L*.009+(L>.7?.004:0):think?.006:0)});
+    // brazos: gestos al hablar
+    a.arms.forEach((s,i)=>{
+      if(name==='Mati'&&i===0){Lr(a.elbows[0].rotation,'x',-Math.PI/2,Math.min(1,dt*4));return}
+      const b=a.armBase[i],w=Math.min(1,dt*4),side=i===0?-1:1;
+      if(talk){const g=Math.sin(t*2.2+i*1.9+a.ph),h=Math.sin(t*3.1+i);poseArm(a,i,-.28-.22*g*(.4+L),b.z+side*.32,-.95-.3*h*(.3+L),w)}
+      else if(think&&i===1){poseArm(a,i,-1.25,side*.35,-2.1,w)}
+      else poseArm(a,i,b.x,b.z,0,w)});
+  }
+  // cámara: encuadra a los dos y se acerca un poco a quien habla
+  const focus=ST.talking||ST.thinking,fx=focus?ST.av[focus].baseX*.3:0,play=document.body.classList.contains('aiplay');
+  const tan=Math.tan(THREE.MathUtils.degToRad(ST.cam.fov/2)),needH=play?1.25:1.08,needW=1.3;
+  let dist=Math.max(needH/2/tan,needW/2/(tan*ST.cam.aspect));dist=Math.min(dist,4.6);
+  const cy=play?Math.min(1.45,2.1-dist*tan):1.48,tgt=new THREE.Vector3(fx,cy,0),cp=new THREE.Vector3(fx*.6,cy+.06,dist);
+  ST.cam.position.lerp(cp,Math.min(1,dt*2.5));if(!ST.camT)ST.camT=tgt.clone();ST.camT.lerp(tgt,Math.min(1,dt*2.5));ST.cam.lookAt(ST.camT);
+  ST.r.render(ST.sc,ST.cam);
+}
+function stageStart(){if(!stageInit())return;if(!ST.raf){ST.last=0;ST.raf=requestAnimationFrame(stageLoop)}}
+document.addEventListener('brj:view',e=>{if(e.detail==='ai'){setWho(ST.who);stageStart()}else{stopSpeak();closeGuideSheet()}});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&currentView==='ai')stageStart()});
+
+/* ---------- voces ---------- */
+function silentWav(){const n=800,b=new ArrayBuffer(44+n*2),v=new DataView(b),w=(o,s)=>[...s].forEach((c,i)=>v.setUint8(o+i,c.charCodeAt(0)));
+  w(0,'RIFF');v.setUint32(4,36+n*2,true);w(8,'WAVE');w(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);v.setUint32(24,16000,true);v.setUint32(28,32000,true);v.setUint16(32,2,true);v.setUint16(34,16,true);w(36,'data');v.setUint32(40,n*2,true);
+  return URL.createObjectURL(new Blob([b],{type:'audio/wav'}))}
+function unlockAudio(){   // en iPhone el audio tiene que "despertarse" dentro del toque
+  if(!VO.audio){VO.audio=new Audio();VO.audio.setAttribute('playsinline','');VO.audio.preload='auto';VO.silent=silentWav()}
+  try{VO.actx=VO.actx||new (window.AudioContext||window.webkitAudioContext)();if(VO.actx.state!=='running')VO.actx.resume()}catch(e){}
+  if(VO.audio.paused){VO.audio.src=VO.silent;VO.audio.play().catch(()=>{})}
+  if(window.speechSynthesis){try{speechSynthesis.cancel()}catch(e){}}
+}
+function speechText(t){return String(t).replace(/\p{Extended_Pictographic}|️|‍/gu,'').replace(/[*_#>`~]|\[[^\]]*\]\([^)]*\)/g,'').replace(/[ \t]+/g,' ').replace(/\n{2,}/g,'\n').trim()}
+function splitSpeech(text){
+  const sents=(text.match(/[^.!?…\n]+[.!?…]+["”»)]*\s*|[^.!?…\n]+\n?|\n/g)||[text]).map(x=>x.trim()).filter(Boolean),out=[];let cur='';
+  sents.forEach(x=>{if(cur&&(cur+' '+x).length>240){out.push(cur);cur=x}else cur=cur?cur+' '+x:x});if(cur)out.push(cur);return out}
+async function envelope(buf){
+  try{const ctx=VO.actx||new (window.AudioContext||window.webkitAudioContext)();VO.actx=ctx;
+    const ab=await new Promise((ok,ko)=>{const p=ctx.decodeAudioData(buf.slice(0),ok,ko);if(p&&p.then)p.then(ok,ko)});
+    const d=ab.getChannelData(0),win=Math.floor(ab.sampleRate*.025),env=[];
+    for(let i=0;i<d.length;i+=win){let q=0;const e=Math.min(d.length,i+win);for(let k=i;k<e;k+=2)q+=d[k]*d[k];env.push(Math.sqrt(q/((e-i)/2||1)))}
+    const top=[...env].sort((a,b)=>a-b)[Math.floor(env.length*.95)]||.1;return env.map(v=>Math.max(0,Math.min(1,(v/top-.08)*1.15)))}catch(e){return null}}
+function ttsGet(text,who){
+  const k=who+'|'+text;if(VO.cache.has(k))return VO.cache.get(k);
+  const p=(async()=>{
+    let pass=aiPass(false);if(!pass)throw new Error('nopass');
+    let r=await fetch(AI_URL,{method:'POST',headers:{'content-type':'application/json','x-brujula-pass':pass},body:JSON.stringify({tts:text,voice:who.toLowerCase()})});
+    if(r.status===401){store.set('aipass','');pass=aiPass(true);if(!pass)throw new Error('nopass');r=await fetch(AI_URL,{method:'POST',headers:{'content-type':'application/json','x-brujula-pass':pass},body:JSON.stringify({tts:text,voice:who.toLowerCase()})})}
+    if(!r.ok||!(r.headers.get('content-type')||'').includes('audio'))throw new Error('tts '+r.status);
+    const buf=await r.arrayBuffer();if(buf.byteLength<200)throw new Error('tts vacío');
+    const env=await envelope(buf);return {url:URL.createObjectURL(new Blob([buf],{type:'audio/mpeg'})),env}})();
+  VO.cache.set(k,p);p.catch(()=>VO.cache.delete(k));return p}
+function phoneVoice(who){
+  const vs=(window.speechSynthesis?speechSynthesis.getVoices():[]).filter(v=>/^es/i.test(v.lang));if(!vs.length)return null;
+  const male=/jorge|diego|juan|carlos|pablo|enrique|andr[eé]s|miguel|male|hombre|tom[aá]s/i,fem=/paulina|m[oó]nica|marisol|isabel|luc[ií]a|elena|helena|laura|sabina|female|mujer|paloma|carmen/i;
+  const pref=vs.filter(v=>/es-(AR|UY|419|MX|US)/i.test(v.lang)).concat(vs);
+  return pref.find(v=>(who==='Paz'?fem:male).test(v.name)&&/premium|enhanced|mejorad|natural/i.test(v.name))||pref.find(v=>(who==='Paz'?fem:male).test(v.name))||pref[0]}
+function setSub(txt){const s=document.getElementById('agSub');if(VO.guide){s.hidden=!txt;s.textContent=txt||''}}
+function agMsg(t){const m=document.getElementById('agMsg');if(m)m.textContent=t||''}
+function speak(text,who,opt={}){
+  stopSpeak(true);unlockAudio();const tok=++VO.token;
+  VO.text=text;VO.who=who;VO.queue=splitSpeech(speechText(text));VO.idx=0;VO.guide=!!opt.guide;VO.btn=opt.btn||null;VO.paused=false;
+  VO.mode=navigator.onLine&&!sampleFn?'eleven':'phone';if(VO.btn){VO.btn.classList.add('on');VO.btn.textContent='⏹ Parar'}
+  agMsg('');playIdx(tok)}
+function prefetch(i){for(let k=i;k<Math.min(VO.queue.length,i+2);k++)ttsGet(VO.queue[k],VO.who).catch(()=>{})}
+async function playIdx(tok){
+  if(tok!==VO.token)return;
+  if(VO.idx>=VO.queue.length){finishSpeak();return}
+  const s=VO.queue[VO.idx];setSub(s);
+  if(VO.mode==='eleven'){
+    try{if(VO.idx===0)agMsg(`${VO.who} está cogiendo aire…`);
+      const a=await ttsGet(s,VO.who);prefetch(VO.idx+1);if(tok!==VO.token)return;agMsg('');
+      VO.env=a.env;VO.audio.onended=()=>{if(tok!==VO.token)return;ST.talking=null;VO.idx++;playIdx(tok)};
+      VO.audio.src=a.url;ST.talking=VO.who;if(VO.paused)return;await VO.audio.play();return}
+    catch(e){if(tok!==VO.token)return;VO.mode='phone';agMsg('No llego a la voz real: uso la voz del móvil.');setTimeout(()=>agMsg(''),4000)}}
+  if(!window.speechSynthesis){finishSpeak();return}
+  const u=new SpeechSynthesisUtterance(s),v=phoneVoice(VO.who);u.lang=v?v.lang:'es-ES';if(v)u.voice=v;
+  u.pitch=VO.who==='Paz'?1.1:.88;u.rate=VO.who==='Paz'?1.02:.97;
+  u.onstart=()=>{if(tok===VO.token)ST.talking=VO.who};u.onboundary=()=>{VO.phoneT=ST.t};
+  u.onend=()=>{if(tok!==VO.token)return;ST.talking=null;VO.idx++;playIdx(tok)};u.onerror=u.onend;
+  speechSynthesis.speak(u)}
+function pauseSpeak(){
+  VO.paused=!VO.paused;const b=document.getElementById('agPause');if(b)b.textContent=VO.paused?'▶':'⏸';
+  if(VO.mode==='eleven'&&VO.audio){if(VO.paused)VO.audio.pause();else if(VO.audio.src&&VO.audio.src!==VO.silent)VO.audio.play().catch(()=>{})}
+  else if(window.speechSynthesis){if(VO.paused)speechSynthesis.pause();else speechSynthesis.resume()}}
+function resetBtn(){if(VO.btn){VO.btn.classList.remove('on');VO.btn.textContent='🔊 Escuchar';VO.btn=null}}
+function stopSpeak(keepGuide){
+  VO.token++;ST.talking=null;VO.paused=false;
+  if(VO.audio){VO.audio.onended=null;try{VO.audio.pause()}catch(e){}}
+  if(window.speechSynthesis){try{speechSynthesis.cancel()}catch(e){}}
+  resetBtn();
+  if(!keepGuide){VO.guide=false;ST.thinking=null;document.body.classList.remove('aiplay');document.getElementById('agSub').hidden=true;document.getElementById('agCtl').hidden=true;agMsg('')}}
+function finishSpeak(){
+  ST.talking=null;resetBtn();
+  if(VO.guide){setSub('✨ Fin de la audioguía. ↺ para repetirla, ⏹ para volver al chat.');const b=document.getElementById('agPause');if(b)b.style.visibility='hidden'}}
+window.brjSpeakMsg=(text,btn)=>{if(VO.btn===btn){stopSpeak();return}if(VO.guide)stopSpeak();if(stageInit())stageStart();speak(text,ST.who,{btn})};
+
+/* ---------- audioguía ---------- */
+const AG_LEN=[{w:150,tk:450,l:'corta, de alrededor de 1 minuto'},{w:420,tk:1100,l:'media, de unos 3 minutos'},{w:800,tk:1900,l:'completa, de unos 5 o 6 minutos'}];
+let agLen=+store.get('agLen',1),agPre=null;
+function agPlaces(){
+  const seen=new Set(),out=[];
+  LM_INFO.forEach(i=>{const n=i[2].replace(/^\S+\s/,'');if(/A57|Hungexpo/.test(n))return;seen.add(n.toLowerCase());out.push({name:n,info:i[3],lat:i[0],lng:i[1]})});
+  Object.values(BRIDGE_INFO).forEach(b=>{const n=b[0].replace(/^\S+\s/,'');seen.add(n.toLowerCase());out.push({name:n,info:b[1]})});
+  POIS.forEach(p=>{if(seen.has(p.name.toLowerCase()))return;seen.add(p.name.toLowerCase());out.push({name:p.name,info:p.why||'',lat:p.lat,lng:p.lng})});
+  return out}
+function agNearest(){
+  let best=null,bd=.7;agPlaces().forEach(p=>{if(p.lat==null)return;const k=kmBetween(pos,p);if(k<bd){bd=k;best=p}});
+  return best?{...best,m:Math.round(bd*1000)}:null}
+function openGuideSheet(pre){
+  agPre=pre||null;stopSpeak();if(stageInit())stageStart();
+  const sh=document.getElementById('agSheet'),pl=agPlaces();
+  document.getElementById('agList').innerHTML=pl.map((p,i)=>`<option value="${i}">${esc(p.name)}</option>`).join('');
+  const nr=agNearest();document.getElementById('agNear').textContent=nr?`${nr.name}, a ${nr.m<60?'unos pasos':nr.m+' m'}`:`Nada famoso muy cerca: os cuenta de la zona (${pos.label})`;
+  if(pre){const i=pl.findIndex(p=>p.name===pre.name);if(i>=0){document.getElementById('agList').value=i;sh.querySelector('input[value=list]').checked=true}
+    else{document.getElementById('agFree').value=pre.name;sh.querySelector('input[value=free]').checked=true}}
+  else sh.querySelector('input[value=near]').checked=true;
+  document.querySelectorAll('#agLen button').forEach(b=>b.classList.toggle('on',+b.dataset.len===agLen));setWho(ST.who);sh.hidden=false}
+function closeGuideSheet(){const s=document.getElementById('agSheet');if(s)s.hidden=true}
+window.openGuideSheet=openGuideSheet;
+async function startGuide(){
+  const sh=document.getElementById('agSheet'),kind=sh.querySelector('input[name=agT]:checked').value,L=AG_LEN[agLen],who=ST.who,other=who==='Mati'?'Paz':'Mati';
+  let topic,data='';
+  if(kind==='near'){const n=agNearest();if(n){topic=`${n.name}, que tienen delante (a ${n.m} m)`;data=n.info}else topic=`la zona donde están ahora mismo: ${pos.label} (${pos.lat.toFixed(4)}, ${pos.lng.toFixed(4)}), en Budapest`}
+  else if(kind==='list'){const p=agPlaces()[+document.getElementById('agList').value];topic=p.name;data=p.info}
+  else{topic=document.getElementById('agFree').value.trim();if(!topic){document.getElementById('agFree').focus();return}}
+  if(!navigator.onLine&&!sampleFn){alert('Sin conexión: la audioguía necesita datos para escribirse.');return}
+  unlockAudio();closeGuideSheet();
+  document.body.classList.add('aiplay');VO.guide=true;ST.thinking=who;
+  document.getElementById('agCtl').hidden=false;document.getElementById('agPause').style.visibility='hidden';document.getElementById('agPause').textContent='⏸';
+  setSub('');agMsg(`${who} está preparando la audioguía…`);const tok=++VO.token;
+  const sys=`Vas a narrar una AUDIOGUÍA HABLADA. Eres ${who}, que está de viaje por Budapest con ${other}, y se la cuentas en primera persona como su compañero de viaje: cercano, con complicidad y humor suave, en español rioplatense natural (voseo), dirigiéndote a ${other} (y a los dos cuando encaje). Olvida el formato de chat y el límite de palabras de la información del viaje.
+Escribe SOLO el texto que se va a leer en voz alta: sin títulos, listas, markdown, emojis ni acotaciones entre paréntesis. Frases cortas y fáciles de escuchar. Números y fechas escritos como se dicen en voz alta.
+Duración: ${L.l}, unas ${L.w} palabras. Completa pero sin relleno: empieza situándoos (qué tenéis delante o de qué va), cuenta la historia con 2 a 4 curiosidades o anécdotas reales, y termina con algo práctico (qué mirar ahora, la mejor foto o qué probar) y una frase final con gracia.
+Solo datos de los que estés seguro; si dudas de una fecha o una cifra, no la des. No inventes horarios ni precios.
+
+INFORMACIÓN DEL VIAJE (para conectar con lo que están haciendo; no la recites):
+${context()}`;
+  const user=`Tema de la audioguía: ${topic}.${data?'\nDatos verificados que podés usar: '+data:''}`;
+  try{
+    let text;
+    if(sampleFn){const r=await sampleFn([{role:'user',content:sys+'\n\n'+user}],{cache:false,modelTier:'default'});text=r.text}
+    else text=await callGuide([{role:'user',content:user}],sys,false,{max_tokens:L.tk});
+    if(tok!==VO.token)return;text=String(text||'').trim();if(!text)throw new Error('vacía');
+    ST.thinking=null;document.getElementById('agPause').style.visibility='';
+    speak(text,who,{guide:true});
+  }catch(e){if(tok!==VO.token)return;ST.thinking=null;agMsg('');setSub(e&&e.code==='nopass'?'Hace falta la contraseña del viaje.':'No pude preparar la audioguía ('+(e.message||e)+'). Probad otra vez en un momento.')}
+}
+document.querySelectorAll('#stWho button,#agWho button').forEach(b=>b.onclick=()=>setWho(b.dataset.who));
+document.querySelectorAll('#agLen button').forEach(b=>b.onclick=()=>{agLen=+b.dataset.len;store.set('agLen',agLen);document.querySelectorAll('#agLen button').forEach(x=>x.classList.toggle('on',x===b))});
+document.getElementById('agOpen').onclick=()=>openGuideSheet();
+document.getElementById('agCancel').onclick=closeGuideSheet;
+document.getElementById('agGo').onclick=startGuide;
+document.getElementById('agList').onchange=()=>{document.querySelector('#agSheet input[value=list]').checked=true};
+document.getElementById('agFree').oninput=()=>{document.querySelector('#agSheet input[value=free]').checked=true};
+document.getElementById('agPause').onclick=pauseSpeak;
+document.getElementById('agStop').onclick=()=>stopSpeak();
+document.getElementById('agRep').onclick=()=>{if(!VO.text)return;document.getElementById('agPause').style.visibility='';document.getElementById('agPause').textContent='⏸';speak(VO.text,VO.who,{guide:true})};
+if(window.speechSynthesis&&speechSynthesis.onvoiceschanged!==undefined)speechSynthesis.onvoiceschanged=()=>{};
+if(currentView==='ai'){setWho(ST.who);stageStart()}
 </script>
 </body>
 </html>
