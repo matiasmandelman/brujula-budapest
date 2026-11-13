@@ -1188,7 +1188,7 @@ $('simReal').onclick=()=>{sim=null;$('simDlg').close();render()};
 
 /* ================= GUÍA IA ================= */
 const AI_URL='https://iufbanhlyqtonfnufpjz.supabase.co/functions/v1/brujula';
-const QUICK=[['¿Qué hacemos ahora mismo?'],['Reorganízanos lo que queda de hoy'],['📷 Traduce esta carta','Traduce esta carta y recomiéndanos qué pedir (y el precio aproximado en euros).',1],['📷 ¿Qué es esto?','¿Qué es esto que vemos? Cuéntanos su historia en pocas frases y si merece la pena entrar.',1],['Comida típica y barata cerca'],['Un café bonito cerca']];
+const QUICK=[['¿Qué hacemos ahora mismo?'],['¿Qué nos falta?','¿Qué nos falta del plan, de lo pendiente y de la lista de Paz? ¿Qué nos da tiempo a hacer todavía?'],['Resumen del día','Haznos un resumen de lo que hicimos hoy, con lo mejor del día.'],['Reorganízanos lo que queda de hoy'],['📷 Traduce esta carta','Traduce esta carta y recomiéndanos qué pedir (y el precio aproximado en euros).',1],['📷 ¿Qué es esto?','¿Qué es esto que vemos? Cuéntanos su historia en pocas frases y si merece la pena entrar.',1],['Comida típica y barata cerca'],['Un café bonito cerca']];
 $('quick').innerHTML=QUICK.map((q,i)=>`<button data-qi="${i}">${q[0]}</button>`).join('');
 $('quick').querySelectorAll('button').forEach(b=>b.onclick=()=>{const q=QUICK[+b.dataset.qi];$('q').value=q[1]||q[0];if(q[2]){pendingAsk=true;$('aiPhoto').click()}else ask()});
 // pantalla de chat: el campo de texto crece con lo escrito y Enter envía
@@ -1196,6 +1196,7 @@ $('q').addEventListener('input',()=>{const q=$('q');q.style.height='auto';q.styl
 $('q').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();ask()}});
 document.addEventListener('brj:view',e=>{const on=e.detail==='ai';document.body.classList.toggle('aimode',on);
   if(on){const n=document.querySelector('nav');document.documentElement.style.setProperty('--navh',(n?n.offsetHeight:70)+'px');
+    if(!$('chat').children.length){history.forEach(m=>addMsg(m.role,m.content));}
     if(!$('chat').children.length)addMsg('assistant','¡Hola! Soy vuestro guía. Preguntadme lo que queráis, mandadme una foto 📷 de una carta o un edificio, o pulsad 🎤 y habladme.');
     scrollChat()}});
 // micrófono: dictáis y, al terminar de hablar, se envía solo
@@ -1211,6 +1212,28 @@ $('aiMic').onclick=()=>{
   $('aiState').textContent='Escuchando… hablad y se envía solo.';$('aiMic').classList.add('rec');
   try{rec.start()}catch(e){rec=null;$('aiMic').classList.remove('rec');$('aiState').textContent='No pude abrir el micrófono.'}
 };
+/* Diario del viaje: lo que hicisteis de verdad (GPS, ✓, momentos, retos) para que el guía lo sepa todo */
+function tripLog(){
+  const D=['sáb','dom','lun'],when=ms=>{const a=tsToAbs(ms);return a==null?'':D[Math.floor(a/1440)]+' '+fmt(a%1440)};
+  const tr=(store.get('trail',[])||[]).filter(p=>p&&isFinite(p.lat)&&p.t&&tsToAbs(p.t)!==null);
+  const km={};let prev=null;tr.forEach(p=>{const d=Math.floor(tsToAbs(p.t)/1440);if(prev&&Math.floor(tsToAbs(prev.t)/1440)===d){const k=kmBetween(prev,p);if(k<1.5)km[d]=(km[d]||0)+k}prev=p});
+  const seen=[];POIS.forEach(z=>{const hit=tr.find(p=>kmBetween(p,z)*1000<60);if(hit)seen.push({z,t:hit.t})});seen.sort((a,b)=>a.t-b.t);
+  const o=PST(),paz=POIS.filter(z=>z.paz);
+  const pazDone=paz.filter(z=>done.has(z.id)||seen.some(x=>x.z===z)||PLAN.some(p=>p.poi===z.id&&o[p.id]==='done'));
+  const mom=(store.get('moments',[])||[]).filter(m=>!m.test).map(m=>`- ${D[Math.floor(m.ta/1440)]||''} ${fmt(m.ta%1440)}${m.place?' · '+m.place:''}: ${m.who?m.who+' dijo «'+m.text+'»':m.text}`);
+  const med=(store.get('medals',[])||[]).map(m=>`- ${when(m.t)}: ${m.text}`);
+  const tk=PLAN.filter(p=>p.task).map(p=>`${p.title}: ${getTasks().has(p.id)?'HECHO':'sin hacer'}`);
+  return `DIARIO REAL DEL VIAJE (lo que pasó de verdad):
+Km caminados (GPS): ${Object.keys(km).length?Object.entries(km).map(([d,k])=>D[d]+' '+k.toFixed(1)+' km').join(', '):'aún sin datos'}.
+Sitios por los que pasaron (GPS, en orden): ${seen.map(x=>x.z.name+' ('+when(x.t)+')').join(', ')||'ninguno todavía'}.
+Marcados como visitados en la app: ${[...done].map(id=>POIS.find(p=>p.id===id)?.name).filter(Boolean).join(', ')||'ninguno'}.
+Lista de Paz: ${pazDone.length} de ${paz.length} hechos. Faltan: ${paz.filter(z=>!pazDone.includes(z)).map(z=>z.name).join(', ')||'ninguno'}.
+Tareas: ${tk.join('; ')}.
+Momentos que apuntaron:
+${mom.join('\n')||'- ninguno todavía'}
+Retos cumplidos:
+${med.join('\n')||'- ninguno todavía'}`;
+}
 function context(){
   const t=now();const sun=SUNSET[t.d]??SUNSET[0];const nh=nextAnchor(t,true);const na=nextAnchor(t,false);const o=PST();
   const near=POIS.map(p=>({p,...score(p,t)})).sort((a,b)=>b.s-a.s).slice(0,14)
@@ -1221,6 +1244,8 @@ function context(){
 Su plan real (⭐ = imprescindible; FIJO = no se puede mover; entre corchetes, lo que ya marcaron):
 ${PLAN.filter(p=>!p.task).map(p=>`${DAYNAME[p.d]} ${p.t}${p.star?' ⭐':''}${FIXED.has(p.id)?' FIJO':''} ${p.title}${o[p.id]?' ['+stt[o[p.id]]+']':''}${p.late?' (retrasado '+p.late+' min)':''}`).join('\n')}
 Pendiente para cuando haya hueco: ${pl.map(x=>x.title).join('; ')||'nada'}.
+No fueron (descartado): ${PLAN.filter(p=>o[p.id]==='skip').map(p=>p.title).join('; ')||'nada'}.
+${tripLog()}
 Paso actual del plan: ${pn.cur?pn.cur.title:'ninguno'}; siguiente: ${pn.next?pn.next.t+' '+pn.next.title:'ninguno'}.
 AHORA: ${DAYNAME[t.d]}, ${fmt(t.m)} (hora de Budapest). Atardecer hoy: ${fmt(sun)} (${sun-t.m>0?'faltan '+dur(sun-t.m):'ya ha anochecido'}). Próximo compromiso: ${na?na.label+' a las '+fmt(na.m)+' (en '+dur(abs(na)-abs(t))+')':'ninguno'}${nh&&nh!==na?'; próximo compromiso fijo: '+nh.label+' a las '+fmt(nh.m):''}.
 Tiempo: ${weather?Math.round(weather.temp)+'°C'+(weather.rain?', lloviendo':weather.snow?', nevando':''):'desconocido'}.
@@ -1228,9 +1253,10 @@ Ubicación: ${pos.src==='gps'?'GPS':'manual'} · ${pos.label} (${pos.lat.toFixed
 Mejores candidatos cercanos según la app:
 ${near}
 Los sitios 'guardado por Paz' son sus favoritos: dales preferencia cuando encajen.
+Eres su asistente en vivo durante todo el viaje: recuerdas lo que hicieron, lo que falta y lo que dejaron sin hacer, y puedes hacer resúmenes del día, decir qué les queda (también de la lista de Paz) y proponer cómo aprovechar el tiempo que queda.
 Reglas: responde en español rioplatense, breve y práctico (máx. ~120 palabras salvo que pidan traducir una carta), con 1–3 propuestas concretas y en orden, indicando el tiempo a pie. No muevas lo FIJO; propón cosas que encajen en el hueco hasta el siguiente paso y aprovecha lo pendiente si queda cerca. Si te piden reorganizar, da el nuevo orden con horas y diles qué tocar en la app (⏰ Vamos tarde, ⇄ Cambiar, ✗ No fuimos o ↪ Pendiente). Si mandan una foto: si es una carta, tradúcela entera de forma resumida con precios en forintos y su equivalente aproximado en euros (1 € ≈ ${Math.round((store.get('huf',null)||{v:363}).v)} Ft) y recomienda; si es un edificio o lugar, identifícalo con prudencia y di si no estás seguro. Si no sabes un horario o si algo sigue abierto, dilo y sugiere confirmarlo en Google Maps. No te inventes datos.`;
 }
-let sampleFn=null;let history=[];let picData=null,pendingAsk=false;
+let sampleFn=null;let history=store.get('chat',[])||[];let picData=null,pendingAsk=false;
 (async()=>{try{if(window.claude&&window.claude.use){sampleFn=await window.claude.use('sample');}}catch(e){sampleFn=null}})();
 function scrollChat(){const c=$('chat');requestAnimationFrame(()=>{c.scrollTop=c.scrollHeight})}
 function addMsg(role,text,img){const d=document.createElement('div');d.className='msg '+(role==='user'?'u':'a');if(img){const i=document.createElement('img');i.src=img;i.onload=scrollChat;d.appendChild(i)}const tx=document.createElement('span');tx.textContent=text;d.appendChild(tx);d.setText=t=>{tx.textContent=t;d.classList.remove('typing');scrollChat()};$('chat').appendChild(d);scrollChat();return d}
@@ -1260,9 +1286,9 @@ async function ask(){
   const content=pic?[{type:'image',source:{type:'base64',media_type:'image/jpeg',data:pic.split(',')[1]}},{type:'text',text:q}]:q;
   try{
     let text;
-    if(sampleFn){const r=await sampleFn([...history.slice(-6),{role:'user',content:context()+'\n\nPREGUNTA: '+q}],{cache:false,modelTier:'default',onText:({text})=>{out.setText(text)}});text=r.text}
-    else text=await callGuide([...history.slice(-6),{role:'user',content}],context());
-    out.setText(text);history.push({role:'user',content:pic?'[foto] '+q:q},{role:'assistant',content:text});$('aiState').textContent='';
+    if(sampleFn){const r=await sampleFn([...history.slice(-12),{role:'user',content:context()+'\n\nPREGUNTA: '+q}],{cache:false,modelTier:'default',onText:({text})=>{out.setText(text)}});text=r.text}
+    else text=await callGuide([...history.slice(-12),{role:'user',content}],context());
+    out.setText(text);history.push({role:'user',content:pic?'[foto] '+q:q},{role:'assistant',content:text});history=history.slice(-40);store.set('chat',history);$('aiState').textContent='';
   }catch(e){
     out.setText(e&&e.code==='nopass'?'Necesito la contraseña del viaje para preguntar. Volved a intentarlo.':
       (!navigator.onLine?'Sin conexión: el guía necesita datos.':'No he podido responder ahora ('+((e&&e.message)||'error')+'). Probad otra vez en un momento.'));
@@ -1283,7 +1309,7 @@ $('showClosed').onchange=render;
 
 (function tripReset(){
   const n=budNow();if(!TRIP.includes(n.date)||store.get('tripReset',false))return;
-  ['trail','flags','medals','done','tasks','moments','extras'].forEach(k=>store.set(k,[]));['pst','shift','repl'].forEach(k=>store.set(k,{}));store.set('dest',null);store.set('tripReset',true);
+  ['trail','flags','medals','done','tasks','moments','extras','chat'].forEach(k=>store.set(k,[]));history=[];['pst','shift','repl'].forEach(k=>store.set(k,{}));store.set('dest',null);store.set('tripReset',true);
   pos={lat:HOTEL.lat,lng:HOTEL.lng,label:HOTEL.name,src:'manual'};store.set('pos',pos);pst=null;rebuildPlan();
   done=new Set();tasks=null;
 })();
