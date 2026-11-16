@@ -3461,7 +3461,7 @@ function mvEnter(M,j){
 function mvPosAt(M,d){let i=1;while(i<M.cum.length-1&&M.cum[i]<d)i++;
   const a=M.w[i-1],b=M.w[i],seg=(M.cum[i]-M.cum[i-1])||1,f=Math.min(1,Math.max(0,(d-M.cum[i-1])/seg));return {x:a.x+(b.x-a.x)*f,z:a.z+(b.z-a.z)*f}}
 function updateMovie(dt,el){
-  const M=movie;if(!M)return;M.t+=dt;const TT=5.5;
+  const M=movie;if(!M)return;M.t+=dt;const TT=5.5;if(mate)mate.visible=false;
   if(M.lastTa==null)M.lastTa=M.beats.length?M.beats[0].t0:12*60;
   let ta=M.lastTa,hud=null,place='',cap='';
   if(M.t<TT)hud={title:'Budapest',sub:'Mati & Paz · 14–16 nov 2026'+(M.demo?' · avance con vuestro plan':''),light:true};
@@ -3557,6 +3557,7 @@ function mvOverlayEnd(){
   avatars.forEach(a=>{a.head.rotation.set(0,0,0);a.lids.forEach(l=>{l.visible=false})});
 }
 function movieOverlay(dt,el){
+  if(movie&&mate)mate.visible=false;   // en la película no llevan mate
   const M=movie;if(!M||M.scene||M.over)return;const B=M.beats[M.bi];if(!B||!B.overlay||!M.ovOn){mvOverlayEnd();if(B&&M.t>=5.5)movieLife(M,B,dt,el);return}
   if(!M.ov||M.ov.bi!==M.bi){mvOverlayEnd();M.ov={bi:M.bi,t:0,ic:{}}}
   const o=M.ov;o.t+=dt;const t=o.t,Mt=avatars.find(a=>a.name==='Mati'),Pz=avatars.find(a=>a.name==='Paz');
@@ -3714,7 +3715,7 @@ function moveAvatars(dt){
     a.phase+=dt*(moving?(movie?13:tired?6:9):2.2);
     const sw=Math.sin(a.phase)*.65*a.speed;
     a.legs[0].rotation.x=sw;a.legs[1].rotation.x=-sw;
-    const holds=mateHolder===a,busy=mateAnim&&(mateAnim.g===a||mateAnim.r===a);
+    const holds=mateHolder===a&&!movie,busy=mateAnim&&(mateAnim.g===a||mateAnim.r===a);
     a.arms[0].rotation.x=(holds||busy)?-.08-sw*.3:-sw*.8;a.arms[1].rotation.x=sw*.8;
     if(!busy)a.elbows[0].rotation.x=holds?-Math.PI/2:-.12-Math.max(0,sw)*.35;
     a.elbows[1].rotation.x=-.12-Math.max(0,-sw)*.35;
