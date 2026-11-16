@@ -745,7 +745,8 @@ const GUION=[
  {d:1,h:'13:50',place:'Mamá Goulash',scene:'meal',food:'goulash',cap:'🍲 Goulash en pan · Mamá Goulash'},
  {d:1,h:'17:05',place:'Zapatos del Danubio',scene:'nap',cap:'🕯️ Zapatos en la orilla del Danubio'},
  {d:1,h:'17:40',place:'Mercado navideño',scene:'meal',food:'chimney',cap:'🎄 Chimenea con crema de pistacho'},
- {d:1,h:'19:10',boat:'boatnap',cap:'🛥️ Crucero por el Danubio'}];
+ {d:1,h:'19:10',boat:'boatnap',cap:'🛥️ Crucero por el Danubio'},
+ {d:2,h:'02:30',place:'A57',scene:'elbow',dur:12,cap:'🌙 En medio de la noche · codazo en la nariz'}];
 
 /* ================= ESTADO ================= */
 const store={get(k,d){try{const v=localStorage.getItem('brj_'+k);return v?JSON.parse(v):d}catch(e){return d}},
@@ -3498,7 +3499,7 @@ function updateMovie(dt,el){
       else if(B.k==='stop'){
         place=B.place;M.li=B.b;
         if(M.scene){runScene(M,dt);if(!M.scene){M.mood='idle';moodNext='idle'}}
-        if(!M.scene&&M.sq<B.scenes.length&&M.bt>.35){const e=B.scenes[M.sq++];startScene(M,{...e});M.mood=MOOD_SCENES.includes(e.scene)?e.scene:'idle';moodNext=M.mood}
+        if(!M.scene&&M.sq<B.scenes.length&&M.bt>.35){const e=B.scenes[M.sq++];startScene(M,{...e});M.mood=e.scene==='elbow'?'sleep':MOOD_SCENES.includes(e.scene)?e.scene:'idle';moodNext=M.mood}
         if(M.scene){ta=M.scene.e.ta;cap=M.scene.e.cap&&M.scene.t>.6?M.scene.e.cap:'';place=M.scene.e.place||place}
         else{ta=B.t0+(B.t1-B.t0)*f;cap=B.cap}
       }
@@ -3536,8 +3537,8 @@ function updateMovie(dt,el){
   const V3=THREE.Vector3,orbit=(r,h)=>new V3(Math.sin(M.ang)*r,h,Math.cos(M.ang)*r);
   let off,tg=mid.clone(),lk=1.4;
   if(ovw){tg=M.ctr.clone();M.ang+=dt*.05;off=new V3(Math.sin(M.ang)*110,310,Math.cos(M.ang)*110+70);lk=3}
-  else if(M.scene){const S=M.scene,low=S.e.scene==='hug'||S.e.scene==='watch';M.ang+=dt*(low?.035:.07);tg.y+=avScale*.9;const dz=avScale*(6.8-Math.min(1.6,S.t*.14))*(['meal','nap','hotdog'].includes(S.e.scene)?.78:1);
-    off=new V3(Math.sin(M.ang)*dz,avScale*(low?1.35:2.4),Math.cos(M.ang)*dz);if(!S.cut){S.cut=1;M.camOff=off.clone().multiplyScalar(1.35)}}
+  else if(M.scene){const S=M.scene,low=S.e.scene==='hug'||S.e.scene==='watch';M.ang+=dt*(low?.035:.07);tg.y+=avScale*.9;const dz=avScale*(6.8-Math.min(1.6,S.t*.14))*(S.e.scene==='elbow'?.5:['meal','nap','hotdog'].includes(S.e.scene)?.78:1);
+    off=new V3(Math.sin(M.ang)*dz,avScale*(low?1.35:S.e.scene==='elbow'?4.3:2.4),Math.cos(M.ang)*dz);if(!S.cut){S.cut=1;M.camOff=off.clone().multiplyScalar(1.35)}}
   else if(B.k==='boat'){if(M.napOn){M.ang+=dt*.05;tg.x=(avatars[0].group.position.x+avatars[1].group.position.x)/2;tg.z=(avatars[0].group.position.z+avatars[1].group.position.z)/2;tg.y+=avScale*.9;
       if(M.hd!=null)M.ang=M.hd+.55+Math.sin(M.t*.25)*.35;off=orbit(avScale*4.6,avScale*2.1);lk=2.5}
     else{M.ang+=dt*.1;off=orbit(27,15)}}
@@ -3565,6 +3566,32 @@ function updateMovie(dt,el){
   if(M.over&&M.endT>7.2)stopMovie();
 }
 /* escenas que pasan mientras caminan o navegan */
+function mvElbow(S,dt,el){   // de noche: Paz, dormida, le da un codazo en la nariz a Mati; se ríen y siguen durmiendo
+  const t=S.t,Mt=avatars.find(a=>a.name==='Mati'),Pz=avatars.find(a=>a.name==='Paz'),o=S.o||(S.o={});
+  const one=(k,fn)=>{if(!o[k]){o[k]=1;fn()}};
+  if(o.i==null){const p=new THREE.Vector3();let bd=1e9;[0,1].forEach(i=>{Pz.arms[i].getWorldPosition(p);const d=p.distanceTo(Mt.group.position);if(d<bd){bd=d;o.i=i}})}
+  const i=o.i,out=i?1:-1;
+  if(moodObj.bed){const blk=moodObj.bed.children[moodObj.bed.children.length-1];blk.scale.z=.5;blk.position.z=.78}   // manta solo hasta la cintura, para que se vea la escena
+  // el codazo
+  const wsw=Wt(t,2.2,3.3,.14,.5);poseArm(Pz,i,-.5,out*1.55,-1.9,wsw);
+  if(t>2.36)one('hit',()=>{sfx('crack');floatIcon(Mt,'💥');bubble(Mt,'¡Ay! 🤕',2.2);say('¡Ay!','Mati')});
+  // Mati se agarra la nariz
+  const wn=Wt(t,2.4,6.4,.18,.6);
+  if(wn>0){Mt.lids.forEach(l=>{l.visible=false});poseArm(Mt,1,-.55,-.5,-2.35,wn);poseArm(Mt,0,-.55,.5,-2.35,wn);Lr(Mt.head.rotation,'z',Math.sin(el*9)*.14*wn,1);
+    Mt.group.position.y+=Math.abs(Math.sin(el*7))*.03*avScale*wn*(t<3.4?1:.2)}
+  if(t>3.3)one('ow',()=>floatIcon(Mt,'😖'));
+  // Paz se despierta y lo mira
+  const wp=Wt(t,3.3,9.2,.4,.6);
+  if(wp>0){Pz.lids.forEach(l=>{l.visible=false});Lr(Pz.head.rotation,'y',-out*.9*wp,1);poseArm(Pz,i,-.9,out*.2,-2.2,Wt(t,3.5,5.2,.3,.4))}
+  if(t>3.7)one('uy',()=>{bubble(Pz,'¡Uy! 😳',1.8)});
+  // se ríen los dos
+  const wl=Wt(t,5.4,9.2,.4,.6);
+  if(wl>0){Mt.lids.forEach(l=>{l.visible=false});[Mt,Pz].forEach((av,j)=>{av.group.position.y+=Math.abs(Math.sin(el*15+j))*.022*avScale*wl});Lr(Mt.head.rotation,'y',out*.8*wl,1);
+    const n=Math.floor(t/.8);if(n!==o.ln){o.ln=n;floatIcon(n%2?Mt:Pz,n%3?'😂':'🤣')}}
+  if(t>5.6)one('ja',()=>{bubble(Mt,'Jajaja 😂',2.6);bubble(Pz,'Jajaja 😂',2.6)});
+  // y siguen durmiendo
+  if(t>9.6){const n=Math.floor(t/1.1);if(n!==o.zn){o.zn=n;floatIcon(n%2?Mt:Pz,'💤')}}
+}
 function mvOverlayEnd(){
   const M=movie;if(!M||!M.ov)return;const o=M.ov;M.ov=null;
   [o.phone,...(o.ph||[])].forEach(p=>{if(p&&p.parent)p.parent.remove(p)});M.napOn=false;avatars.forEach(a=>{a.body.rotation.z=0});
@@ -3572,6 +3599,7 @@ function mvOverlayEnd(){
 }
 function movieOverlay(dt,el){
   if(movie&&mate)mate.visible=false;   // en la película no llevan mate
+  if(movie&&movie.scene&&movie.scene.e.scene==='elbow'&&mood==='sleep')mvElbow(movie.scene,dt,el);
   const M=movie;if(!M||M.scene||M.over)return;const B=M.beats[M.bi];if(!B||!B.overlay||!M.ovOn){mvOverlayEnd();if(B&&M.t>=5.5)movieLife(M,B,dt,el);return}
   if(!M.ov||M.ov.bi!==M.bi){mvOverlayEnd();M.ov={bi:M.bi,t:0,ic:{}}}
   const o=M.ov;o.t+=dt;const t=o.t,Mt=avatars.find(a=>a.name==='Mati'),Pz=avatars.find(a=>a.name==='Paz');
