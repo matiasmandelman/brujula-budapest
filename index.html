@@ -161,6 +161,9 @@ body.aitype .aistage{height:0;border:0}
 .agmsg{position:absolute;top:8px;left:10px;right:10px;text-align:center;font-size:12px;color:var(--mut);z-index:2;pointer-events:none}
 .agsub{position:absolute;left:12px;right:12px;bottom:78px;z-index:2;background:#0a1220e0;border:1px solid var(--line);border-radius:14px;padding:12px 14px;font-size:17px;line-height:1.45;text-align:center;max-height:38%;overflow:auto}
 .agctl{position:absolute;left:0;right:0;bottom:14px;display:flex;justify-content:center;gap:16px;z-index:2}
+ #mvCtl{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom));z-index:60;display:flex;gap:6px;background:#0a1220cc;border:1px solid var(--line);border-radius:999px;padding:5px}
+#mvCtl button{min-width:40px;height:36px;border-radius:999px;padding:0 10px;font-size:14px;background:transparent;border:0;color:var(--mut)}
+#mvCtl button.on{background:var(--acc);color:#1a1205;font-weight:700}
 .agctl[hidden],.agsub[hidden],.agsheet[hidden]{display:none}
 .agctl button{width:50px;height:50px;border-radius:50%;font-size:20px;padding:0}
 body.aiplay .aistage{height:auto;flex:1;margin-bottom:-6px;border:0}
@@ -734,7 +737,11 @@ const getTasks=()=>tasks||(tasks=new Set(store.get('tasks',[])));
    {d:0 (sáb) | 1 (dom) | 2 (lun), h:'15:42', place:'Citadella', scene:'hug',
     bubbles:[{who:'Paz',text:'¡Mirá ese sol!'}], cap:'Primer atardecer juntos 💛', dur:7}
    Escenas: hug, eat, boat, sleep, party, food, chipa, sloth, reel, photo, mapcheck, yawn, reclaim, cheer, talk. */
-const GUION=[];
+const GUION=[
+ {d:0,h:'15:25',walk:'climb',cap:'⛰️ Subiendo a la Citadella · Paz feliz sacando fotos, Mati nervioso'},
+ {d:0,h:'16:00',place:'Citadella',scene:'proposal',cap:'🌅 Primer atardecer · Citadella'},
+ {d:0,h:'17:55',place:'Mercado navideño',scene:'hotdog',cap:'🎄 Mercado navideño · el hot dog gigante'},
+ {d:1,h:'19:10',boat:'boatnap',cap:'🛥️ Crucero por el Danubio · la siesta de Paz'}];
 
 /* ================= ESTADO ================= */
 const store={get(k,d){try{const v=localStorage.getItem('brj_'+k);return v?JSON.parse(v):d}catch(e){return d}},
@@ -2501,6 +2508,11 @@ function makeProp(kind){
     const bread=S('#e9c487'),B=new THREE.BoxGeometry(.15,.028,.1);
     a(B,bread,0,0,0);a(new THREE.BoxGeometry(.158,.012,.106),S('#6cbf4a'),0,.02,0);a(new THREE.BoxGeometry(.15,.014,.1),S('#e79a9a'),0,.033,0);
     a(new THREE.BoxGeometry(.14,.01,.09),S('#d9433a'),0,.045,0);a(B,bread,0,.062,0);
+  }else if(kind==='hotdog'){   // hot dog gigante
+    const bun=a(new THREE.CapsuleGeometry(.055,.36,6,14),S('#d9a35a',.75),0,0,0);bun.rotation.z=Math.PI/2;bun.scale.set(1,1,.85);
+    const sau=a(new THREE.CapsuleGeometry(.034,.46,6,12),S('#a8452e',.5),0,.04,0);sau.rotation.z=Math.PI/2;
+    const pts=[];for(let i=0;i<=16;i++)pts.push(new THREE.Vector3(-.22+i*.0275,.075,(i%2?.016:-.016)));
+    a(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),48,.007,6,false),S('#f2c230',.5),0,0,0);
   }else if(kind==='chipa'){
     const m=S('#e3a93f',.8);a(new THREE.SphereGeometry(.05,14,10),m,0,0,0).scale.set(1,.85,1);
     for(let i=0;i<6;i++){const th=i*1.05;a(new THREE.SphereGeometry(.018,8,6),S('#f0c56a'),Math.cos(th)*.04,.025,Math.sin(th)*.04)}
@@ -2819,6 +2831,52 @@ const ACTIONS={
       poseArm(P,0,-2.55,-.75,-1.95,wh);poseArm(P,1,-2.55,.75,-1.95,wh);
       Lr(P.head.rotation,'z',Math.sin(el*5)*.18,wh);Lr(P.head.rotation,'x',.12,wh)}
   }},
+  // ---- escenas de la película
+  proposal:{dur:21.5,run(A,t,dt,el){
+    const M=A.mati,P=A.paz,c=A.mid;
+    once(A,'m0',()=>{if(mate)mate.visible=false});
+    const w=Wt(t,0,21.5,.5,.6);La(M.group,faceAng(M,P),w);La(P.group,faceAng(P,M),w);
+    const line=(k,tt,av,txt,secs)=>{if(t>tt)once(A,k,()=>{bubble(av,txt,secs);say(txt.replace(/\p{Extended_Pictographic}/gu,'').trim(),av.name)})};
+    line('a',.8,M,'¿Qué te parece si…',1.6);
+    line('b',2.1,P,'¡No!',1.5);
+    line('c',3.5,M,'Bueno, no te digo nada',2.5);
+    line('d',6.2,P,'No, dale, decime',2.4);
+    line('e',8.8,M,'¿Qué te parece si oficializamos noviazgo?',3.6);
+    line('f',12.7,P,'¡Sí! 💛',2.8);
+    // Mati nervioso, mano en la nuca
+    poseArm(M,1,-2.35,.62,-2.05,Wt(t,.2,3.4,.3,.3));
+    // Paz lo corta con la mano
+    const wb=Wt(t,2.0,3.4,.12,.3);poseArm(P,1,-1.55,.12,-.15,wb);Lr(P.head.rotation,'y',Math.sin(el*14)*.25*wb,1);
+    // "bueno, no te digo nada": se encoge de hombros y mira a otro lado
+    const wc=Wt(t,3.5,6.0,.3,.4);poseArm(M,0,-.35,-.75,-1.25,wc);poseArm(M,1,-.35,.75,-1.25,wc);Lr(M.head.rotation,'y',.7*wc,1);Lr(M.head.rotation,'x',-.12*wc,1);
+    // Paz le toca el brazo
+    poseArm(P,0,-.95,.25,-.55,Wt(t,6.1,8.6,.3,.4));Lr(P.head.rotation,'z',-.15*Wt(t,6.1,8.6),1);
+    // le toma las manos
+    const we=Wt(t,8.7,12.6,.4,.3);[M,P].forEach(av=>{poseArm(av,0,-1.05,.22,-.6,we);poseArm(av,1,-1.05,-.22,-.6,we)});
+    // ¡Sí!: salta de alegría
+    const wf=Wt(t,12.7,14.3,.15,.3);poseArmsUp(P,wf);jump(P,t,12.7,14.3,wf);
+    if(t>12.75)once(A,'yes',()=>{sfx('pop');for(let i=0;i<6;i++)floatIcon(i%2?M:P,i%3?'💛':'💖')});
+    // abrazo con corazones
+    const wh=Wt(t,14.1,21.5,.6,.6);
+    if(wh>0){[M,P].forEach(av=>{av.group.position.x+=(c.x-av.group.position.x)*.62*wh;av.group.position.z+=(c.z-av.group.position.z)*.62*wh});
+      poseArm(M,0,-1.25,.5,-1.45,wh);poseArm(M,1,-1.25,-.5,-1.45,wh);poseArm(P,0,-1.8,.45,-1.3,wh);poseArm(P,1,-1.8,-.45,-1.3,wh);
+      Lr(M.head.rotation,'z',.18*wh,1);Lr(P.head.rotation,'z',-.2*wh,1);Lr(P.head.rotation,'x',-.15*wh,1);
+      const n=Math.floor(t/.45);if(n!==A.hn){A.hn=n;floatIcon(Math.random()<.5?M:P,Math.random()<.5?'💛':'🧡')}}
+    if(t>21.2)once(A,'m1',()=>{if(mate)mate.visible=true});
+  }},
+  hotdog:{dur:10.5,run(A,t,dt,el){
+    const M=A.mati,P=A.paz;
+    once(A,'h0',()=>{if(mate)mate.visible=false;A.hd=makeProp('hotdog');holdProp(A,A.hd,M.elbows[1]);sfx('pop')});
+    const w=Wt(t,0,10.5,.4,.5);La(M.group,camAng(M),w*.6);La(P.group,faceAng(P,M),w);
+    poseArm(M,1,-1.3,-.05,-.55,w);
+    for(let k=0;k<3;k++){const t0=2+k*2.3,wb=Wt(t,t0,t0+1.1,.3,.35);poseMouth(M,wb);
+      if(t>t0+.55)once(A,'b'+k,()=>{sfx('crunch');A.hd.scale.x=Math.max(.42,A.hd.scale.x-.2);floatIcon(M,k===2?'😋':'🌭')})}
+    if(t>.6)once(A,'p1',()=>floatIcon(P,'😳'));
+    const ws=Wt(t,.6,3.2,.3,.4);poseArm(P,0,-2.3,-.5,-2.3,ws);poseArm(P,1,-2.3,.5,-2.3,ws);
+    if(t>5.4)once(A,'p2',()=>floatIcon(P,'😂'));
+    if(t>9)once(A,'h1',()=>bubble(M,'🤤',1.4));
+    if(t>10.3)once(A,'m1',()=>{if(mate)mate.visible=true});
+  }},
   sloth:{dur:6.6,run(A,t,dt,el){
     const w=Wt(t,0,6.6,.8,.8);
     [A.mati,A.paz].forEach((av,j)=>{
@@ -2945,7 +3003,7 @@ function flash(av){
 }
 function stoppedFor(){return clock.elapsedTime-lastMoveT}
 function computeMood(t,mid){
-  if(movie)return movie.scene&&MOOD_SCENES.includes(movie.scene.e.scene)?movie.scene.e.scene:'idle';
+  if(movie)return movie.mood||'idle';
   if(action&&!action.quiet)return 'idle';
   const pn=planNow(t),cur=pn.cur;const r=river(mid.x,mid.z);
   const onBridge=BRIDGE_SEGS.some(sg=>segDist(mid,{...sg.a,w:0},{...sg.b,w:0}).d<5);
@@ -2980,12 +3038,14 @@ function makeBoat(o={}){
     const cab=new THREE.Mesh(new THREE.BoxGeometry(1.1,.55,.9),S('#2d4d6e',.4));cab.position.set(0,.55,-L/2+.55);b.add(cab);
   }
   const lamp=new THREE.Mesh(new THREE.SphereGeometry(.06,8,6),new THREE.MeshBasicMaterial({color:'#ffd27a'}));lamp.position.set(0,.9,-L/2+.55);b.add(lamp);
+  if(o.bench!==false){const bn=new THREE.Mesh(new THREE.BoxGeometry(1.2,.07,.34),S('#8a5a32',.7));bn.position.set(0,.71,L*.3);b.add(bn);b.userData.benchZ=L*.3;   // banco para ir sentados
+    [-.5,.5].forEach(x=>{const lg=new THREE.Mesh(new THREE.BoxGeometry(.06,.42,.28),S('#6e4526',.7));lg.position.set(x,.48,L*.3);b.add(lg)})}
   return b;
 }
 function setupMood(m){
   moodObj={t:0,props:[]};
   if(m==='eat'){avatars.forEach(av=>{const l=langos();l.position.copy(PROP_P);av.elbows[1].add(l);moodObj.props.push(l);av.food=l})}
-  if(m==='boat'){const b=makeBoat();scene.add(b);moodObj.boat=b}
+  if(m==='boat'){const b=movie?makeBoat({cruise:true,len:4.2}):makeBoat();scene.add(b);moodObj.boat=b}
   if(m==='sleep'){
     const b=new THREE.Group();const S=(c,r=.9)=>new THREE.MeshStandardMaterial({color:c,roughness:r});
     const frame=new THREE.Mesh(new THREE.BoxGeometry(1.7,.32,2.25),S('#7a5232',.7));frame.position.y=.16;b.add(frame);
@@ -3024,7 +3084,13 @@ function applyMood(m,dt,el,mid,w){
     const r=river(mid.x,mid.z);const i=DANUBE.findIndex((p,k)=>k<DANUBE.length-1&&segDist(mid,p,DANUBE[k+1]).d<=r.d+.01);
     const a=DANUBE[Math.max(0,i)],e=DANUBE[Math.min(DANUBE.length-1,i+1)];const ang=Math.atan2(e.x-a.x,e.z-a.z);
     const b=moodObj.boat;b.position.set(mid.x,.3+Math.sin(el*1.3)*.04*avScale,mid.z);b.rotation.y=ang;b.rotation.z=Math.sin(el*1.6)*.05;b.scale.setScalar(avScale*w);
-    avatars.forEach(av=>{av.group.position.y=b.position.y+.29*avScale*w+(1-w)*av.group.position.y*0;av.group.rotation.z=Math.sin(el*1.6)*.05*w});
+    const fw=new THREE.Vector3(Math.sin(ang),0,Math.cos(ang));
+    avatars.forEach(av=>{   // sentados en el banco, de cara a la proa
+      av.group.position.addScaledVector(fw,((b.userData.benchZ||0)-.08)*avScale*w);
+      av.group.position.y=b.position.y+(.745-.85*av.h)*avScale*w;av.group.rotation.z=Math.sin(el*1.6)*.05*w;
+      La(av.group,ang,w);
+      av.legs.forEach(l=>{Lr(l.rotation,'x',-1.5,w);Lr(l.rotation,'z',0,w)});av.knees.forEach(k=>Lr(k.rotation,'x',1.5,w));
+      const holds=mateHolder===av&&mate&&mate.visible;if(!holds)poseArm(av,0,-.55,-.05,-.75,w);poseArm(av,1,-.55,.05,-.75,w)});
     if(T%9<dt)floatIcon(P,'🌉');
   }
   if(m==='sleep'&&moodObj.bed){
@@ -3153,10 +3219,10 @@ function moviePath(){
   if(pts.length<15||len<60){demo=true;pts=PLAN.filter(p=>p.loc&&!p.task&&PST()[p.id]!=='skip'&&onMap(p.loc)).map(p=>({lat:p.loc.lat,lng:p.loc.lng,ta:abs(p)}))}
   else{const tas=pts.map(p=>p.t?tsToAbs(p.t):null);const ok=tas.filter(v=>v!==null).length>pts.length*.6;
     pts=pts.map((p,i)=>({...p,ta:ok?tas[i]:null}))}
-  const w=[];pts.forEach(p=>{const q=toW(p.lat,p.lng);const prev=w[w.length-1];if(prev&&Math.hypot(prev.x-q.x,prev.z-q.z)<2)return;w.push({x:q.x,z:q.z,ta:p.ta})});
+  const w=[];pts.forEach(p=>{const q=toW(p.lat,p.lng);const prev=w[w.length-1];if(prev&&Math.hypot(prev.x-q.x,prev.z-q.z)<2){if(p.ta!=null)prev.tb=p.ta;return}w.push({x:q.x,z:q.z,ta:p.ta,tb:p.ta})});
   // reparto de horas si faltan
-  const t0=12*60,t1=1440+22*60;w.forEach((p,i)=>{if(p.ta==null)p.ta=t0+(t1-t0)*i/Math.max(1,w.length-1)});
-  for(let i=1;i<w.length;i++)if(w[i].ta<w[i-1].ta)w[i].ta=w[i-1].ta;
+  const t0=12*60,t1=1440+22*60;w.forEach((p,i)=>{if(p.ta==null){p.ta=t0+(t1-t0)*i/Math.max(1,w.length-1);p.tb=p.ta}});
+  for(let i=1;i<w.length;i++){if(w[i].ta<w[i-1].tb)w[i].ta=w[i-1].tb;if(w[i].tb<w[i].ta)w[i].tb=w[i].ta}
   const cum=[0];for(let i=1;i<w.length;i++)cum.push(cum[i-1]+Math.hypot(w[i].x-w[i-1].x,w[i].z-w[i-1].z));
   return {w,cum,len:cum[cum.length-1],demo};
 }
@@ -3167,15 +3233,89 @@ function movieScenes(){
     .map(m=>({ta:m.ta,place:m.place,scene:'talk',bubbles:m.who?[{who:m.who,text:m.text}]:[],cap:m.who?'':m.text}));
   return [...g,...ms].sort((a,b)=>a.ta-b.ta);
 }
+/* ---------- tramos de la película: paseos, traslados, barco y paradas ---------- */
+const MV_LEN=[{k:'Corta',f:.55,s:'~2½ min'},{k:'Media',f:1,s:'~3½ min'},{k:'Larga',f:1.8,s:'~5 min'}];
+const DAY_TITLE=[['Sábado 14','Llegada a Budapest'],['Domingo 15','Segundo día'],['Lunes 16','Vuelta a casa']];
+function placeAt(x,z,r=16){let best='',bd=r;
+  LM_INFO.forEach(i=>{const p=toW(i[0],i[1]),d=Math.hypot(p.x-x,p.z-z);if(d<bd){bd=d;best=i[2].replace(/^\S+\s/,'')}});
+  POIS.forEach(p=>{const q=toW(p.lat,p.lng),d=Math.hypot(q.x-x,q.z-z);if(d<bd){bd=d;best=p.name}});return best}
+function onRiver(p){const r=river(p.x,p.z);if(r.d>=r.w/2-3)return false;return !BRIDGE_SEGS.some(sg=>segDist(p,{...sg.a,w:0},{...sg.b,w:0}).d<5)}
+const hm=ta=>fmt(Math.round(ta-Math.floor(ta/1440)*1440));
+function buildBeats(P,F){
+  const w=P.w,cum=P.cum,n=w.length,segs=[];let i=0;
+  // 1) paradas: 8 min o más dentro de un radio de ~120 m
+  while(i<n){let j=i;while(j+1<n&&Math.hypot(w[j+1].x-w[i].x,w[j+1].z-w[i].z)<12)j++;
+    if(w[j].tb-w[i].ta>=8){segs.push({k:'stop',a:i,b:j});i=j+1}
+    else{const l=segs[segs.length-1];if(l&&l.k==='move')l.b=i;else segs.push({k:'move',a:Math.max(0,i-1),b:i});i++}}
+  segs.forEach(s=>{if(s.k==='stop'){let x=0,z=0;for(let k=s.a;k<=s.b;k++){x+=w[k].x;z+=w[k].z}s.c={x:x/(s.b-s.a+1),z:z/(s.b-s.a+1)}}});
+  // 2) se juntan paradas casi pegadas (separadas por un paseo cortito)
+  const m=[];segs.forEach(s=>{
+    const L=m[m.length-1],L2=m[m.length-2];
+    if(s.k==='stop'&&L&&L.k==='move'&&L2&&L2.k==='stop'&&cum[L.b]-cum[L.a]<16&&Math.hypot(L2.c.x-s.c.x,L2.c.z-s.c.z)<20){m.pop();L2.b=s.b;return}
+    if(s.k==='stop'&&L&&L.k==='stop'&&Math.hypot(L.c.x-s.c.x,L.c.z-s.c.z)<20){L.b=s.b;return}
+    m.push(s)});
+  const sc=movieScenes().map(e=>({...e,used:false})),beats=[];
+  let day=-1;
+  const addTitle=d=>{if(d>day&&d>0)beats.push({k:'title',dur:2.6,title:DAY_TITLE[Math.min(2,d)][0],sub:DAY_TITLE[Math.min(2,d)][1],t0:d*1440,t1:d*1440});day=Math.max(day,d)};
+  m.forEach(s=>{
+    const t0=s.k==='stop'?w[s.a].ta:w[s.a].tb,t1=s.k==='stop'?w[s.b].tb:w[s.b].ta,mins=Math.max(0,t1-t0),len=cum[s.b]-cum[s.a],km=len/100;
+    addTitle(Math.floor(t0/1440));
+    if(s.k==='move'){
+      if(s.b<=s.a||len<1.5)return;
+      const sp=mins>0?km/(mins/60):4;let rv=0;for(let k=s.a;k<=s.b;k++)if(onRiver(w[k]))rv++;
+      const kind=rv/(s.b-s.a+1)>.45&&sp>3?'boat':(sp>11?'ride':'walk');
+      const B={k:kind,a:s.a,b:s.b,t0,t1,km};
+      const ov=sc.find(e=>!e.used&&(e.walk||e.boat)&&e.ta>=t0-5&&e.ta<=t1+5);if(ov){ov.used=true;B.overlay=ov.walk||ov.boat;B.cap=ov.cap}
+      if(kind==='ride'){const to=placeAt(w[s.b].x,w[s.b].z,30);B.dur=3.2;B.title=`🚕 ${Math.round(mins)} min`;B.sub=to?'Traslado a '+to:'Traslado'}
+      else if(kind==='boat')B.dur=Math.max(B.overlay?15:6,Math.min(20,km*1.5))*F;
+      else B.dur=Math.max(1.2,Math.min(10,km*4.2))*F*(B.overlay?2.6:1);
+      beats.push(B);
+    }else{
+      const c=s.c,hw=toW(HOTEL.lat,HOTEL.lng),hot=Math.hypot(c.x-hw.x,c.z-hw.z)<30,place=hot?'A57':(placeAt(c.x,c.z)||''),B={k:'stop',a:s.a,b:s.b,t0,t1,c,place,scenes:[]};
+      sc.forEach(e=>{if(!e.used&&!e.walk&&!e.boat&&e.ta>=t0-4&&e.ta<=t1+4){e.used=true;B.scenes.push(e)}});
+      if(!B.scenes.length){
+        const ss=Math.floor(t0/1440)*1440+(SUNSET[Math.min(2,Math.floor(t0/1440))]??SUNSET[0]);
+        const night=[0,1440,2880].some(d0=>t0<=d0+6*60&&t1>=d0+2*60);   // pasa la madrugada allí
+        if(/Hungexpo/i.test(place))B.scenes.push({scene:'fiesta',ta:t0+20,place:'Bónusz Festival',cap:'🎧 Bónusz Festival · a bailar'});
+        else if(hot&&night)B.scenes.push({scene:'sleep',dur:4.2,ta:t0+30,place:'A57',cap:'💤 A dormir'});
+        else if(ss>=t0-10&&ss<=t1+5&&mins>=20)B.scenes.push({scene:'hug',dur:7.5,ta:ss,place,cap:'🌅 Atardecer'+(place?' en '+place:'')});
+        else if(mins>=25&&(/mercado|café|cafe|brunch|gerbeaud|lángos|langos|ruszwurm|bistro|kürt|chimney|pastel/i.test(place)||POIS.some(p=>p.cat==='comida'&&Math.hypot(toW(p.lat,p.lng).x-c.x,toW(p.lat,p.lng).z-c.z)<6)))
+          B.scenes.push({scene:'eat',dur:4.5,ta:t0+mins/2,place,cap:'😋 '+(place||'A comer')});
+      }
+      B.dur=(mins>=25?2.2:1.2)*F;B.cap=(place?place+' · ':'')+hm(t0)+'–'+hm(t1);
+      beats.push(B);
+    }
+  });
+  // momentos que no cayeron en ningún tramo: van a la parada más cercana en el tiempo
+  sc.filter(e=>!e.used&&!e.walk&&!e.boat).forEach(e=>{let best=null,bd=1e9;beats.forEach(b=>{if(b.k!=='stop')return;const d=Math.min(Math.abs(b.t0-e.ta),Math.abs(b.t1-e.ta));if(d<bd){bd=d;best=b}});if(best)best.scenes.push(e)});
+  beats.forEach(b=>{if(b.scenes)b.scenes.sort((x,y)=>x.ta-y.ta)});
+  return beats;
+}
 function startMovie(rec){
   if(movie||action)return;
   resetMood();const P=moviePath();if(P.w.length<2){toast('Aún no hay recorrido para la película');return}
-  const dur=Math.max(30,Math.min(75,P.len/34));
-  movie={...P,dur,t:0,pt:0,endT:0,cur:{x:P.w[0].x,z:P.w[0].z},skyT:0,shown:new Set(),cap:'',capT:0,ang:0,scenes:movieScenes(),si:0,scene:null};
+  const F=(MV_LEN[store.get('mvLen',1)]||MV_LEN[1]).f;
+  const beats=buildBeats(P,F);
+  const first=beats.find(b=>b.a!=null),p0=first?(first.c||P.w[first.a]):P.w[0];
+  movie={...P,beats,bi:-1,bt:0,F,speed:1,t:0,endT:0,cur:{x:p0.x,z:p0.z},skyT:0,shown:new Set(),cap:'',capT:0,ang:0,scene:null,si:0,scenes:[],mood:'idle'};
   if(!hudScene)initHud();
   followMode=false;camAnim=null;setFull(true);document.body.classList.add('acting');avatars.forEach(a=>{a.group.userData.tag.visible=false});
-  controls.enabled=false;
+  controls.enabled=false;mvControls(true);avScale=AV_MOVIE;
   if(rec)startRec();
+}
+function mvControls(on){
+  let c=document.getElementById('mvCtl');if(c)c.remove();if(!on)return;
+  c=document.createElement('div');c.id='mvCtl';
+  c.innerHTML=`<button data-sp="1" class="on">x1</button><button data-sp="2">x2</button><button data-sp="4">x4</button><button id="mvNext" aria-label="Siguiente momento">⏭</button><button id="mvX" aria-label="Salir">✕</button>`;
+  document.body.appendChild(c);
+  c.querySelectorAll('[data-sp]').forEach(b=>b.onclick=()=>{if(movie)movie.speed=+b.dataset.sp;c.querySelectorAll('[data-sp]').forEach(x=>x.classList.toggle('on',x===b))});
+  document.getElementById('mvNext').onclick=()=>mvSkip();document.getElementById('mvX').onclick=()=>stopMovie();
+}
+function mvSkip(){   // salta al siguiente momento con escena
+  const M=movie;if(!M||M.over)return;
+  if(M.scene){if(action&&action.o&&action.o.scene)endAction(action);M.scene=null}
+  let j=Math.max(0,M.bi+1);while(j<M.beats.length&&!(M.beats[j].scenes&&M.beats[j].scenes.length)&&!M.beats[j].overlay)j++;
+  if(M.t<3.5)M.t=3.5;mvEnter(M,j);
 }
 const DAYS_SHORT=['Sáb','Dom','Lun'];
 function startScene(M,e){
@@ -3195,39 +3335,101 @@ function runScene(M,dt){
     M.scene=null;
   }
 }
+function mvEnter(M,j){
+  mvOverlayEnd();M.bi=j;M.bt=0;M.sq=0;const B=M.beats[j];
+  if(!B){M.over=true;M.mood='idle';moodNext='idle';return}
+  M.mood=B.k==='boat'?'boat':'idle';moodNext=M.mood;
+  if(B.k==='stop')M.cur={x:B.c.x,z:B.c.z};
+  if(B.k==='walk'||B.k==='boat'){const p=M.w[B.a];M.cur={x:p.x,z:p.z}}
+}
+function mvPosAt(M,d){let i=1;while(i<M.cum.length-1&&M.cum[i]<d)i++;
+  const a=M.w[i-1],b=M.w[i],seg=(M.cum[i]-M.cum[i-1])||1,f=Math.min(1,Math.max(0,(d-M.cum[i-1])/seg));return {x:a.x+(b.x-a.x)*f,z:a.z+(b.z-a.z)*f}}
 function updateMovie(dt,el){
   const M=movie;if(!M)return;M.t+=dt;const TT=3.5;
-  if(M.t>TT&&!M.scene)M.pt+=dt;
-  const s=Math.max(0,Math.min(1,M.pt/M.dur)),d=s*M.len;
-  let i=1;while(i<M.cum.length-1&&M.cum[i]<d)i++;
-  const a=M.w[i-1],b=M.w[i],seg=(M.cum[i]-M.cum[i-1])||1,f=Math.min(1,Math.max(0,(d-M.cum[i-1])/seg));
-  M.cur={x:a.x+(b.x-a.x)*f,z:a.z+(b.z-a.z)*f};let ta=a.ta+(b.ta-a.ta)*f;
-  // momentos del guion: la película se detiene y los personajes lo representan
-  if(!M.scene&&M.t>TT&&M.si<M.scenes.length&&(M.scenes[M.si].ta<=ta+.5||s>=1))startScene(M,M.scenes[M.si++]);
-  if(M.scene){runScene(M,dt);if(M.scene)ta=M.scene.e.ta}
+  if(M.lastTa==null)M.lastTa=M.beats.length?M.beats[0].t0:12*60;
+  let ta=M.lastTa,hud=null,place='',cap='';
+  if(M.t<TT)hud={title:'✈️ Budapest',sub:'Mati & Paz · 14–16 nov 2026'+(M.demo?' · avance con vuestro plan':'')};
+  else if(!M.over){
+    if(M.bi<0)mvEnter(M,0);
+    const B=M.beats[M.bi];
+    if(B){
+      M.bt+=dt*(M.scene?1:M.speed);const f=Math.min(1,M.bt/(B.dur||1));
+      if(B.k==='walk'||B.k==='boat'){M.cur=mvPosAt(M,M.cum[B.a]+(M.cum[B.b]-M.cum[B.a])*f);ta=B.t0+(B.t1-B.t0)*f;cap=B.overlay&&B.cap?B.cap:''}
+      else if(B.k==='ride'){const p=M.w[f<.5?B.a:B.b];M.cur={x:p.x,z:p.z};ta=B.t0+(B.t1-B.t0)*f;hud={title:B.title,sub:B.sub}}
+      else if(B.k==='title'){hud={title:B.title,sub:B.sub}}
+      else if(B.k==='stop'){
+        place=B.place;
+        if(M.scene){runScene(M,dt);if(!M.scene){M.mood='idle';moodNext='idle'}}
+        if(!M.scene&&M.sq<B.scenes.length&&M.bt>.35){const e=B.scenes[M.sq++];startScene(M,{...e});M.mood=MOOD_SCENES.includes(e.scene)?e.scene:'idle';moodNext=M.mood}
+        if(M.scene){ta=M.scene.e.ta;cap=M.scene.e.cap&&M.scene.t>.6?M.scene.e.cap:'';place=M.scene.e.place||place}
+        else{ta=B.t0+(B.t1-B.t0)*f;cap=B.cap}
+      }
+      M.lastTa=ta;
+      const done=B.k==='stop'?(!M.scene&&M.sq>=B.scenes.length&&M.bt>=B.dur):M.bt>=B.dur;
+      if(done)mvEnter(M,M.bi+1);
+    }
+  }
   const day=Math.max(0,Math.min(2,Math.floor(ta/1440))),mm=Math.round(ta-day*1440);
   M.skyT-=dt;if(M.skyT<=0){M.skyT=.15;dayNight({d:day,m:mm})}
-  // cámara de cine girando alrededor; en los momentos, plano cercano
+  // cámara: en los momentos, plano cercano; en el barco y en las escenas al caminar, plano medio.
+  // Sigue a los avatares sin retraso y solo suaviza el ángulo, así no se quedan fuera de plano aunque vayan rápido.
+  const B=M.beats[M.bi]||{};
   const mid=new THREE.Vector3(M.cur.x,height(M.cur.x,M.cur.z),M.cur.z);
-  let want;
-  if(M.scene){M.ang+=dt*.07;const tg=mid.clone();tg.y+=avScale*.9;controls.target.lerp(tg,Math.min(1,dt*2));
-    want=mid.clone().add(new THREE.Vector3(Math.sin(M.ang)*avScale*6.2,avScale*2.4,Math.cos(M.ang)*avScale*6.2));
-    want.y=Math.max(want.y,height(want.x,want.z)+avScale*1.6,height((want.x+mid.x)/2,(want.z+mid.z)/2)+avScale*1.4);}
-  else{M.ang+=dt*.16;controls.target.lerp(mid,Math.min(1,dt*2.2));want=mid.clone().add(new THREE.Vector3(Math.sin(M.ang)*62,52,Math.cos(M.ang)*62))}
-  camera.position.lerp(want,Math.min(1,dt*1.4));camera.lookAt(controls.target);
-  // rótulos
-  if(!M.scene)PLAN.forEach(p=>{if(!p.star||!p.loc||M.shown.has(p.id)||PST()[p.id]==='skip')return;const w=toW(p.loc.lat,p.loc.lng);if(Math.hypot(w.x-M.cur.x,w.z-M.cur.z)<26&&M.t>TT){M.shown.add(p.id);M.cap='⭐ '+p.title;M.capT=3.4}});
+  const av0=avatars[0]&&avatars[0].group.position;if(av0&&(M.scene||B.k==='boat'))mid.y=Math.max(mid.y,(avatars[0].group.position.y+avatars[1].group.position.y)/2-.5);
+  let off,tg=mid.clone();
+  if(M.scene){M.ang+=dt*.07;tg.y+=avScale*.9;off=new THREE.Vector3(Math.sin(M.ang)*avScale*6.2,avScale*2.4,Math.cos(M.ang)*avScale*6.2)}
+  else{const near=B.overlay?[avScale*8,avScale*3.6]:B.k==='boat'?[44,24]:B.k==='stop'?[42,30]:[62,52];
+    M.ang+=dt*(B.overlay?.1:.16);if(B.overlay||B.k==='boat')tg.y+=avScale*.8;off=new THREE.Vector3(Math.sin(M.ang)*near[0],near[1],Math.cos(M.ang)*near[0])}
+  if(!M.camOff)M.camOff=camera.position.clone().sub(controls.target);
+  M.camOff.lerp(off,Math.min(1,dt*1.4));
+  if(!M.camT||M.camT.distanceTo(tg)>120)M.camT=tg.clone();else M.camT.lerp(tg,Math.min(1,dt*8));
+  controls.target.copy(M.camT);const cp=M.camT.clone().add(M.camOff);
+  cp.y=Math.max(cp.y,height(cp.x,cp.z)+avScale*1.6,height((cp.x+M.camT.x)/2,(cp.z+M.camT.z)/2)+avScale*1.4);
+  camera.position.copy(cp);camera.lookAt(controls.target);
+  // rótulos de los ⭐ al pasar caminando
+  if(!M.scene&&(B.k==='walk'||B.k==='boat'))PLAN.forEach(p=>{if(!p.star||!p.loc||M.shown.has(p.id)||PST()[p.id]==='skip')return;const w=toW(p.loc.lat,p.loc.lng);if(Math.hypot(w.x-M.cur.x,w.z-M.cur.z)<26){M.shown.add(p.id);M.cap='⭐ '+p.title;M.capT=3.4}});
   M.capT-=dt;
   const km=(M.len*10/1000).toFixed(1).replace('.',',');
-  const over=s>=1&&!M.scene&&M.si>=M.scenes.length;if(over){M.endT+=dt;if(!M.fwDone){M.fwDone=1;fireworks(mid)}}
-  if(M.t<TT)drawHud({title:'Budapest',sub:'Mati & Paz · 14–16 nov 2026'+(M.demo?' · avance con vuestro plan':'')});
-  else if(over)drawHud({title:'Fin 💛',sub:`${km} km juntos por Budapest`});
-  else if(M.scene){const e=M.scene.e;drawHud({clock:`${DAYS_SHORT[day]} ${fmt(mm)}${e.place?' · '+e.place:''}`,cap:e.cap&&M.scene.t>.6?e.cap:''})}
-  else drawHud({clock:`${DAYS_SHORT[day]} ${fmt(mm)}`,cap:M.capT>0?M.cap:''});
-  if(over&&M.endT>3.8)stopMovie();
+  if(M.over){M.endT+=dt;if(M.endT>3.2&&!M.fwDone){M.fwDone=1;fireworks(mid)}
+    hud=M.endT<3.2?{title:'✈️ Hasta pronto, Budapest',sub:'Lunes 16 · vuelta a Barcelona'}:{title:'Fin 💛',sub:`${km} km juntos por Budapest`}}
+  if(hud)drawHud(hud);
+  else drawHud({clock:`${DAYS_SHORT[day]} ${fmt(mm)}${place?' · '+place:''}`,cap:cap||(M.capT>0?M.cap:'')});
+  if(M.over&&M.endT>7.2)stopMovie();
+}
+/* escenas que pasan mientras caminan o navegan */
+function mvOverlayEnd(){
+  const M=movie;if(!M||!M.ov)return;const o=M.ov;M.ov=null;
+  if(o.phone&&o.phone.parent)o.phone.parent.remove(o.phone);
+  avatars.forEach(a=>{a.head.rotation.set(0,0,0);a.lids.forEach(l=>{l.visible=false})});
+}
+function movieOverlay(dt,el){
+  const M=movie;if(!M||M.scene||M.over)return;const B=M.beats[M.bi];if(!B||!B.overlay)return;
+  if(!M.ov||M.ov.bi!==M.bi){mvOverlayEnd();M.ov={bi:M.bi,t:0,ic:{}}}
+  const o=M.ov;o.t+=dt;const t=o.t,Mt=avatars.find(a=>a.name==='Mati'),Pz=avatars.find(a=>a.name==='Paz');
+  const every=(k,p,fn)=>{const n=Math.floor(t/p);if(n!==o.ic[k]){o.ic[k]=n;if(t>.3)fn()}};
+  if(B.overlay==='climb'){   // Paz feliz sacando fotos, Mati nervioso
+    if(!o.phone){o.phone=makeProp('phone');o.phone.position.copy(PROP_P);Pz.elbows[1].add(o.phone);o.phone.rotation.x=-1.4}
+    const ph=t%2.8,wp=Wt(ph,.2,1.7,.3,.35);
+    poseArm(Pz,1,-1.55,.12,-.55,wp);if(ph>1.05&&ph<1.05+dt*1.5)flash(Pz);
+    Lr(Pz.head.rotation,'z',Math.sin(el*3)*.12,1);
+    every('pz',3.1,()=>floatIcon(Pz,Math.random()<.5?'📸':'😄'));
+    poseArm(Mt,1,-2.35,.62,-2.05,1);Lr(Mt.head.rotation,'y',Math.sin(el*2.4)*.55,.5);Lr(Mt.head.rotation,'x',.08,.5);
+    every('mt',3.6,()=>floatIcon(Mt,Math.random()<.6?'😅':'😬'));
+  }
+  if(B.overlay==='boatnap'){   // Paz se duerme un rato y Mati se ríe
+    const ws=Wt(t,1.2,1e9,.8,.1);
+    Lr(Pz.head.rotation,'x',.5*ws+Math.sin(el*1.3)*.04*ws,1);Lr(Pz.head.rotation,'z',.32*ws,1);
+    if(t>1.6)Pz.lids.forEach(l=>{l.visible=true});
+    poseArm(Pz,0,0,-.05,-.1,ws);poseArm(Pz,1,0,.05,-.1,ws);
+    if(t>1.6)every('z',1.7,()=>floatIcon(Pz,'💤'));
+    if(t>3.2){const wl=Wt(t,3.2,1e9,.4,.1);La(Mt.group,faceAng(Mt,Pz),wl);
+      Mt.body.position.y+=Math.abs(Math.sin(el*17))*.012*wl;poseArm(Mt,1,-.55,.25,-1.7,wl);Lr(Mt.head.rotation,'x',-.18*wl,1);
+      if(!o.laugh){o.laugh=1;bubble(Mt,'¡Jajajajaja! 😂',3);say('¡Jajajajaja!','Mati')}
+      every('j',2.2,()=>floatIcon(Mt,'😂'))}
+  }
 }
 function stopMovie(){
-  if(!movie)return;const rec=movie.rec;if(action&&action.o&&action.o.scene)endAction(action);movie=null;resetMood();controls.enabled=true;
+  if(!movie)return;const rec=movie.rec;if(action&&action.o&&action.o.scene)endAction(action);mvOverlayEnd();mvControls(false);if(mate)mate.visible=true;movie=null;avScale=AV_MAP;resetMood();controls.enabled=true;
   document.body.classList.remove('acting');avatars.forEach(a=>{a.group.userData.tag.visible=true});
   if(rec&&rec.state!=='inactive')rec.stop();
   setFull(false);refresh();flyHome();
@@ -3294,11 +3496,13 @@ function openMovieSheet(){
   sh.innerHTML=`<button class="x" id="shX">✕</button><h3>🎬 La película del viaje</h3>
    <div class="tip">${P.demo?'Aún no hay suficiente recorrido: veréis un avance con vuestro cronograma. Durante el viaje se irá llenando con vuestro camino real.':'Vuestro recorrido real, con el cielo de cada momento y los ⭐ por los que pasasteis.'}</div>
    ${(()=>{const n=movieScenes().length;return n?`<p class="muted">📝 ${n} momento${n>1?'s':''} se representarán en la película.</p>`:''})()}
+   <div class="aglbl" style="margin-top:12px">Duración</div><div class="agopts" id="mvLen">${MV_LEN.map((o,i)=>`<button data-l="${i}" class="${i===store.get('mvLen',1)?'on':''}">${o.k}<small>${o.s}</small></button>`).join('')}</div>
    <div class="actions"><button class="go" id="mvPlay">▶ Ver</button>${inClaude?'':'<button id="mvRec">⏺ Ver y grabar vídeo</button>'}</div>
    ${inClaude?'<p class="muted">Para grabar el vídeo, abridla desde vuestra web de GitHub.</p>':''}
    <p class="muted" style="margin-top:8px">¿Grabasteis la ruta con otra app? <a href="#" id="mvGpx" style="color:var(--acc)">📥 Importar GPX</a></p>`;
   document.getElementById('mvGpx').onclick=e=>{e.preventDefault();sh.hidden=true;document.getElementById('gpxIn').click()};
   document.getElementById('shX').onclick=()=>{sh.hidden=true};
+  sh.querySelectorAll('#mvLen button').forEach(b=>b.onclick=()=>{store.set('mvLen',+b.dataset.l);sh.querySelectorAll('#mvLen button').forEach(x=>x.classList.toggle('on',x===b))});
   document.getElementById('mvPlay').onclick=()=>{sh.hidden=true;startMovie(false)};
   const r=document.getElementById('mvRec');if(r)r.onclick=()=>{sh.hidden=true;startMovie(true)};
 }
@@ -3312,7 +3516,7 @@ function buildAvatars(){
   mateHolder.elbows[0].rotation.x=-Math.PI/2;mateHolder.elbows[0].add(mate);mate.position.copy(MATE_P);mate.quaternion.copy(MATE_Q);
 }
 function avatarTarget(){const p=toW(pos.lat,pos.lng);return {x:p.x,z:p.z,y:height(p.x,p.z)}}
-let heading=0;const avScale=4.2;   // tamaño fijo: protagonistas
+let heading=0;let avScale=4.2;const AV_MAP=4.2,AV_MOVIE=3.1;   // tamaño fijo: protagonistas
 let lastMoveT=0,tired=false;
 function lifeIdle(a,dt,moving){   // parpadean, se miran y miran alrededor
   a.blinkT-=dt;if(a.blinkT<-.13)a.blinkT=1.8+Math.random()*3.5;
@@ -3634,7 +3838,7 @@ function loop(){
   if(currentView!=='map'||document.hidden)return;
   const dt=Math.min(.05,clock.getDelta());const el=clock.elapsedTime;
   updateMovie(dt,el);updateTraffic(dt,el);
-  const mid=moveAvatars(dt);cityU.uMid.value.copy(mid);updateAmbient(dt,el,mid);updateMarkets(dt,el,mid);updateCrowd(dt,el,mid);updateRealCity(dt,mid);sun.target.position.copy(mid);sun.position.copy(mid).add(sunDir);updateMate(dt);updateLife(dt,el,mid);runAction(dt);updateBubbles(dt);updateMouths();updateFloats(dt,el);updateDest(mid,el);updateNear(mid,dt);
+  const mid=moveAvatars(dt);cityU.uMid.value.copy(mid);updateAmbient(dt,el,mid);updateMarkets(dt,el,mid);updateCrowd(dt,el,mid);updateRealCity(dt,mid);sun.target.position.copy(mid);sun.position.copy(mid).add(sunDir);updateMate(dt);updateLife(dt,el,mid);runAction(dt);movieOverlay(dt,el);updateBubbles(dt);updateMouths();updateFloats(dt,el);updateDest(mid,el);updateNear(mid,dt);
   waterU.uTime.value=el;updateNightFx(el);
   sky.position.copy(camera.position);stars.position.copy(camera.position);
   const anim=movie?true:updateCam(dt);
@@ -3881,7 +4085,7 @@ const VOICE_LINES=[
  ['Paz','Ah, menos mal que no tenías ganas, un río'],['Paz','Buendíabuendíabuendíabuendíaaaaaaaa'],['Mati','Bueno, yo también'],['Paz','Dame tu mano'],
  ['Paz','Estoy muerta, no puedo más'],['Paz','Me hago pis'],['Mati','Mira este reel'],['Mati','No... bueno'],['Mati','Taca taca taca'],['Mati','¡Ay!'],
  ['Mati','¡Buendíaaaaaaaa!'],['Mati','¡Chipá! ¡Chipá! ¡Chipá!'],['Paz','¡Corran putitas!'],['Mati','¡Dale, dale!'],['Paz','¡Dale, dale!'],['Mati','¡Jajajajaja!'],
- ['Paz','¡Soy yo, soy yo, soy yoooooooooooo!'],['Paz','¡Sí!'],['Paz','¡Uh, temazo!'],['Paz','¡Ñam! ¡Qué rico!'],['Mati','¿Otra vez?'],['Mati','¿Qué mirás?'],['Mati','¿Tenés hambre?'],['Mati','¡Ahora quiero milanesas!']];
+ ['Paz','¡Soy yo, soy yo, soy yoooooooooooo!'],['Paz','¡Sí!'],['Paz','¡Uh, temazo!'],['Paz','¡Ñam! ¡Qué rico!'],['Mati','¿Otra vez?'],['Mati','¿Qué mirás?'],['Mati','¿Tenés hambre?'],['Mati','¡Ahora quiero milanesas!'],['Mati','¿Qué te parece si…'],['Paz','¡No!'],['Mati','Bueno, no te digo nada'],['Paz','No, dale, decime'],['Mati','¿Qué te parece si oficializamos noviazgo?']];
 const VC={mem:new Map(),pool:[],busy:new Set(),talk:{},cacheName:'brj-voces'};
 const vKey=(t,w)=>'https://voces.brujula/'+w.toLowerCase()+'/'+encodeURIComponent(t);
 async function clipFromBuf(buf){return {url:URL.createObjectURL(new Blob([buf],{type:'audio/mpeg'})),env:await envelope(buf)}}
