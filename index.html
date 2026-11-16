@@ -2849,35 +2849,47 @@ const ACTIONS={
     poseArm(M,1,-.35,.55,-.5,w);
     if(t>2.4)once(A,'i',()=>floatIcon(P,'🌅'));
   }},
-  nap:{dur:10.6,run(A,t,dt,el){   // memorial de los Zapatos: un momento en silencio; luego Paz se duerme de pie y Mati se ríe
+  nap:{dur:11.5,run(A,t,dt,el){   // memorial de los Zapatos: Paz se sienta en un banquito, se duerme y Mati la abraza desde atrás
     const M=A.mati,P=A.paz,c=A.mid,T=t-4.1;
-    once(A,'s',()=>{const r=river(c.x,c.z),dx=r.x-c.x,dz=r.z-c.z,L=Math.hypot(dx,dz)||1;A.dir=Math.atan2(dx,dz);
-      A.sh=makeShoes();A.sh.position.set(c.x+dx/L*1.35*avScale,M.group.position.y,c.z+dz/L*1.35*avScale);A.sh.rotation.y=A.dir;A.sh.scale.setScalar(avScale*1.2);scene.add(A.sh);A.props.push(A.sh)});
+    once(A,'s',()=>{const r=river(c.x,c.z),dx=r.x-c.x,dz=r.z-c.z,L=Math.hypot(dx,dz)||1;A.dir=Math.atan2(dx,dz);A.ux=dx/L;A.uz=dz/L;
+      A.sh=makeShoes();A.sh.position.set(c.x+A.ux*1.5*avScale,M.group.position.y,c.z+A.uz*1.5*avScale);A.sh.rotation.y=A.dir;A.sh.scale.setScalar(avScale*1.2);scene.add(A.sh);A.props.push(A.sh);
+      const S=col=>new THREE.MeshStandardMaterial({color:col,roughness:.8});A.bn=new THREE.Group();const seat=new THREE.Mesh(new THREE.BoxGeometry(.6,.07,.34),S('#8a5a32'));seat.position.y=.5;seat.castShadow=true;A.bn.add(seat);
+      [-.24,.24].forEach(x=>{const lg=new THREE.Mesh(new THREE.BoxGeometry(.06,.5,.3),S('#3a2c20'));lg.position.set(x,.25,0);A.bn.add(lg)});
+      A.bn.position.set(c.x-A.ux*.06*avScale,M.group.position.y,c.z-A.uz*.06*avScale);A.bn.rotation.y=A.dir;scene.add(A.bn);A.props.push(A.bn)});
     A.sh.userData.gl.forEach((g,i)=>{const k=.3+.08*Math.sin(el*9+i*2);g.scale.set(k,k,1)});
-    const wq=Wt(t,0,10.6,.5,.5);[M,P].forEach(av=>La(av.group,A.dir,wq));
-    const wd=Wt(t,.4,4.2,.5,.5);[M,P].forEach(av=>Lr(av.head.rotation,'x',.34*wd,1));poseArm(M,1,-.5,.3,-1.6,wd);
-    if(t>1.3)once(A,'c',()=>floatIcon(M,'🕯️'));
-    const ws=Wt(T,.5,5.6,.7,.4);if(ws>0){Lr(P.head.rotation,'x',.5*ws,1);Lr(P.head.rotation,'z',.3*ws,1);P.body.rotation.z=Math.sin(el*1.1)*.05*ws}
-    if(T>.9&&T<5.4)P.lids.forEach(l=>{l.visible=true});
-    {const n=Math.floor(T/1.3);if(n!==A.zn&&T>.9&&T<5.2){A.zn=n;floatIcon(P,'💤')}}
-    const wl=Wt(T,1.8,6,.3,.4);if(wl>0){La(M.group,faceAng(M,P),wl);M.body.position.y+=Math.abs(Math.sin(el*17))*.012*wl;poseArm(M,1,-.55,.25,-1.7,wl);Lr(M.head.rotation,'x',-.18*wl,1)}
-    if(T>1.9)once(A,'l',()=>{bubble(M,'¡Jajajajaja! 😂',2.8);say('¡Jajajajaja!','Mati');floatIcon(M,'😂')});
+    const w=Wt(t,0,11.5,.6,.5);A.bn.scale.setScalar(avScale*Math.max(.001,Wt(t,0,11.5,.4,.3)));
+    // Paz sentada mirando al río; Mati de pie justo detrás
+    P.group.position.x=c.x;P.group.position.z=c.z;P.group.position.y-=.42*avScale*P.h*w;P.legs.forEach(l=>Lr(l.rotation,'x',-1.5,w));P.knees.forEach(k=>Lr(k.rotation,'x',1.5,w));poseArm(P,0,-.5,-.05,-.7,w);poseArm(P,1,-.5,.05,-.7,w);
+    M.group.position.x=c.x-A.ux*.4*avScale;M.group.position.z=c.z-A.uz*.4*avScale;[M,P].forEach(av=>La(av.group,A.dir,w));
+    const wd=Wt(t,.6,4.2,.5,.5);[M,P].forEach(av=>Lr(av.head.rotation,'x',.3*wd,1));
+    if(t>1.4)once(A,'c',()=>floatIcon(M,'🕯️'));
+    // se queda dormida
+    const ws=Wt(T,.4,7,.7,.5);if(ws>0){Lr(P.head.rotation,'x',.55*ws,1);Lr(P.head.rotation,'z',.3*ws,1);P.body.rotation.z=Math.sin(el*1.1)*.04*ws}
+    if(T>.9&&T<6.9)P.lids.forEach(l=>{l.visible=true});
+    {const n=Math.floor(T/.9);if(n!==A.zn&&T>.9&&T<6.8){A.zn=n;floatIcon(P,'💤')}}
+    if(T>.9)once(A,'zz',()=>{bubble(P,'💤 Zzz…',3.2)});
+    // abrazo desde atrás y risa en silencio
+    const wh=Wt(T,1.6,7.2,.6,.5);if(wh>0){M.body.rotation.x=.42*wh;poseArm(M,0,-1.05,.42,-.75,wh);poseArm(M,1,-1.05,-.42,-.75,wh);Lr(M.head.rotation,'x',.25*wh,1);Lr(M.head.rotation,'z',.15*wh,1);
+      if(T>3)M.body.position.y+=Math.abs(Math.sin(el*16))*.01*wh}
+    if(T>3.1)once(A,'l',()=>{floatIcon(M,'😂');floatIcon(M,'🤭')});if(T>5)once(A,'l2',()=>floatIcon(M,'😂'));
   }},
-  meal:{dur:9.6,run(A,t,dt,el){   // comidas: sentados a la mesa (goulash) o de pie con algo en la mano (lángos, chimenea)
-    const M=A.mati,P=A.paz,c=A.mid,e=(movie&&movie.scene&&movie.scene.e)||{},food=e.food||'plate',sit=food==='goulash'||food==='plate',w=Wt(t,0,9.6,.5,.5);
-    once(A,'s',()=>{if(mate)mate.visible=false;A.ax=Math.atan2(P.group.position.x-M.group.position.x,P.group.position.z-M.group.position.z);A.fd=[];
+  meal:{dur:10.4,run(A,t,dt,el){   // comidas: sentados a la mesa (goulash) o de pie con algo en la mano (lángos, chimenea), siempre de cara a la cámara
+    const M=A.mati,P=A.paz,c=A.mid,e=(movie&&movie.scene&&movie.scene.e)||{},food=e.food||'plate',sit=food==='goulash'||food==='plate',w=Wt(t,0,10.4,.5,.5),ico=food==='goulash'?'🍲':food==='chimney'?'🥐':food==='langos'?'🫓':'🍽️';
+    once(A,'s',()=>{if(mate)mate.visible=false;const ca=Math.atan2(camera.position.x-c.x,camera.position.z-c.z);A.ca=ca;A.ax=ca+Math.PI/2;A.fd=[];
       if(sit){A.tb=makeTable();A.tb.position.set(c.x,M.group.position.y,c.z);A.tb.rotation.y=A.ax;scene.add(A.tb);A.props.push(A.tb);
-        [-1,1].forEach(sd=>{const f=makeFood(food);f.position.set(0,.78,sd*.2);A.tb.add(f);A.fd.push(f)})}
-      else [M,P].forEach(av=>{const f=makeFood(food);holdProp(A,f,av.elbows[1]);A.fd.push(f)});sfx('pop')});
-    if(sit)A.tb.scale.setScalar(avScale*Math.max(.001,Wt(t,0,9.6,.35,.3)));
+        [-1,1].forEach(sd=>{const f=makeFood(food);f.scale.setScalar(1.35);f.position.set(0,.78,sd*.2);A.tb.add(f);A.fd.push(f)})}
+      else [M,P].forEach(av=>{const f=makeFood(food);f.scale.multiplyScalar(1.7);holdProp(A,f,av.elbows[1]);A.fd.push(f)});
+      sfx('pop');floatIcon(M,ico);floatIcon(P,ico)});
+    if(sit)A.tb.scale.setScalar(avScale*Math.max(.001,Wt(t,0,10.4,.35,.3)));
     [[M,-1],[P,1]].forEach(([av,sd],j)=>{
-      if(sit){const d=(.41+.27*w)*avScale;av.group.position.x=c.x+Math.sin(A.ax)*sd*d;av.group.position.z=c.z+Math.cos(A.ax)*sd*d;
-        av.group.position.y-=.42*avScale*av.h*w;av.legs.forEach(l=>Lr(l.rotation,'x',-1.5,w));av.knees.forEach(k=>Lr(k.rotation,'x',1.5,w));poseArm(av,0,-.8,0,-.75,w)}
-      La(av.group,A.ax+(sd<0?0:Math.PI),w);
-      const cyc=t+j*1.4,ph=cyc%2.8,wb=Wt(ph,.3,1.5,.3,.35)*w;poseArm(av,1,sit?-.8:-1.2,0,sit?-.75:-.5,w*(1-wb));poseMouth(av,wb);
-      const n=Math.floor(cyc/2.8);if(n!==A['n'+j]&&ph>.9&&t>1.2){A['n'+j]=n;const f=A.fd[j];f.scale.multiplyScalar(.87);if(j===0&&n%2===0)sfx('crunch')}});
-    if(t>4.2)once(A,'i1',()=>floatIcon(P,'😋'));if(t>7)once(A,'i2',()=>floatIcon(M,food==='goulash'?'🍲':food==='chimney'?'💚':food==='langos'?'🫓':'😋'));
-    if(t>9.4)once(A,'m1',()=>{if(mate)mate.visible=true});
+      const d=(sit?.41+.27*w:.36)*avScale;av.group.position.x=c.x+Math.sin(A.ax)*sd*d;av.group.position.z=c.z+Math.cos(A.ax)*sd*d;
+      if(sit){av.group.position.y-=.42*avScale*av.h*w;av.legs.forEach(l=>Lr(l.rotation,'x',-1.5,w));av.knees.forEach(k=>Lr(k.rotation,'x',1.5,w));poseArm(av,0,-.8,0,-.75,w);
+        La(av.group,A.ax+(sd<0?0:Math.PI),w);let dy=camAng(av)-av.group.rotation.y;dy=Math.atan2(Math.sin(dy),Math.cos(dy));Lr(av.head.rotation,'y',Math.max(-.75,Math.min(.75,dy*.6)),w)}
+      else La(av.group,camAng(av)-sd*.3,w);   // de frente a la cámara, apenas girados el uno hacia el otro
+      const cyc=t+j*1.3,ph=cyc%2.6,wb=Wt(ph,.3,1.5,.28,.3)*w;poseArm(av,1,sit?-.8:-1.3,0,sit?-.75:-.75,w*(1-wb));poseMouth(av,wb);Lr(av.head.rotation,'x',.2*wb,1);
+      av.body.position.y+=Math.abs(Math.sin(el*9))*.006*wb;
+      const n=Math.floor(cyc/2.6);if(n!==A['n'+j]&&ph>.85&&t>1){A['n'+j]=n;const f=A.fd[j];f.scale.multiplyScalar(.86);sfx('crunch');floatIcon(av,n%2?'😋':ico)}});
+    if(t>10.2)once(A,'m1',()=>{if(mate)mate.visible=true});
   }},
   hotdog:{dur:10.5,run(A,t,dt,el){
     const M=A.mati,P=A.paz;
@@ -3223,11 +3235,11 @@ function drawHud(o){
   if(o.title)card(o.title,o.sub||'');
   else{
     if(o.clock){x.textAlign='left';x.font=`600 ${15*u}px Inter, system-ui, sans-serif`;const tw=x.measureText(o.clock).width;x.fillStyle='rgba(8,6,4,.55)';rr(x,12*u,12*u,tw+22*u,30*u,15*u);x.fill();x.fillStyle='#ffe7a6';x.fillText(o.clock,23*u,32*u)}
-    if(o.cap){const ca=o.capA==null?1:o.capA;x.save();x.globalAlpha=ca;x.translate(0,(1-ca)*16*u);x.textAlign='center';x.font=`700 ${19*u}px Inter, system-ui, sans-serif`;
+    if(o.cap){const ca=o.capA==null?1:o.capA;x.save();x.globalAlpha=ca;x.translate(0,(1-ca)*16*u);x.textAlign='center';x.font=`700 ${(o.big?24:19)*u}px Inter, system-ui, sans-serif`;
       const ls=[];let l='';o.cap.split(' ').forEach(wd=>{const t=l?l+' '+wd:wd;if(x.measureText(t).width>W*.8&&l){ls.push(l);l=wd}else l=t});if(l)ls.push(l);
-      const tw=Math.max(...ls.map(z=>x.measureText(z).width)),lh=26*u,bh=16*u+ls.length*lh,top=Hh-50*u-bh;
+      const tw=Math.max(...ls.map(z=>x.measureText(z).width)),lh=(o.big?32:26)*u,bh=16*u+ls.length*lh,top=Hh-50*u-bh;
       x.fillStyle='rgba(8,10,16,.72)';rr(x,W/2-tw/2-18*u,top,tw+36*u,bh,Math.min(21*u,bh/2));x.fill();x.strokeStyle='rgba(242,184,75,.6)';x.lineWidth=1.3*u;x.stroke();x.fillStyle='#fff';
-      ls.forEach((z,i)=>x.fillText(z,W/2,top+8*u+lh*i+19*u));x.restore()}
+      ls.forEach((z,i)=>x.fillText(z,W/2,top+8*u+lh*i+(o.big?23:19)*u));x.restore()}
   }
   hudMesh.material.map.needsUpdate=true;
 }
@@ -3481,7 +3493,7 @@ function updateMovie(dt,el){
         if(Math.hypot(q.x-p.x,q.z-p.z)>.8){const h=Math.atan2(q.x-p.x,q.z-p.z);M.hd=M.hd==null?h:M.hd+Math.atan2(Math.sin(h-M.hd),Math.cos(h-M.hd))*Math.min(1,dt*(B.k==='boat'?1.3:5))}
         if(B.k==='boat'&&M.hd!=null)p={x:p.x+Math.cos(M.hd)*3,z:p.z-Math.sin(M.hd)*3};   // navega por su derecha
         const k=Math.min(1,dt*(B.k==='boat'?3:7));M.cur={x:M.cur.x+(p.x-M.cur.x)*k,z:M.cur.z+(p.z-M.cur.z)*k};
-        ta=B.t0+(B.t1-B.t0)*(wp?fp:f);cap=(B.k!=='walk'||M.ovOn)&&B.cap?B.cap:''}
+        ta=B.t0+(B.t1-B.t0)*(wp?fp:f);cap=M.napOn&&B.k==='boat'?'😴 Paz se quedó dormida…':(B.k!=='walk'||M.ovOn)&&B.cap?B.cap:''}
       else if(B.k==='title'){hud={title:B.title,sub:B.sub}}
       else if(B.k==='stop'){
         place=B.place;M.li=B.b;
@@ -3524,9 +3536,11 @@ function updateMovie(dt,el){
   const V3=THREE.Vector3,orbit=(r,h)=>new V3(Math.sin(M.ang)*r,h,Math.cos(M.ang)*r);
   let off,tg=mid.clone(),lk=1.4;
   if(ovw){tg=M.ctr.clone();M.ang+=dt*.05;off=new V3(Math.sin(M.ang)*110,310,Math.cos(M.ang)*110+70);lk=3}
-  else if(M.scene){const S=M.scene,low=S.e.scene==='hug'||S.e.scene==='watch';M.ang+=dt*(low?.035:.07);tg.y+=avScale*.9;const dz=avScale*(6.8-Math.min(1.6,S.t*.14));
+  else if(M.scene){const S=M.scene,low=S.e.scene==='hug'||S.e.scene==='watch';M.ang+=dt*(low?.035:.07);tg.y+=avScale*.9;const dz=avScale*(6.8-Math.min(1.6,S.t*.14))*(['meal','nap','hotdog'].includes(S.e.scene)?.78:1);
     off=new V3(Math.sin(M.ang)*dz,avScale*(low?1.35:2.4),Math.cos(M.ang)*dz);if(!S.cut){S.cut=1;M.camOff=off.clone().multiplyScalar(1.35)}}
-  else if(B.k==='boat'){M.ang+=dt*.1;off=orbit(27,15)}
+  else if(B.k==='boat'){if(M.napOn){M.ang+=dt*.05;tg.x=(avatars[0].group.position.x+avatars[1].group.position.x)/2;tg.z=(avatars[0].group.position.z+avatars[1].group.position.z)/2;tg.y+=avScale*.9;
+      if(M.hd!=null)M.ang=M.hd+.55+Math.sin(M.t*.25)*.35;off=orbit(avScale*4.6,avScale*2.1);lk=2.5}
+    else{M.ang+=dt*.1;off=orbit(27,15)}}
   else if(M.ovOn){M.ang+=dt*.1;tg.y+=avScale*.8;off=orbit(avScale*8,avScale*3.6)}
   else if((B.k==='walk'||B.k==='ride')&&M.hd!=null&&M.bi%3!==1){const rv=B.k==='ride',side=M.bi%3===2,a=M.hd+(side?Math.PI/2:Math.PI+.25),d=rv?30:side?24:19;
     off=new V3(Math.sin(a)*d,rv?17:side?12:15,Math.cos(a)*d);tg.y+=avScale*.5;lk=2.2;M.ang=a}
@@ -3534,7 +3548,7 @@ function updateMovie(dt,el){
   else{M.ang+=dt*.16;off=orbit(42,34)}
   if(!M.camOff)M.camOff=camera.position.clone().sub(controls.target);
   M.camOff.lerp(off,Math.min(1,dt*lk));
-  if(!M.camT||M.camT.distanceTo(tg)>120)M.camT=tg.clone();else M.camT.lerp(tg,Math.min(1,dt*12));
+  if(!M.camT||M.camT.distanceTo(tg)>120)M.camT=tg.clone();else M.camT.lerp(tg,Math.min(1,dt*(M.napOn?40:12)));
   controls.target.copy(M.camT);const cp=M.camT.clone().add(M.camOff);
   cp.y=Math.max(cp.y,height(cp.x,cp.z)+avScale*1.6,height((cp.x+M.camT.x)/2,(cp.z+M.camT.z)/2)+avScale*1.4);
   camera.position.copy(cp);camera.lookAt(controls.target);
@@ -3547,13 +3561,13 @@ function updateMovie(dt,el){
   M.fade=Math.max(0,(M.fade||0)-dt*1.4);const fd=Math.round(M.fade*10)/10;
   if(hud)drawHud({...hud,fade:fd});
   else{const ct=cap||(M.capT>0?M.cap:'');if(ct!==M.capKey){M.capKey=ct;M.capA=0}M.capA=Math.min(1,(M.capA||0)+dt*3.5);
-    drawHud({clock:`${DAYS_SHORT[day]} ${fmt(mm)}${place?' · '+place:''}`,cap:ct,capA:Math.round(M.capA*6)/6,fade:fd})}
+    drawHud({clock:`${DAYS_SHORT[day]} ${fmt(mm)}${place?' · '+place:''}`,cap:ct,capA:Math.round(M.capA*6)/6,big:!!(M.scene&&M.scene.t<3.2)||!!M.napOn,fade:fd})}
   if(M.over&&M.endT>7.2)stopMovie();
 }
 /* escenas que pasan mientras caminan o navegan */
 function mvOverlayEnd(){
   const M=movie;if(!M||!M.ov)return;const o=M.ov;M.ov=null;
-  [o.phone,...(o.ph||[])].forEach(p=>{if(p&&p.parent)p.parent.remove(p)});
+  [o.phone,...(o.ph||[])].forEach(p=>{if(p&&p.parent)p.parent.remove(p)});M.napOn=false;avatars.forEach(a=>{a.body.rotation.z=0});
   avatars.forEach(a=>{a.head.rotation.set(0,0,0);a.lids.forEach(l=>{l.visible=false})});
 }
 function movieOverlay(dt,el){
@@ -3575,18 +3589,21 @@ function movieOverlay(dt,el){
     const n0=B.dur*.42,wn=B.nap?Wt(M.bt,n0,n0+10,.8,.7):0;
     if(!o.ph)o.ph=[Pz,Mt].map(av=>{const p=makeProp('phone');p.position.copy(PROP_P);p.rotation.x=-1.4;av.elbows[1].add(p);return p});
     [Pz,Mt].forEach((av,j)=>{
-      if(av===Pz&&wn>.02)return;const laugh=av===Mt&&wn>.02&&M.bt>n0+1.6&&M.bt<n0+5.5;if(laugh)return;
+      if(av===Pz&&wn>.02)return;const laugh=av===Mt&&wn>.02&&M.bt>n0+2.2&&M.bt<n0+8;if(laugh)return;
       const ph=(t+j*2.9)%5.8,wp=Wt(ph,.4,2.2,.35,.4),yaw=Math.sin(el*.55+j*2.3)*1.05;
       Lr(av.head.rotation,'y',yaw,Math.min(1,dt*3));Lr(av.head.rotation,'x',-.05,Math.min(1,dt*3));Lr(av.head.rotation,'z',0,Math.min(1,dt*3));
       poseArm(av,1,-1.5,j?-.1:.1,-.55,wp);if(ph>1.3&&ph<1.3+dt*1.5)flash(av);
       every('ic'+j,7.3+j,()=>floatIcon(av,j?'🌉':'📸'))});
+    M.napOn=wn>.02;
     if(wn>.02){
-      Lr(Pz.head.rotation,'y',0,Math.min(1,dt*3));Lr(Pz.head.rotation,'x',.5*wn+Math.sin(el*1.3)*.04*wn,Math.min(1,dt*4));Lr(Pz.head.rotation,'z',.32*wn,Math.min(1,dt*4));
-      Pz.lids.forEach(l=>{l.visible=wn>.6});if(wn>.6)every('z',1.7,()=>floatIcon(Pz,'💤'));
-      if(M.bt>n0+1.6&&M.bt<n0+5.5){const wl=Wt(M.bt,n0+1.6,n0+5.5,.4,.5);Lr(Mt.head.rotation,'y',-1.1*wl,Math.min(1,dt*5));Lr(Mt.head.rotation,'x',-.15*wl,1);
-        Mt.body.position.y+=Math.abs(Math.sin(el*17))*.012*wl;poseArm(Mt,1,-.55,.25,-1.7,wl);
-        if(!o.laugh){o.laugh=1;bubble(Mt,'¡Jajajajaja! 😂',3);say('¡Jajajajaja!','Mati')}}
-    }else Pz.lids.forEach(l=>{if(Pz.blinkT>=0)l.visible=false});
+      Lr(Pz.head.rotation,'y',0,Math.min(1,dt*3));Lr(Pz.head.rotation,'x',.3*wn,Math.min(1,dt*4));Lr(Pz.head.rotation,'z',.62*wn+Math.sin(el*1.2)*.03,Math.min(1,dt*4));
+      Pz.body.rotation.z=.2*wn;poseArm(Pz,1,-.4,.1,-.6,wn);
+      Pz.lids.forEach(l=>{l.visible=wn>.5});if(wn>.5)every('z',.8,()=>floatIcon(Pz,'💤'));
+      if(wn>.5&&!o.zb){o.zb=1;bubble(Pz,'💤 Zzz…',4)}
+      if(M.bt>n0+2.2&&M.bt<n0+8){const wl=Wt(M.bt,n0+2.2,n0+8,.4,.5);Lr(Mt.head.rotation,'y',-1.1*wl,Math.min(1,dt*5));Lr(Mt.head.rotation,'x',-.12*wl,1);
+        Mt.body.position.y+=Math.abs(Math.sin(el*16))*.01*wl;poseArm(Mt,1,-.55,.25,-1.7,wl);
+        if(!o.laugh){o.laugh=1;floatIcon(Mt,'😂')}every('lg',2.4,()=>floatIcon(Mt,'🤭'))}
+    }else{Pz.body.rotation.z=0;Pz.lids.forEach(l=>{if(Pz.blinkT>=0)l.visible=false})}
   }
 }
 function stopMovie(){
@@ -4006,7 +4023,10 @@ function loop(){
   sky.position.copy(camera.position);stars.position.copy(camera.position);
   const anim=movie?true:updateCam(dt);
   LMS.forEach(l=>{l.g.visible=Math.hypot(mid.x-l.x,mid.z-l.z)>l.r;if(l.g.userData.show)l.g.userData.show.forEach((s_,i)=>{s_.position.set(-4.6,3+Math.sin(el*.7+i*2)*1.5,Math.sin(el*.5+i*2.1)*3);s_.material.opacity=waterU.uNight.value*.22})});
-  if(trailLine)trailLine.visible=!movie;const inScene=!!(movie||(action&&!action.quiet));if(inScene!==loop.sc){loop.sc=inScene;markers.forEach(m=>{m.group.visible=!inScene});momentPins.forEach(p=>{p.visible=!inScene})}
+  if(trailLine)trailLine.visible=!movie;
+  if(movie){loop.mvHid=1;markers.forEach(m=>{m.group.visible=false});momentPins.forEach(p=>{p.visible=false});medalMeshes.forEach(g=>{g.visible=false});flagMeshes.forEach(f=>{f.g.visible=false})}
+  else if(loop.mvHid){loop.mvHid=0;loop.sc=null;medalMeshes.forEach(g=>{g.visible=true});flagMeshes.forEach(f=>{f.g.visible=true})}
+const inScene=!!(movie||(action&&!action.quiet));if(inScene!==loop.sc){loop.sc=inScene;markers.forEach(m=>{m.group.visible=!inScene});momentPins.forEach(p=>{p.visible=!inScene})}
   medalMeshes.forEach((g,i)=>{g.rotation.y=el*1.2+i;g.position.y+=Math.sin(el*2+i)*.01});flagMeshes.forEach((f,i)=>{f.fl.rotation.y=Math.sin(el*2.5+i)*.25});
   if(compassMode&&devHead!=null&&!anim&&!action){
     const off=camera.position.clone().sub(controls.target),hd=Math.hypot(off.x,off.z),h=devHead*Math.PI/180;
