@@ -3382,7 +3382,7 @@ function buildBeats(P,F){
         if(B.overlay){   // la escena empieza al terminar de cruzar el puente, cuando empieza la subida
           let k1=-1,kb=a;for(let k=a;k<=b;k++){const rv=river(w[k].x,w[k].z);if(rv.d<rv.w/2){k1=k;break}}
           if(k1>=0){kb=k1;while(kb<b){const rv=river(w[kb].x,w[kb].z);if(rv.d>=rv.w/2+2)break;kb++}}
-          const tired=B.overlay==='tired',tot=(cum[b]-cum[a])||1,f0=Math.min(.85,(cum[kb]-cum[a])/tot),fw=Math.min(tired?.2:.3,1-f0),t0w=f0*base,W=tired?5:9;
+          const tot=(cum[b]-cum[a])||1,f0=Math.max(.72,Math.min(.85,(cum[kb]-cum[a])/tot)),fw=Math.min(.08,1-f0),t0w=f0*base,W=5;   // 5 s, casi llegando arriba
           B.warp={t0:t0w,W,f0,fw,post:(1-f0-fw)*base};B.dur=t0w+W+B.warp.post}
         beats.push(B)};
       mvSplit(w,cum,s).forEach(r=>{
@@ -3608,7 +3608,7 @@ function runScene(M,dt){
 function mvEnter(M,j){
   mvOverlayEnd();M.bi=j;M.bt=0;M.sq=0;const B=M.beats[j],old=M.cur;
   if(!B){M.over=true;M.mood='idle';moodNext='idle';return}
-  M.mood=B.k==='boat'?'boat':'idle';moodNext=M.mood;
+  const pm=M.mood;M.mood=B.k==='boat'?'boat':'idle';moodNext=M.mood;if((pm==='boat')!==(M.mood==='boat'))moodW=0;
   if(B.k==='stop')M.cur={x:B.c.x,z:B.c.z};
   M.ovOn=false;if(B.k==='walk'||B.k==='boat'||B.k==='ride'){const p=B.k==='boat'?B.path.p[0]:M.w[B.a];M.cur={x:p.x,z:p.z};M.hd=null}
   if(B.k==='title'||B.k==='ride'||(old&&Math.hypot(old.x-M.cur.x,old.z-M.cur.z)>30))M.fade=1;
@@ -3624,7 +3624,7 @@ function updateMovie(dt,el){
     if(M.bi<0)mvEnter(M,0);
     const B=M.beats[M.bi];
     if(B){
-      M.bt+=dt*(M.scene?1:M.speed);const f=Math.min(1,M.bt/(B.dur||1));
+      M.bt+=dt*(M.scene?1:M.speed);if(B.k==='boat'){if(mood==='boat')moodW=1;else M.bt=0}const f=Math.min(1,M.bt/(B.dur||1));
       if(B.k==='walk'||B.k==='boat'||B.k==='ride'){
         let fp=f;const wp=B.warp;if(wp){const bt=M.bt;fp=bt<wp.t0?(wp.t0?bt/wp.t0*wp.f0:0):bt<wp.t0+wp.W?wp.f0+(bt-wp.t0)/wp.W*wp.fw:Math.min(1,wp.f0+wp.fw+(wp.post?(bt-wp.t0-wp.W)/wp.post*(1-wp.f0-wp.fw):0))}
         M.ovOn=B.k==='boat'||(!!wp&&M.bt>=wp.t0&&M.bt<wp.t0+wp.W);
@@ -3664,7 +3664,7 @@ function updateMovie(dt,el){
     const vp=pv?B.vehPos:M.cur;M.veh.visible=true;M.veh.position.set(vp.x,height(vp.x,vp.z)+.05,vp.z);if(pv)M.veh.rotation.y=B.h;else if(M.hd!=null)M.veh.rotation.y=M.hd;M.veh.scale.setScalar(avScale*(vk==='bus'?.5:.75));
     if(rd)M.veh.userData.wheels.forEach(wh=>{wh.rotation.x+=dt*14})}
   else if(M.veh)M.veh.visible=false;
-  const hideAv=rd||(B.k==='plane'&&!M.over&&M.t>=TT&&B.hide);avatars.forEach(a=>{a.group.visible=!hideAv});if(M.plane)M.plane.visible=B.k==='plane'&&!M.over&&M.t>=TT;
+  const hideAv=rd||(B.k==='boat'&&mood!=='boat')||(B.k==='plane'&&!M.over&&M.t>=TT&&B.hide);avatars.forEach(a=>{a.group.visible=!hideAv});if(M.plane)M.plane.visible=B.k==='plane'&&!M.over&&M.t>=TT;
   const av0=avatars[0]&&avatars[0].group.position;if(av0&&M.scene){mid.x=(avatars[0].group.position.x+avatars[1].group.position.x)/2;mid.z=(avatars[0].group.position.z+avatars[1].group.position.z)/2}
   if(av0&&(M.scene||B.k==='boat'))mid.y=Math.max(mid.y,(avatars[0].group.position.y+avatars[1].group.position.y)/2-.5);
   // estela del barco y de los vehículos
@@ -3688,7 +3688,7 @@ function updateMovie(dt,el){
   else if(B.k==='boat'){if(M.napOn){M.ang+=dt*.05;tg.x=(avatars[0].group.position.x+avatars[1].group.position.x)/2;tg.z=(avatars[0].group.position.z+avatars[1].group.position.z)/2;tg.y+=avScale*.9;
       if(M.hd!=null)M.ang=M.hd+.55+Math.sin(M.t*.25)*.35;off=orbit(avScale*4.6,avScale*2.1);lk=2.5}
     else{M.ang+=dt*.1;off=orbit(27,15)}}
-  else if(M.ovOn&&B.overlay==='tired'&&M.hd!=null){tg.y+=avScale*.8;const a=M.hd+Math.PI/2+.25;off=new V3(Math.sin(a)*avScale*7,avScale*3,Math.cos(a)*avScale*7);M.ang=a;lk=2.5}
+  else if(M.ovOn&&(B.overlay==='tired'||B.overlay==='climb')&&M.hd!=null){tg.y+=avScale*.95;const a=M.hd+.3;off=new V3(Math.sin(a)*avScale*5.2,avScale*1.5,Math.cos(a)*avScale*5.2);M.ang=a;lk=3}
   else if(M.ovOn){M.ang+=dt*.1;tg.y+=avScale*.8;off=orbit(avScale*8,avScale*3.6)}
   else if((B.k==='walk'||B.k==='ride')&&M.hd!=null&&M.bi%3!==1){const rv=B.k==='ride',side=M.bi%3===2,a=M.hd+(side?Math.PI/2:Math.PI+.25),d=rv?30:side?24:19;
     off=new V3(Math.sin(a)*d,rv?17:side?12:15,Math.cos(a)*d);tg.y+=avScale*.5;lk=2.2;M.ang=a}
@@ -3759,14 +3759,13 @@ function movieOverlay(dt,el){
     poseArm(Pz,1,-1.55,.12,-.55,wp);if(ph>1.05&&ph<1.05+dt*1.5)flash(Pz);
     Lr(Pz.head.rotation,'z',Math.sin(el*3)*.12,1);
     every('pz',3.1,()=>floatIcon(Pz,Math.random()<.5?'📸':'😄'));
-    poseArm(Mt,1,-2.35,.62,-2.05,1);Lr(Mt.head.rotation,'y',Math.sin(el*2.4)*.55,.5);Lr(Mt.head.rotation,'x',.08,.5);
+    poseArm(Mt,0,-2.55,-.5,-2.15,1);poseArm(Mt,1,-2.55,.5,-2.15,1);Lr(Mt.head.rotation,'y',Math.sin(el*2.4)*.45,.5);Lr(Mt.head.rotation,'x',.1,.5);Mt.body.position.y+=Math.sin(el*30)*.004;
     every('mt',3.6,()=>floatIcon(Mt,Math.random()<.6?'😅':'😬'));
   }
   if(B.overlay==='tired'){   // subiendo al Bastión: Paz agotada, Mati la espera y le tiende la mano
-    Pz.group.rotation.x=.38;Pz.group.position.y-=.05*avScale;poseArm(Pz,0,-.75,.15,-.25,1);poseArm(Pz,1,-.75,-.15,-.25,1);
-    Pz.body.position.y+=Math.abs(Math.sin(el*5))*.012;Lr(Pz.head.rotation,'x',-.25+Math.sin(el*5)*.06,1);
-    const fx=Math.sin(M.hd||0),fz=Math.cos(M.hd||0);Mt.group.position.x+=fx*.45*avScale;Mt.group.position.z+=fz*.45*avScale;
-    La(Mt.group,faceAng(Mt,Pz),1);poseArm(Mt,1,-1.4,.2,-.2,1);
+    Pz.group.rotation.x=.5;Pz.group.position.y-=.08*avScale;Pz.knees.forEach(k=>{k.rotation.x=Math.max(k.rotation.x,.35)});poseArm(Pz,0,-.55,.2,-.1,1);poseArm(Pz,1,-.55,-.2,-.1,1);
+    Pz.body.position.y+=Math.abs(Math.sin(el*5))*.012;Lr(Pz.head.rotation,'x',-.45+Math.sin(el*5)*.07,1);
+    Lr(Mt.head.rotation,'y',(Mt.side<Pz.side?-1:1)*-.7,.3);poseArm(Mt,Mt.side<Pz.side?1:0,-.9,Mt.side<Pz.side?-.45:.45,-.35,1);
     every('pz',1.4,()=>floatIcon(Pz,t%2.8<1.4?'😮‍💨':'🥵'));
     if(!o.b){o.b=1;bubble(Pz,'No puedo más… 😮‍💨',3.4)}
   }
@@ -3902,7 +3901,7 @@ function moveAvatars(dt){
   const dx=tg.x-mid.x,dz=tg.z-mid.z,dist=Math.hypot(dx,dz);
   const jump=dist>250;                                    // primer punto GPS o salto grande: aparecer allí
   const hold=!!action;
-  const moving=movie?(!jump&&!hold&&dist/Math.max(dt,1e-3)>1.2):(dist>0.6&&!jump&&!hold);
+  const moving=movie?(!jump&&!hold&&dist/Math.max(dt,1e-3)>.5):(dist>0.6&&!jump&&!hold);
   if(moving)heading=Math.atan2(dx,dz);   // siempre mirando hacia donde caminan
   const step=movie?dist:Math.min(dist,Math.max(12,dist*1.8)*dt);
   if(moving)lastMoveT=clock.elapsedTime;
