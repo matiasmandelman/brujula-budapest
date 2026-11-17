@@ -740,10 +740,12 @@ const getTasks=()=>tasks||(tasks=new Set(store.get('tasks',[])));
 const GUION=[
  {d:0,h:'14:05',place:'Krumplis Lángos',scene:'meal',food:'langos',cap:'🫓 Un lángos antes de subir'},
  {d:0,h:'15:25',walk:'climb',cap:'📸 Paz feliz sacando fotos · Matias nervioso'},
+ {d:0,h:'15:58',place:'Citadella',scene:'budapest',cap:'🌅 Primer atardecer · Citadella'},
  {d:0,h:'16:00',place:'Citadella',scene:'hug',dur:8.5,cap:'🌅 Primer atardecer · Citadella'},
  {d:0,h:'17:55',place:'Mercado navideño',scene:'hotdog',cap:'🌭 Mercado navideño, pancho de 1kg'},
  {d:1,h:'14:44',place:'Gran Sinagoga',scene:'moco',cap:'🤧 Saliendo de la Gran Sinagoga · el moco de Paz'},
  {d:1,h:'15:30',walk:'tired',cap:'😮‍💨 Subiendo al Bastión · Paz no puede más'},
+ {d:1,h:'12:50',place:'A57',scene:'wakeup',dur:8.6,cap:'☀️ Goulash días'},
  {d:1,h:'13:50',place:'Mamá Goulash',scene:'meal',food:'goulash',cap:'🍲 Goulash en pan · Mamá Goulash'},
  {d:1,h:'17:05',place:'Zapatos del Danubio',scene:'nap',cap:'🕯️ Zapatos en la orilla del Danubio'},
  {d:1,h:'17:40',place:'Mercado navideño',scene:'meal',food:'chimney',cap:'🎄 Chimeneas'},
@@ -3044,6 +3046,16 @@ const ACTIONS={
     La(N.group,faceAng(N,H_),w);poseArm(N,1,-1.35,-.25,-.15,w);
     once(A,'r',()=>bubble(N,'¿Y el mate? 🧉',2.8));
   }},
+  budapest:{dur:9.4,run(A,t,dt,el){   // «Vos sos Pest» · «Vos sos Buda» · «¡Somos Budapest!»
+    const M=A.mati,P=A.paz,w=Wt(t,0,9.4,.5,.5);La(M.group,faceAng(M,P),w);La(P.group,faceAng(P,M),w);
+    const line=(k,tt,av,txt)=>{if(t>tt)once(A,k,()=>{bubble(av,txt,2.4);say(txt,av.name)})};
+    line('a',.6,M,'Vos sos Pest');line('b',3.2,P,'Vos sos Buda');line('c',5.8,M,'¡Somos Budapest!');
+    const hp=v=>{const p=new THREE.Vector3();v.head.getWorldPosition(p);return p};
+    {const wa=Wt(t,.5,2.9,.3,.4);if(wa>0){M.group.updateMatrixWorld(true);aimArm(M,1,hp(P),wa)}}
+    {const wb=Wt(t,3.1,5.5,.3,.4);if(wb>0){P.group.updateMatrixWorld(true);aimArm(P,1,hp(M),wb)}}
+    {const wc=Wt(t,5.7,9.2,.3,.5);poseArm(M,0,-1.6,-.9,-.2,wc);poseArm(M,1,-1.6,.9,-.2,wc);if(t>6)once(A,'h',()=>{floatIcon(M,'💛');floatIcon(P,'🥹')})}
+    Lr(P.head.rotation,'z',-.12*Wt(t,3,9.4),1);
+  }},
   talk:{dur:4,run(A,t,dt,el){
     const w=Wt(t,0,A.def.dur,.4,.5);[A.mati,A.paz].forEach((av,j)=>{La(av.group,camAng(av)+(j?-.35:.35),w);Lr(av.head.rotation,'z',Math.sin(el*2.2+j*2)*.08,w)});
     const sp=A.mati.bubble?A.mati:A.paz.bubble?A.paz:null;
@@ -3689,7 +3701,7 @@ function updateMovie(dt,el){
       else if(B.k==='stop'){
         place=B.place;M.li=B.b;
         if(M.scene){runScene(M,dt);if(!M.scene){M.mood='idle';moodNext='idle'}}
-        if(!M.scene&&M.sq<B.scenes.length&&M.bt>.35){const e=B.scenes[M.sq++];startScene(M,{...e});M.mood=e.scene==='elbow'?'sleep':MOOD_SCENES.includes(e.scene)?e.scene:'idle';moodNext=M.mood}
+        if(!M.scene&&M.sq<B.scenes.length&&M.bt>.35){const e=B.scenes[M.sq++];startScene(M,{...e});M.mood=(e.scene==='elbow'||e.scene==='wakeup')?'sleep':MOOD_SCENES.includes(e.scene)?e.scene:'idle';moodNext=M.mood}
         if(M.scene){ta=M.scene.e.ta;cap=M.scene.e.cap&&M.scene.t>.6?M.scene.e.cap:'';place=M.scene.e.place||place}
         else{ta=B.t0+(B.t1-B.t0)*f;cap=B.cap}
       }
@@ -3791,6 +3803,20 @@ function mvElbow(S,dt,el){   // de noche: Paz, dormida, le da un codazo en la na
   // y siguen durmiendo
   if(t>9.6){const n=Math.floor(t/1.1);if(n!==o.zn){o.zn=n;floatIcon(n%2?Mt:Pz,'💤')}}
 }
+function mvWake(S,dt,el){   // se despiertan: «Goulash días» · «¡Goulash días!», salen de la cama y saltan felices
+  const t=S.t,Mt=avatars.find(a=>a.name==='Mati'),Pz=avatars.find(a=>a.name==='Paz'),o=S.o||(S.o={}),M=movie;
+  const one=(k,fn)=>{if(!o[k]){o[k]=1;fn()}};
+  if(mood==='sleep'&&t<4.8){
+    {const a=new THREE.Vector3(),b=new THREE.Vector3();Mt.head.getWorldPosition(a);Pz.head.getWorldPosition(b);M.camHint={tg:a.add(b).multiplyScalar(.5),ang:Mt.group.rotation.y,d:avScale*3.4,h:avScale*2.5,lk:6}}
+    [Mt,Pz].forEach(av=>av.lids.forEach(l=>{l.visible=t<.8}));
+    if(t>.9)one('a',()=>{bubble(Mt,'Goulash días ☀️',2.2);say('Goulash días','Mati')});
+    if(t>2.8)one('b',()=>{bubble(Pz,'¡Goulash días!',2.2);say('¡Goulash días!','Paz')});
+    const s1=Wt(t,1,4.6,.4,.3),s2=Wt(t,1.6,4.6,.4,.3);poseArm(Mt,1,-2.6,.3,-.4,s1);poseArm(Pz,0,-2.6,-.3,-.4,s2);   // se estiran
+  }
+  if(t>=4.8)one('up',()=>{moodNext='idle';M.mood='idle';M.camHint=null});
+  if(mood==='idle'&&t>5){const w=Wt(t,5,8.4,.3,.4);[Mt,Pz].forEach((av,j)=>{La(av.group,camAng(av)+(j?-.3:.3),w);poseArmsUp(av,w);jump(av,t+j*.2,5.2,7.6,w)});
+    if(t>5.3)one('c',()=>{floatIcon(Mt,'🙌');floatIcon(Pz,'🍲')})}
+}
 function mvOverlayEnd(){
   const M=movie;if(!M||!M.ov)return;const o=M.ov;M.ov=null;
   [o.phone,...(o.ph||[])].forEach(p=>{if(p&&p.parent)p.parent.remove(p)});avatars.forEach(a=>{a.group.rotation.x=0});M.napOn=false;avatars.forEach(a=>{a.body.rotation.z=0});
@@ -3799,6 +3825,7 @@ function mvOverlayEnd(){
 function movieOverlay(dt,el){
   if(movie&&mate)mate.visible=false;   // en la película no llevan mate
   if(movie&&movie.scene&&movie.scene.e.scene==='elbow'&&mood==='sleep')mvElbow(movie.scene,dt,el);
+  if(movie&&movie.scene&&movie.scene.e.scene==='wakeup')mvWake(movie.scene,dt,el);
   const M=movie;if(!M||M.scene||M.over)return;const B=M.beats[M.bi];if(!B||!B.overlay||!M.ovOn){mvOverlayEnd();if(B&&M.t>=5.5)movieLife(M,B,dt,el);return}
   if(!M.ov||M.ov.bi!==M.bi){mvOverlayEnd();M.ov={bi:M.bi,t:0,ic:{}}}
   const o=M.ov;o.t+=dt;const t=o.t,Mt=avatars.find(a=>a.name==='Mati'),Pz=avatars.find(a=>a.name==='Paz');
@@ -4514,7 +4541,7 @@ const VOICE_LINES=[
  ['Paz','Ah, menos mal que no tenías ganas, un río'],['Paz','Buendíabuendíabuendíabuendíaaaaaaaa'],['Mati','Bueno, yo también'],['Paz','Dame tu mano'],
  ['Paz','Estoy muerta, no puedo más'],['Paz','Me hago pis'],['Mati','Mira este reel'],['Mati','No... bueno'],['Mati','Taca taca taca'],['Mati','¡Ay!'],
  ['Mati','¡Buendíaaaaaaaa!'],['Mati','¡Chipá! ¡Chipá! ¡Chipá!'],['Paz','¡Corran putitas!'],['Mati','¡Dale, dale!'],['Paz','¡Dale, dale!'],['Mati','¡Jajajajaja!'],
- ['Paz','¡Soy yo, soy yo, soy yoooooooooooo!'],['Paz','¡Sí!'],['Paz','¡Uh, temazo!'],['Paz','¡Ñam! ¡Qué rico!'],['Mati','¿Otra vez?'],['Mati','¿Qué mirás?'],['Mati','¿Tenés hambre?'],['Mati','¡Ahora quiero milanesas!']];
+ ['Paz','¡Soy yo, soy yo, soy yoooooooooooo!'],['Paz','¡Sí!'],['Paz','¡Uh, temazo!'],['Paz','¡Ñam! ¡Qué rico!'],['Mati','¿Otra vez?'],['Mati','¿Qué mirás?'],['Mati','¿Tenés hambre?'],['Mati','¡Ahora quiero milanesas!'],['Mati','Vos sos Pest'],['Paz','Vos sos Buda'],['Mati','¡Somos Budapest!'],['Mati','Goulash días'],['Paz','¡Goulash días!']];
 const VC={mem:new Map(),pool:[],busy:new Set(),talk:{},cacheName:'brj-voces'};
 const vKey=(t,w)=>'https://voces.brujula/'+w.toLowerCase()+'/'+encodeURIComponent(t);
 async function clipFromBuf(buf){return {url:URL.createObjectURL(new Blob([buf],{type:'audio/mpeg'})),env:await envelope(buf)}}
