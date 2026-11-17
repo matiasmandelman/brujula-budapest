@@ -742,6 +742,8 @@ const GUION=[
  {d:0,h:'15:25',walk:'climb',cap:'📸 Paz feliz sacando fotos · Mati nervioso'},
  {d:0,h:'16:00',place:'Citadella',scene:'hug',dur:8.5,cap:'🌅 Primer atardecer · Citadella'},
  {d:0,h:'17:55',place:'Mercado navideño',scene:'hotdog',cap:'🎄 Mercado navideño · el hot dog gigante'},
+ {d:1,h:'14:44',place:'Gran Sinagoga',scene:'moco',cap:'🤧 Saliendo de la Gran Sinagoga · el moco de Paz'},
+ {d:1,h:'15:30',walk:'tired',cap:'😮‍💨 Subiendo al Bastión · Paz no puede más'},
  {d:1,h:'13:50',place:'Mamá Goulash',scene:'meal',food:'goulash',cap:'🍲 Goulash en pan · Mamá Goulash'},
  {d:1,h:'17:05',place:'Zapatos del Danubio',scene:'nap',cap:'🕯️ Zapatos en la orilla del Danubio'},
  {d:1,h:'17:40',place:'Mercado navideño',scene:'meal',food:'chimney',cap:'🎄 Chimenea con crema de pistacho'},
@@ -2370,6 +2372,13 @@ function makeAvatar(o){
     add(head,sph(.004),M('#ffffff',.2),x+.004,.024,.118);                  // brillo
     const b=add(head,new THREE.BoxGeometry(.044,.011,.012),hairM,x,.05,.104);b.rotation.z=x<0?.12:-.12;brows.push(b)});
   const lids=[-.038,.038].map(x=>{const l=add(head,sph(.0195),skin,x,.021,.099);l.scale.set((o.eyeX||1)*1.08,(o.eyeY||.8)*1.12,.64);l.visible=false;return l});   // párpados (parpadeo)
+  if(o.hat){   // gorro de lana con dobladillo y pompón
+    const hm=M(o.hat,.97),hc=M(o.hat2||o.hat,.97);
+    add(head,new THREE.SphereGeometry(.13,22*Q,12*Q,0,Math.PI*2,0,Math.PI/2),hm,0,.088,-.004).scale.set(1,1.02,1);
+    add(head,new THREE.CylinderGeometry(.133,.131,.05,22*Q),hc,0,.085,-.004);
+    for(let k=0;k<12;k++){const a=k/12*Math.PI*2,rb=add(head,new THREE.BoxGeometry(.006,.044,.006),hm,Math.sin(a)*.134,.085,Math.cos(a)*.134-.004);rb.rotation.y=a}
+    add(head,sph(.036),M('#ffffff',1),0,.222,-.004).scale.set(1,.92,1);
+  }
   const smile=add(head,new THREE.TorusGeometry(.026,.006,6,14,Math.PI),M('#9a4a40'),0,-.05,.104);smile.rotation.z=Math.PI;
   const mouth=add(head,sph(.021),M('#3a1714',.7),0,-.056,.099);mouth.scale.set(1.15,.05,.45);mouth.visible=false;   // boca que se abre al hablar
   if(o.hd){const tm=add(head,new THREE.BoxGeometry(.03,.006,.004),M('#f4efe6',.4),0,-.047,.104);tm.visible=false;mouth.userData.teeth=tm}
@@ -2850,29 +2859,91 @@ const ACTIONS={
     poseArm(M,1,-.35,.55,-.5,w);
     if(t>2.4)once(A,'i',()=>floatIcon(P,'🌅'));
   }},
-  nap:{dur:11.5,run(A,t,dt,el){   // memorial de los Zapatos: Paz se sienta en un banquito, se duerme y Mati la abraza desde atrás
+  nap:{dur:11.5,run(A,t,dt,el){   // memorial de los Zapatos: Paz se sienta en el borde de piedra, se duerme y Mati la abraza desde atrás
     const M=A.mati,P=A.paz,c=A.mid,T=t-4.1;
     once(A,'s',()=>{const r=river(c.x,c.z),dx=r.x-c.x,dz=r.z-c.z,L=Math.hypot(dx,dz)||1;A.dir=Math.atan2(dx,dz);A.ux=dx/L;A.uz=dz/L;
       A.sh=makeShoes();A.sh.position.set(c.x+A.ux*1.5*avScale,M.group.position.y,c.z+A.uz*1.5*avScale);A.sh.rotation.y=A.dir;A.sh.scale.setScalar(avScale*1.2);scene.add(A.sh);A.props.push(A.sh);
-      const S=col=>new THREE.MeshStandardMaterial({color:col,roughness:.8});A.bn=new THREE.Group();const seat=new THREE.Mesh(new THREE.BoxGeometry(.6,.07,.34),S('#8a5a32'));seat.position.y=.5;seat.castShadow=true;A.bn.add(seat);
-      [-.24,.24].forEach(x=>{const lg=new THREE.Mesh(new THREE.BoxGeometry(.06,.5,.3),S('#3a2c20'));lg.position.set(x,.25,0);A.bn.add(lg)});
-      A.bn.position.set(c.x-A.ux*.06*avScale,M.group.position.y,c.z-A.uz*.06*avScale);A.bn.rotation.y=A.dir;scene.add(A.bn);A.props.push(A.bn)});
+      const S=col=>new THREE.MeshStandardMaterial({color:col,roughness:.9});A.bn=new THREE.Group();
+      const blk=new THREE.Mesh(new THREE.BoxGeometry(.75,.68,.36),S('#a19d95'));blk.position.y=.34;blk.castShadow=true;A.bn.add(blk);
+      const cap=new THREE.Mesh(new THREE.BoxGeometry(.8,.05,.4),S('#8d8a84'));cap.position.y=.7;A.bn.add(cap);
+      A.bn.position.set(c.x-A.ux*.02*avScale,M.group.position.y-.5,c.z-A.uz*.02*avScale);A.bn.rotation.y=A.dir;scene.add(A.bn);A.props.push(A.bn)});
     A.sh.userData.gl.forEach((g,i)=>{const k=.3+.08*Math.sin(el*9+i*2);g.scale.set(k,k,1)});
     const w=Wt(t,0,11.5,.6,.5);A.bn.scale.setScalar(avScale*Math.max(.001,Wt(t,0,11.5,.4,.3)));
-    // Paz sentada mirando al río; Mati de pie justo detrás
-    P.group.position.x=c.x;P.group.position.z=c.z;P.group.position.y-=.42*avScale*P.h*w;P.legs.forEach(l=>Lr(l.rotation,'x',-1.5,w));P.knees.forEach(k=>Lr(k.rotation,'x',1.5,w));poseArm(P,0,-.5,-.05,-.7,w);poseArm(P,1,-.5,.05,-.7,w);
-    M.group.position.x=c.x-A.ux*.4*avScale;M.group.position.z=c.z-A.uz*.4*avScale;[M,P].forEach(av=>La(av.group,A.dir,w));
+    const sx=A.uz,sz=-A.ux;   // a la derecha de quien mira al río
+    // Paz sentada en el borde mirando al río, con los pies colgando; Mati de pie detrás
+    P.group.position.x=c.x;P.group.position.z=c.z;P.group.position.y-=.2*avScale*P.h*w;P.legs.forEach(l=>Lr(l.rotation,'x',-1.5,w));P.knees.forEach(k=>Lr(k.rotation,'x',1.45,w));poseArm(P,0,-.55,-.05,-.7,w);poseArm(P,1,-.55,.05,-.7,w);
+    M.group.position.x=c.x-A.ux*.5*avScale;M.group.position.z=c.z-A.uz*.5*avScale;[M,P].forEach(av=>La(av.group,A.dir,w));
     const wd=Wt(t,.6,4.2,.5,.5);[M,P].forEach(av=>Lr(av.head.rotation,'x',.3*wd,1));
     if(t>1.4)once(A,'c',()=>floatIcon(M,'🕯️'));
     // se queda dormida
-    const ws=Wt(T,.4,7,.7,.5);if(ws>0){Lr(P.head.rotation,'x',.55*ws,1);Lr(P.head.rotation,'z',.3*ws,1);P.body.rotation.z=Math.sin(el*1.1)*.04*ws}
+    const ws=Wt(T,.4,7,.7,.5);if(ws>0){Lr(P.head.rotation,'x',.55*ws,1);Lr(P.head.rotation,'z',.25*ws,1)}
     if(T>.9&&T<6.9)P.lids.forEach(l=>{l.visible=true});
     {const n=Math.floor(T/.9);if(n!==A.zn&&T>.9&&T<6.8){A.zn=n;floatIcon(P,'💤')}}
     if(T>.9)once(A,'zz',()=>{bubble(P,'💤 Zzz…',3.2)});
-    // abrazo desde atrás y risa en silencio
-    const wh=Wt(T,1.6,7.2,.6,.5);if(wh>0){M.body.rotation.x=.42*wh;poseArm(M,0,-1.05,.42,-.75,wh);poseArm(M,1,-1.05,-.42,-.75,wh);Lr(M.head.rotation,'x',.25*wh,1);Lr(M.head.rotation,'z',.15*wh,1);
-      if(T>3)M.body.position.y+=Math.abs(Math.sin(el*16))*.01*wh}
+    // abrazo desde atrás: se inclina un poco y la rodea con los brazos por encima de los hombros
+    const wh=Wt(T,1.6,7.2,.6,.5);
+    if(wh>0){M.group.rotation.x=.16*wh;M.group.updateMatrixWorld(true);
+      const y=P.group.position.y+1.12*avScale*P.h,f=.2*avScale;
+      [[0,-1],[1,1]].forEach(([i,sd])=>aimArm(M,i,new THREE.Vector3(c.x+A.ux*f+sx*sd*.11*avScale,y,c.z+A.uz*f+sz*sd*.11*avScale),wh));
+      Lr(M.head.rotation,'x',.3*wh,1);Lr(M.head.rotation,'z',.1*wh,1);
+      if(T>3)M.group.position.y+=Math.abs(Math.sin(el*16))*.01*avScale*wh}
+    else M.group.rotation.x=0;
     if(T>3.1)once(A,'l',()=>{floatIcon(M,'😂');floatIcon(M,'🤭')});if(T>5)once(A,'l2',()=>floatIcon(M,'😂'));
+  }},
+  moco:{dur:10.5,run(A,t,dt,el){   // a Paz se le cae un moco, le dice a Mati que lo mire y se ríen los dos
+    const M=A.mati,P=A.paz,w=Wt(t,0,10.5,.5,.5);
+    once(A,'s',()=>{const g=new THREE.Group(),m=new THREE.MeshStandardMaterial({color:'#b9d65a',roughness:.15,metalness:0,emissive:'#3c5a10',emissiveIntensity:.25,transparent:true,opacity:.92});
+      const d=new THREE.Mesh(new THREE.CapsuleGeometry(.011,.05,6,10),m);d.position.y=-.035;g.add(d);const tip=new THREE.Mesh(new THREE.SphereGeometry(.017,12,10),m);tip.position.y=-.07;g.add(tip);
+      g.position.set(.012,-.03,.118);g.scale.set(1,.05,1);P.head.add(g);A.props.push(g);A.moco=g});
+    La(M.group,faceAng(M,P),w);La(P.group,faceAng(P,M)-.55,w);
+    const gr=Math.min(1,Math.max(.05,(t-.6)/2.2));A.moco.scale.set(1,gr*(1+.06*Math.sin(el*5)),1);A.moco.rotation.z=Math.sin(el*2.2)*.15*gr;A.moco.visible=t<9.6;
+    // Paz se señala la nariz: «¡Mirá!»
+    const wp=Wt(t,1.8,4.6,.35,.4);if(wp>0){const n=new THREE.Vector3();P.head.getWorldPosition(n);const fx=Math.sin(P.group.rotation.y),fz=Math.cos(P.group.rotation.y);
+      n.x+=fx*.3*avScale;n.z+=fz*.3*avScale;P.group.updateMatrixWorld(true);aimArm(P,1,n,wp)}
+    if(t>2)once(A,'mi',()=>bubble(P,'¡Mirá! 👃',2.4));
+    if(t>3.2)once(A,'ms',()=>floatIcon(M,'😳'));
+    // se ríen los dos
+    const wl=Wt(t,4.3,10.3,.4,.6);if(wl>0){[M,P].forEach((av,j)=>{av.group.position.y+=Math.abs(Math.sin(el*15+j))*.02*avScale*wl;poseArm(av,j?0:1,-.55,j?-.25:.25,-1.7,wl)});
+      if(t>4.5)once(A,'j1',()=>{bubble(M,'¡Jajaja! 😂',2.6);floatIcon(M,'😂')});if(t>6)once(A,'j2',()=>{bubble(P,'Jajaja 🙈',2.4);floatIcon(P,'🤣')})}
+    // plano cercano de su cara mientras le cuelga el moco
+    if(t<4.6){const h=new THREE.Vector3();P.head.getWorldPosition(h);A.camHint={tg:h,ang:faceAng(P,M)-1.5,d:avScale*1.7,h:avScale*.15,lk:4}}else A.camHint=null;
+  }},
+  bridgedance:{dur:14,run(A,t,dt,el){   // reto cumplido: Paz baila girando por el puente, Mati se ríe; luego Mati perrea y Paz se ríe
+    const M=A.mati,P=A.paz,c=A.mid,w=Wt(t,0,14,.5,.6);
+    once(A,'s',()=>{A.hd=movie&&movie.hd!=null?movie.hd:camAng(M)+Math.PI/2;A.fx=Math.sin(A.hd);A.fz=Math.cos(A.hd)});
+    // 1) Paz se adelanta bailando y dando vueltas
+    const go=Math.min(1,Math.max(0,(t-.4)/5.6)),wd=Wt(t,.3,6.4,.4,.5),mg=Math.min(1,Math.max(0,(t-6.2)/1))*.55;
+    P.group.position.x+=A.fx*go*1.2*avScale*w;P.group.position.z+=A.fz*go*1.2*avScale*w;M.group.position.x+=A.fx*mg*avScale*w;M.group.position.z+=A.fz*mg*avScale*w;
+    {const tg=M.group.position.clone().add(P.group.position).multiplyScalar(.5);tg.y+=avScale*.9;A.camHint={tg,ang:A.hd+Math.PI/2,d:avScale*6.5,h:avScale*1.7,lk:2.5}}
+    if(wd>0){P.group.rotation.y+=dt*7.5*wd;poseArm(P,0,-2.3+Math.sin(el*6)*.4,-.6,-.5,wd);poseArm(P,1,-2.3-Math.sin(el*6)*.4,.6,-.5,wd);
+      P.group.position.y+=Math.abs(Math.sin(el*6.5))*.05*avScale*wd;P.knees.forEach((k,i)=>Lr(k.rotation,'x',.35+.3*Math.sin(el*6.5+i*3),wd));Lr(P.head.rotation,'z',Math.sin(el*6.5)*.2,wd)}
+    else La(P.group,faceAng(P,M),w);
+    if(t>.8)once(A,'p1',()=>floatIcon(P,'💃'));
+    // Mati se ríe
+    const wl=Wt(t,1.2,6.6,.3,.5);if(wl>0){La(M.group,faceAng(M,P),wl);M.group.position.y+=Math.abs(Math.sin(el*15))*.02*avScale*wl;poseArm(M,1,-.55,.25,-1.7,wl);
+      if(t>1.6)once(A,'m1',()=>floatIcon(M,'😂'));if(t>4)once(A,'m2',()=>floatIcon(M,'🤣'))}
+    // 2) Mati perrea
+    const wp=Wt(t,7,13.4,.4,.5);
+    if(wp>0){La(M.group,faceAng(M,P)+Math.PI,wp);M.group.rotation.x=(.28+Math.sin(el*16)*.08)*wp;M.group.position.y-=(.2-Math.abs(Math.sin(el*8))*.04)*avScale*wp;
+      M.legs.forEach((l,i)=>{Lr(l.rotation,'x',-.95,wp);Lr(l.rotation,'z',(i?1:-1)*.2,wp)});M.knees.forEach(k=>Lr(k.rotation,'x',1.45,wp));
+      poseArm(M,0,-.6,.15,-.15,wp);poseArm(M,1,-.6,-.15,-.15,wp);Lr(M.head.rotation,'y',Math.sin(el*4)*.4,wp)}
+    else M.group.rotation.x=0;
+    if(t>7.4)once(A,'m3',()=>floatIcon(M,'🍑'));if(t>9.6)once(A,'m4',()=>floatIcon(M,'🔥'));
+    // Paz se ríe
+    const wq=Wt(t,7.4,13.6,.3,.5);if(wq>0){La(P.group,faceAng(P,M),wq);P.group.position.y+=Math.abs(Math.sin(el*15))*.02*avScale*wq;poseArm(P,0,-.55,-.25,-1.7,wq);
+      if(t>8)once(A,'p2',()=>floatIcon(P,'😂'));if(t>10.5)once(A,'p3',()=>floatIcon(P,'🤣'))}
+  }},
+  cold:{dur:7.5,run(A,t,dt,el){   // saliendo del festival hacia el taxi, muertos de frío
+    const M=A.mati,P=A.paz,w=Wt(t,0,7.5,.5,.6);
+    once(A,'s',()=>{const h=movie&&movie.hd!=null?movie.hd+Math.PI:camAng(M)+Math.PI/2;A.fx=Math.sin(h);A.fz=Math.cos(h);A.h=h});
+    const go=Math.min(1,t/7.5)*2.6*avScale;
+    [M,P].forEach((av,j)=>{av.group.position.x+=A.fx*go*w;av.group.position.z+=A.fz*go*w;La(av.group,A.h,w);
+      av.group.rotation.x=.22*w;av.group.rotation.z=Math.sin(el*38+j)*.03*w;
+      const ph=el*7+j*2;av.legs[0].rotation.x=Math.sin(ph)*.4*w;av.legs[1].rotation.x=-Math.sin(ph)*.4*w;av.knees.forEach((k,i)=>Lr(k.rotation,'x',Math.max(0,Math.sin(ph+(i?Math.PI:0)))*.6,w));
+      poseArm(av,0,-1.35,.95,-1.9,w);poseArm(av,1,-1.35,-.95,-1.9,w);Lr(av.head.rotation,'x',.25*w,1)});
+    {const n=Math.floor(t/.85);if(n!==A.br&&t>.5&&t<7){A.br=n;[M,P].forEach(av=>{const p=new THREE.Vector3();av.head.getWorldPosition(p);
+      const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:getGlow(),color:'#ffffff',transparent:true,depthWrite:false,opacity:.75}));sp.position.set(p.x+A.fx*.25*avScale,p.y-.05*avScale,p.z+A.fz*.25*avScale);sp.scale.set(.7*avScale/3,.5*avScale/3,1);sp.userData.op=.7;scene.add(sp);floats.push({sp,life:1.1,vy:.25})})}}
+    if(t>.8)once(A,'b',()=>{bubble(P,'¡Brrr! 🥶',2.6);floatIcon(M,'🥶')});if(t>3.6)once(A,'c',()=>floatIcon(P,'🥶'));
   }},
   meal:{dur:10.4,run(A,t,dt,el){   // comidas: sentados a la mesa (goulash) o de pie con algo en la mano (lángos, chimenea), siempre de cara a la cámara
     const M=A.mati,P=A.paz,c=A.mid,e=(movie&&movie.scene&&movie.scene.e)||{},food=e.food||'plate',sit=food==='goulash'||food==='plate',w=Wt(t,0,10.4,.5,.5),ico=food==='goulash'?'🍲':food==='chimney'?'🥐':food==='langos'?'🫓':'🍽️';
@@ -2880,7 +2951,7 @@ const ACTIONS={
       if(sit){A.tb=makeTable();A.tb.position.set(c.x,M.group.position.y,c.z);A.tb.rotation.y=A.ax;scene.add(A.tb);A.props.push(A.tb);
         [-1,1].forEach(sd=>{const f=makeFood(food);f.scale.setScalar(1.35);f.position.set(0,.78,sd*.2);A.tb.add(f);A.fd.push(f)})}
       else [M,P].forEach(av=>{const f=makeFood(food);f.scale.multiplyScalar(1.7);holdProp(A,f,av.elbows[1]);A.fd.push(f)});
-      sfx('pop');floatIcon(M,ico);floatIcon(P,ico)});
+      sfx('pop')});
     if(sit)A.tb.scale.setScalar(avScale*Math.max(.001,Wt(t,0,10.4,.35,.3)));
     [[M,-1],[P,1]].forEach(([av,sd],j)=>{
       const d=(sit?.41+.27*w:.36)*avScale;av.group.position.x=c.x+Math.sin(A.ax)*sd*d;av.group.position.z=c.z+Math.cos(A.ax)*sd*d;
@@ -2889,7 +2960,7 @@ const ACTIONS={
       else La(av.group,camAng(av)-sd*.3,w);   // de frente a la cámara, apenas girados el uno hacia el otro
       const cyc=t+j*1.3,ph=cyc%2.6,wb=Wt(ph,.3,1.5,.28,.3)*w;poseArm(av,1,sit?-.8:-1.3,0,sit?-.75:-.75,w*(1-wb));poseMouth(av,wb);Lr(av.head.rotation,'x',.2*wb,1);
       av.body.position.y+=Math.abs(Math.sin(el*9))*.006*wb;
-      const n=Math.floor(cyc/2.6);if(n!==A['n'+j]&&ph>.85&&t>1){A['n'+j]=n;const f=A.fd[j];f.scale.multiplyScalar(.86);sfx('crunch');floatIcon(av,n%2?'😋':ico)}});
+      const n=Math.floor(cyc/2.6);if(n!==A['n'+j]&&ph>.85&&t>1){A['n'+j]=n;const f=A.fd[j];f.scale.multiplyScalar(.86);sfx('crunch');if((A.emo||0)<2&&t>2.5){A.emo=(A.emo||0)+1;floatIcon(av,'😋')}}});
     if(t>10.2)once(A,'m1',()=>{if(mate)mate.visible=true});
   }},
   hotdog:{dur:10.5,run(A,t,dt,el){
@@ -3286,24 +3357,45 @@ function buildBeats(P,F){
     if(s.k==='stop'&&L&&L.k==='stop'&&Math.hypot(L.c.x-s.c.x,L.c.z-s.c.z)<20){L.b=s.b;return}
     m.push(s)});
   const sc=movieScenes().map(e=>({...e,used:false})),beats=[];
+  {const md=(store.get('medals',[])||[]).map(m=>({...m,ta:m.t?tsToAbs(m.t):null})).filter(m=>m.ta!=null&&isFinite(m.lat));
+   const onBr=m=>{const q=toW(m.lat,m.lng);return BRIDGE_SEGS.some(sg=>segDist(q,{...sg.a,w:0},{...sg.b,w:0}).d<8)};
+   const m=md.find(x=>/bail/i.test(x.text||''))||md.find(onBr)||md[0];
+   sc.push({split:true,used:false,scene:'bridgedance',ta:m?m.ta:null,cap:'🏅 Reto cumplido · ¡a bailar en el puente!'})}
   let day=-1;
-  const addTitle=d=>{if(d>day&&d>0)beats.push({k:'title',dur:2.6,title:DAY_TITLE[Math.min(2,d)][0],sub:DAY_TITLE[Math.min(2,d)][1],t0:d*1440,t1:d*1440});day=Math.max(day,d)};
+  const addTitle=d=>{};   // la película va de corrido, sin tarjetas de día
   m.forEach(s=>{
     const t0=s.k==='stop'?w[s.a].ta:w[s.a].tb,t1=s.k==='stop'?w[s.b].tb:w[s.b].ta,mins=Math.max(0,t1-t0),len=cum[s.b]-cum[s.a],km=len/100;
     addTitle(Math.floor(t0/1440));
     if(s.k==='move'){
       if(s.b<=s.a||len<1.5)return;
+      const walkBeat=(a,b,rt0,rt1)=>{
+        const rm=Math.max(0,rt1-rt0),rkm=(cum[b]-cum[a])/100;if(b<=a||rkm<.015)return;
+        const B={k:'walk',a,b,t0:rt0,t1:rt1,km:rkm};
+        const ov=sc.find(e=>!e.used&&e.walk&&e.ta>=rt0-5&&e.ta<=rt1+5);if(ov){ov.used=true;B.overlay=ov.walk;B.cap=ov.cap}
+        const base=Math.max(1.2,Math.min(10,rkm*4.2))*F;B.dur=base;
+        if(B.overlay){   // la escena empieza al terminar de cruzar el puente, cuando empieza la subida
+          let k1=-1,kb=a;for(let k=a;k<=b;k++){const rv=river(w[k].x,w[k].z);if(rv.d<rv.w/2){k1=k;break}}
+          if(k1>=0){kb=k1;while(kb<b){const rv=river(w[kb].x,w[kb].z);if(rv.d>=rv.w/2+2)break;kb++}}
+          const tired=B.overlay==='tired',tot=(cum[b]-cum[a])||1,f0=Math.min(.85,(cum[kb]-cum[a])/tot),fw=Math.min(tired?.2:.3,1-f0),t0w=f0*base,W=tired?5:9;
+          B.warp={t0:t0w,W,f0,fw,post:(1-f0-fw)*base};B.dur=t0w+W+B.warp.post}
+        beats.push(B)};
       mvSplit(w,cum,s).forEach(r=>{
         const rt0=r.a===s.a?t0:w[r.a].tb,rt1=w[r.b].ta,rm=Math.max(0,rt1-rt0),rkm=(cum[r.b]-cum[r.a])/100;if(r.b<=r.a||rkm<.015)return;
         const sp=rm>0?rkm/(rm/60):4,kind=r.r?'boat':(sp>11?'ride':'walk');
+        if(kind==='walk'){
+          // ¿hay que cortar este paseo para una escena (el reto en el puente)?
+          let k=-1,e=sc.find(x=>!x.used&&x.split&&x.ta!=null&&x.ta>=rt0&&x.ta<=rt1);
+          if(e){for(let q=r.a+1;q<r.b;q++)if(w[q].ta>=e.ta){k=q;break}}
+          else if((e=sc.find(x=>!x.used&&x.split&&x.ta==null))&&rt0>=1440+12*60){const rv=[];for(let q=r.a+1;q<r.b;q++){const R=river(w[q].x,w[q].z);if(R.d<R.w/2)rv.push(q)}if(rv.length)k=rv[rv.length>>1];else e=null}
+          if(e&&k>r.a&&k<r.b){e.used=true;walkBeat(r.a,k,rt0,w[k].ta);
+            beats.push({k:'stop',a:k,b:k,t0:w[k].ta,t1:w[k].ta,c:{x:w[k].x,z:w[k].z},place:e.place||'',scenes:[{...e,ta:w[k].ta}],dur:.3,cap:''});
+            walkBeat(k,r.b,w[k].tb,rt1)}
+          else walkBeat(r.a,r.b,rt0,rt1);
+          return}
         const B={k:kind,a:r.a,b:r.b,t0:rt0,t1:rt1,km:rkm};
-        const ov=sc.find(e=>!e.used&&(kind==='boat'?e.boat:kind==='walk'?e.walk:null)&&e.ta>=rt0-5&&e.ta<=rt1+5);if(ov){ov.used=true;B.overlay=ov.walk||ov.boat;B.cap=ov.cap}
+        const ov=sc.find(e=>!e.used&&kind==='boat'&&e.boat&&e.ta>=rt0-5&&e.ta<=rt1+5);if(ov){ov.used=true;B.overlay=ov.boat;B.cap=ov.cap}
         if(kind==='ride'){const to=placeAt(w[r.b].x,w[r.b].z,30);B.veh=rt0<14*60?'bus':'taxi';B.dur=Math.max(3.5,Math.min(9,rkm*.7))*F;B.cap=(B.veh==='bus'?'🚌 Bus 100E':'🚕 Taxi')+(to?' a '+to:'')+` · ${Math.round(rm)} min`}
-        else if(kind==='boat'){B.nap=B.overlay==='boatnap';B.overlay='cruise';B.path=mvBoatPath(w,r.a,r.b);B.dur=Math.max(26,Math.min(34,rkm*3))*Math.max(.8,Math.min(1.25,F));if(!B.cap)B.cap='🛥️ Crucero por el Danubio'}
-        else{const base=Math.max(1.2,Math.min(10,rkm*4.2))*F;B.dur=base;
-          if(B.overlay){let kb=r.a;for(let k=r.a;k<=r.b;k++){const rv=river(w[k].x,w[k].z);if(rv.d<rv.w/2){kb=k;break}}
-            const tot=(cum[r.b]-cum[r.a])||1,f0=(cum[kb]-cum[r.a])/tot,fw=Math.min(.3,1-f0),t0w=f0*base,W=9;
-            B.warp={t0:t0w,W,f0,fw,post:(1-f0-fw)*base};B.dur=t0w+W+B.warp.post}}
+        else{B.nap=B.overlay==='boatnap';B.overlay='cruise';B.path=mvBoatPath(w,r.a,r.b);B.dur=Math.max(26,Math.min(34,rkm*3))*Math.max(.8,Math.min(1.25,F));if(!B.cap)B.cap='🛥️ Crucero por el Danubio'}
         beats.push(B)});
     }else{
       const c=s.c,hw=toW(HOTEL.lat,HOTEL.lng),hot=Math.hypot(c.x-hw.x,c.z-hw.z)<30,place=hot?'A57':(placeAt(c.x,c.z)||''),B={k:'stop',a:s.a,b:s.b,t0,t1,c,place,scenes:[]};
@@ -3311,7 +3403,7 @@ function buildBeats(P,F){
       if(!B.scenes.length){
         const ss=Math.floor(t0/1440)*1440+(SUNSET[Math.min(2,Math.floor(t0/1440))]??SUNSET[0]);
         const night=[0,1440,2880].some(d0=>t0<=d0+6*60&&t1>=d0+2*60);   // pasa la madrugada allí
-        if(/Hungexpo/i.test(place))B.scenes.push({scene:'fiesta',mute:true,ta:t0+20,place:'Bónusz Festival',cap:'🎧 Bónusz Festival · a bailar'});
+        if(/Hungexpo/i.test(place)){B.scenes.push({scene:'fiesta',mute:true,ta:t0+20,place:'Bónusz Festival',cap:'🎧 Bónusz Festival · a bailar'});B.scenes.push({scene:'cold',ta:t1-2,place:'Bónusz Festival',cap:'🥶 Saliendo del Bónusz · ¡qué frío!'})}
         else if(hot&&night)B.scenes.push({scene:'sleep',dur:4.2,ta:t0+30,place:'A57',cap:'💤 A dormir'});
         else if(ss>=t0-10&&ss<=t1+5&&mins>=20)B.scenes.push({scene:'watch',ta:ss,place,cap:'🌅 Atardecer'+(place?' en '+place:'')});
         else if(mins>=25&&(/mercado|café|cafe|brunch|gerbeaud|lángos|langos|ruszwurm|bistro|kürt|chimney|pastel/i.test(place)||POIS.some(p=>p.cat==='comida'&&Math.hypot(toW(p.lat,p.lng).x-c.x,toW(p.lat,p.lng).z-c.z)<6)))
@@ -3449,7 +3541,7 @@ const DAYS_SHORT=['Sáb','Dom','Lun'];
 function startScene(M,e){
   const bs=e.bubbles||[],isMood=MOOD_SCENES.includes(e.scene),act=!isMood&&ACTIONS[e.scene];
   const dur=e.dur||Math.max(isMood?7:5,1+bs.length*2.9+1.2,act&&e.scene!=='talk'?act.dur+.6:0);
-  M.scene={e,t:0,dur,bi:0};M.cap='';M.capT=0;if(e.scene==='watch')M.ang=Math.PI/2-.45;if(e.scene==='nap'){const r=river(M.cur.x,M.cur.z);M.ang=Math.atan2(r.x-M.cur.x,r.z-M.cur.z)+.6}   // cámara detrás, mirando al atardecer
+  M.scene={e,t:0,dur,bi:0};M.cap='';M.capT=0;M.camHint=null;if(e.scene==='watch')M.ang=Math.PI/2-.45;if(e.scene==='nap'){const r=river(M.cur.x,M.cur.z);M.ang=Math.atan2(r.x-M.cur.x,r.z-M.cur.z)+.6}   // cámara detrás, mirando al atardecer
   if(isMood){moodNext=e.scene;moodW=Math.min(moodW,.3)}
   else if(act)startAction(e.scene,{quiet:true,scene:true,mute:!!e.mute,dur:e.scene==='talk'?dur-.3:0,text:e.text});
 }
@@ -3537,11 +3629,13 @@ function updateMovie(dt,el){
   const V3=THREE.Vector3,orbit=(r,h)=>new V3(Math.sin(M.ang)*r,h,Math.cos(M.ang)*r);
   let off,tg=mid.clone(),lk=1.4;
   if(ovw){tg=M.ctr.clone();M.ang+=dt*.05;off=new V3(Math.sin(M.ang)*110,310,Math.cos(M.ang)*110+70);lk=3}
-  else if(M.scene){const S=M.scene,low=S.e.scene==='hug'||S.e.scene==='watch';M.ang+=dt*(low?.035:.07);tg.y+=avScale*.9;const dz=avScale*(6.8-Math.min(1.6,S.t*.14))*(S.e.scene==='elbow'?.5:['meal','nap','hotdog'].includes(S.e.scene)?.78:1);
-    off=new V3(Math.sin(M.ang)*dz,avScale*(low?1.35:S.e.scene==='elbow'?4.3:2.4),Math.cos(M.ang)*dz);if(!S.cut){S.cut=1;M.camOff=off.clone().multiplyScalar(1.35)}}
+  else if(M.scene&&((action&&action.camHint)||M.camHint)){const ch=(action&&action.camHint)||M.camHint;tg=ch.tg.clone();off=new V3(Math.sin(ch.ang)*ch.d,ch.h,Math.cos(ch.ang)*ch.d);lk=ch.lk||3;M.ang=ch.ang;if(!M.scene.cut)M.scene.cut=1}
+  else if(M.scene){const S=M.scene,low=S.e.scene==='hug'||S.e.scene==='watch';M.ang+=dt*(low?.035:.07);tg.y+=avScale*.9;const dz=avScale*(6.8-Math.min(1.6,S.t*.14))*(['meal','nap','hotdog'].includes(S.e.scene)?.78:1);
+    off=new V3(Math.sin(M.ang)*dz,avScale*(low?1.35:2.4),Math.cos(M.ang)*dz);if(!S.cut){S.cut=1;M.camOff=off.clone().multiplyScalar(1.35)}}
   else if(B.k==='boat'){if(M.napOn){M.ang+=dt*.05;tg.x=(avatars[0].group.position.x+avatars[1].group.position.x)/2;tg.z=(avatars[0].group.position.z+avatars[1].group.position.z)/2;tg.y+=avScale*.9;
       if(M.hd!=null)M.ang=M.hd+.55+Math.sin(M.t*.25)*.35;off=orbit(avScale*4.6,avScale*2.1);lk=2.5}
     else{M.ang+=dt*.1;off=orbit(27,15)}}
+  else if(M.ovOn&&B.overlay==='tired'&&M.hd!=null){tg.y+=avScale*.8;const a=M.hd+Math.PI/2+.25;off=new V3(Math.sin(a)*avScale*7,avScale*3,Math.cos(a)*avScale*7);M.ang=a;lk=2.5}
   else if(M.ovOn){M.ang+=dt*.1;tg.y+=avScale*.8;off=orbit(avScale*8,avScale*3.6)}
   else if((B.k==='walk'||B.k==='ride')&&M.hd!=null&&M.bi%3!==1){const rv=B.k==='ride',side=M.bi%3===2,a=M.hd+(side?Math.PI/2:Math.PI+.25),d=rv?30:side?24:19;
     off=new V3(Math.sin(a)*d,rv?17:side?12:15,Math.cos(a)*d);tg.y+=avScale*.5;lk=2.2;M.ang=a}
@@ -3571,6 +3665,8 @@ function mvElbow(S,dt,el){   // de noche: Paz, dormida, le da un codazo en la na
   const one=(k,fn)=>{if(!o[k]){o[k]=1;fn()}};
   if(o.i==null){const p=new THREE.Vector3();let bd=1e9;[0,1].forEach(i=>{Pz.arms[i].getWorldPosition(p);const d=p.distanceTo(Mt.group.position);if(d<bd){bd=d;o.i=i}})}
   const i=o.i,out=i?1:-1;
+  {const a=new THREE.Vector3(),b=new THREE.Vector3();Mt.head.getWorldPosition(a);Pz.head.getWorldPosition(b);const tg=a.add(b).multiplyScalar(.5);const h0=Mt.group.rotation.y;
+   movie.camHint={tg,ang:h0,d:avScale*3.4,h:avScale*2.5,lk:6}}
   if(moodObj.bed){const blk=moodObj.bed.children[moodObj.bed.children.length-1];blk.scale.z=.5;blk.position.z=.78}   // manta solo hasta la cintura, para que se vea la escena
   // el codazo
   const wsw=Wt(t,2.2,3.3,.14,.5);poseArm(Pz,i,-.5,out*1.55,-1.9,wsw);
@@ -3594,7 +3690,7 @@ function mvElbow(S,dt,el){   // de noche: Paz, dormida, le da un codazo en la na
 }
 function mvOverlayEnd(){
   const M=movie;if(!M||!M.ov)return;const o=M.ov;M.ov=null;
-  [o.phone,...(o.ph||[])].forEach(p=>{if(p&&p.parent)p.parent.remove(p)});M.napOn=false;avatars.forEach(a=>{a.body.rotation.z=0});
+  [o.phone,...(o.ph||[])].forEach(p=>{if(p&&p.parent)p.parent.remove(p)});avatars.forEach(a=>{a.group.rotation.x=0});M.napOn=false;avatars.forEach(a=>{a.body.rotation.z=0});
   avatars.forEach(a=>{a.head.rotation.set(0,0,0);a.lids.forEach(l=>{l.visible=false})});
 }
 function movieOverlay(dt,el){
@@ -3612,6 +3708,14 @@ function movieOverlay(dt,el){
     every('pz',3.1,()=>floatIcon(Pz,Math.random()<.5?'📸':'😄'));
     poseArm(Mt,1,-2.35,.62,-2.05,1);Lr(Mt.head.rotation,'y',Math.sin(el*2.4)*.55,.5);Lr(Mt.head.rotation,'x',.08,.5);
     every('mt',3.6,()=>floatIcon(Mt,Math.random()<.6?'😅':'😬'));
+  }
+  if(B.overlay==='tired'){   // subiendo al Bastión: Paz agotada, Mati la espera y le tiende la mano
+    Pz.group.rotation.x=.38;Pz.group.position.y-=.05*avScale;poseArm(Pz,0,-.75,.15,-.25,1);poseArm(Pz,1,-.75,-.15,-.25,1);
+    Pz.body.position.y+=Math.abs(Math.sin(el*5))*.012;Lr(Pz.head.rotation,'x',-.25+Math.sin(el*5)*.06,1);
+    const fx=Math.sin(M.hd||0),fz=Math.cos(M.hd||0);Mt.group.position.x+=fx*.45*avScale;Mt.group.position.z+=fz*.45*avScale;
+    La(Mt.group,faceAng(Mt,Pz),1);poseArm(Mt,1,-1.4,.2,-.2,1);
+    every('pz',1.4,()=>floatIcon(Pz,t%2.8<1.4?'😮‍💨':'🥵'));
+    if(!o.b){o.b=1;bubble(Pz,'No puedo más… 😮‍💨',3.4)}
   }
   if(B.overlay==='cruise'){   // sentados: miran a los lados y sacan fotos; Paz se duerme un rato
     const n0=B.dur*.42,wn=B.nap?Wt(M.bt,n0,n0+10,.8,.7):0;
@@ -3716,8 +3820,8 @@ function openMovieSheet(){
 }
 
 const AV_DEF=[
-  {name:'Mati',style:'mati',side:-1,h:1,skin:'#e5b593',hair:'#33241b',top:'#d7d9dc',jacket:'#18181b',bottoms:'#3e5f8a',bottoms2:'#34506f',shoes:'#161616',tag:'#2f6fd6',scarf:'#8f2f2f',hipW:.1,shW:.25,mate:true,armOffset:[-.08,0]},
-  {name:'Paz',style:'paz',side:1,h:.93,skin:'#e7b993',hair:'#3a271c',eyeX:1.12,eyeY:.66,irisY:.86,top:'#4a4d55',bottoms:'#ebe5d8',shoes:'#f4f4f4',tag:'#e05a6b',scarf:'#e9dcc0',hipW:.095,shW:.2}];
+  {name:'Mati',style:'mati',side:-1,h:1,hat:'#8b8f96',hat2:'#767a81',skin:'#e5b593',hair:'#33241b',top:'#d7d9dc',jacket:'#18181b',bottoms:'#3e5f8a',bottoms2:'#34506f',shoes:'#161616',tag:'#2f6fd6',scarf:'#8f2f2f',hipW:.1,shW:.25,mate:true,armOffset:[-.08,0]},
+  {name:'Paz',style:'paz',side:1,h:.93,hat:'#f3f1ec',hat2:'#e2ded5',skin:'#e7b993',hair:'#3a271c',eyeX:1.12,eyeY:.66,irisY:.86,top:'#4a4d55',bottoms:'#ebe5d8',shoes:'#f4f4f4',tag:'#e05a6b',scarf:'#e9dcc0',hipW:.095,shW:.2}];
 function buildAvatars(){
   avatars=AV_DEF.map(o=>makeAvatar(o));
   mate=makeMate();mateHolder=avatars.find(a=>a.name===store.get('mate','Mati'))||avatars[0];
