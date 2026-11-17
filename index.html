@@ -747,6 +747,7 @@ const GUION=[
  {d:1,h:'13:50',place:'Mamá Goulash',scene:'meal',food:'goulash',cap:'🍲 Goulash en pan · Mamá Goulash'},
  {d:1,h:'17:05',place:'Zapatos del Danubio',scene:'nap',cap:'🕯️ Zapatos en la orilla del Danubio'},
  {d:1,h:'17:40',place:'Mercado navideño',scene:'meal',food:'chimney',cap:'🎄 Chimeneas'},
+ {d:1,h:'17:52',place:'Mercado navideño',scene:'drinks',cap:'☕ Chocolate caliente y café · show de luces'},
  {d:1,h:'19:10',boat:'boatnap',cap:'🛥️ Crucero por el Danubio'},
  {d:1,h:'06:00',place:'A57',scene:'elbow',dur:12,cap:'🌙 En medio de la noche · codazo en la nariz'}];
 
@@ -1952,7 +1953,7 @@ function fireworks(mid){
 }
 function updateAmbient(dt,el,mid){
   if(!leaves)return;
-  const wet=weather&&weather.snow?'snow':weather&&weather.rain?'rain':null;
+  const wet=movie?(movie.rain?'rain':null):weather&&weather.snow?'snow':weather&&weather.rain?'rain':null;
   {const p=leaves.geometry.attributes.position;
    for(let i=0;i<p.count;i++){let x=p.getX(i),y=p.getY(i),z=p.getZ(i);
      y-=dt*(1.1+(i%5)*.3);x+=Math.sin(el*1.3+i)*dt*1.3;z+=Math.cos(el*1.1+i*1.7)*dt*1;
@@ -1960,7 +1961,8 @@ function updateAmbient(dt,el,mid){
      p.setXYZ(i,x,y,z)}
    leaves.userData.init=true;p.needsUpdate=true;leaves.visible=wet!=='snow'}
   if(wet==='rain'&&!rainFx)rainFx=precip('rain');if(wet==='snow'&&!snowFx)snowFx=precip('snow');
-  [[rainFx,'rain',62],[snowFx,'snow',4.5]].forEach(([o,k,sp])=>{if(!o)return;o.visible=wet===k;if(!o.visible)return;
+  if(rainFx)rainFx.material.opacity=movie?.38:.75;
+  [[rainFx,'rain',movie?40:62],[snowFx,'snow',4.5]].forEach(([o,k,sp])=>{if(!o)return;o.visible=wet===k;if(!o.visible)return;
     o.position.set(controls.target.x,0,controls.target.z);const p=o.geometry.attributes.position,seg=k==='rain';
     for(let i=0;i<p.count;i++){let y=p.getY(i)-sp*dt;if(seg){if(i%2===0&&y<0)y+=48;else if(i%2===1&&y<-1.6)y+=48}else{if(y<0)y+=48;p.setX(i,p.getX(i)+Math.sin(el*1.5+i)*dt*1.2)}p.setY(i,y)}
     p.needsUpdate=true});
@@ -2373,7 +2375,7 @@ function makeAvatar(o){
     const b=add(head,new THREE.BoxGeometry(.044,.011,.012),hairM,x,.05,.104);b.rotation.z=x<0?.12:-.12;brows.push(b)});
   const lids=[-.038,.038].map(x=>{const l=add(head,sph(.0195),skin,x,.021,.099);l.scale.set((o.eyeX||1)*1.08,(o.eyeY||.8)*1.12,.64);l.visible=false;return l});   // párpados (parpadeo)
   if(o.hat){   // gorro de lana con dobladillo y pompón
-    const hm=M(o.hat,.97),hc=M(o.hat2||o.hat,.97);
+    const hm=M(o.hat,.97),hc=M(o.hat2||o.hat,.97);g.userData.hatM=[hm,hc];
     add(head,new THREE.SphereGeometry(.13,22*Q,12*Q,0,Math.PI*2,0,Math.PI/2),hm,0,.088,-.004).scale.set(1,1.02,1);
     add(head,new THREE.CylinderGeometry(.133,.131,.05,22*Q),hc,0,.085,-.004);
     for(let k=0;k<12;k++){const a=k/12*Math.PI*2,rb=add(head,new THREE.BoxGeometry(.006,.044,.006),hm,Math.sin(a)*.134,.085,Math.cos(a)*.134-.004);rb.rotation.y=a}
@@ -2890,6 +2892,24 @@ const ACTIONS={
     else M.group.rotation.x=0;
     if(T>3.1)once(A,'l',()=>{floatIcon(M,'😂');floatIcon(M,'🤭')});if(T>5)once(A,'l2',()=>floatIcon(M,'😂'));
   }},
+  drinks:{dur:5.5,run(A,t,dt,el){   // Mati con chocolate caliente con nata y Paz con un café, con el show de luces detrás
+    const M=A.mati,P=A.paz,c=A.mid,w=Wt(t,0,5.5,.4,.4);
+    once(A,'s',()=>{A.cups=[makeDrink('choco'),makeDrink('coffee')];holdProp(A,A.cups[0],M.elbows[1]);holdProp(A,A.cups[1],P.elbows[1]);
+      const ca=camAng(M),bx=-Math.sin(ca),bz=-Math.cos(ca),lx=Math.cos(ca),lz=-Math.sin(ca);A.ls=new THREE.Group();A.ls.userData.l=[];
+      for(let i=0;i<9;i++)for(let j=0;j<5;j++){const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:getGlow(),color:'#ffffff',transparent:true,depthWrite:false,blending:THREE.AdditiveBlending}));
+        sp.position.set(c.x+bx*3.2*avScale+lx*(i-4)*.9*avScale,c.y+(1+j*.85)*avScale,c.z+bz*3.2*avScale+lz*(i-4)*.9*avScale);sp.userData.ij=[i,j];A.ls.add(sp);A.ls.userData.l.push(sp)}
+      for(let i=0;i<5;i++){const g=new THREE.CylinderGeometry(.015,.09,9,6,1,true);g.translate(0,4.5,0);const b=new THREE.Mesh(g,new THREE.MeshBasicMaterial({color:'#ffd27a',transparent:true,opacity:.3,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide}));
+        b.position.set(c.x+bx*3.6*avScale+lx*(i-2)*1.8*avScale,c.y,c.z+bz*3.6*avScale+lz*(i-2)*1.8*avScale);b.scale.setScalar(avScale);b.userData.i=i;A.ls.add(b)}
+      scene.add(A.ls);A.props.push(A.ls)});
+    const cols=['#ff3d5a','#ffd23f','#3dd6ff','#7bff8a','#c07bff','#ff8c42'];
+    A.ls.children.forEach(o=>{if(o.isSprite){const [i,j]=o.userData.ij,k=(Math.sin(el*3-i*.7+j*.5)+1)/2;o.material.color.set(cols[(i+j+Math.floor(el*1.5))%cols.length]);const z=(.6+1.1*k)*avScale*w;o.scale.set(z,z,1);o.material.opacity=.35+.6*k}
+      else{o.rotation.z=Math.sin(el*1.4+o.userData.i)*.5;o.material.opacity=.15+.2*Math.abs(Math.sin(el*2+o.userData.i))}});
+    [M,P].forEach((av,j)=>{La(av.group,camAng(av)+(j?.25:-.25),w);const ph=(t+j*1.1)%2.6,ws=Wt(ph,.4,1.5,.3,.35)*w;
+      poseArm(av,1,-1.15-.6*ws,0,-.9-.9*ws,w);Lr(av.head.rotation,'x',.15*ws,1)});
+    {const n=Math.floor(t/.5);if(n!==A.st&&t<5){A.st=n;A.cups.forEach(cp=>{const p=new THREE.Vector3();cp.getWorldPosition(p);
+      const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:getGlow(),color:'#ffffff',transparent:true,depthWrite:false,opacity:.6}));sp.position.set(p.x,p.y+.18*avScale,p.z);sp.scale.set(.25*avScale,.35*avScale,1);sp.userData.op=.55;scene.add(sp);floats.push({sp,life:1,vy:.4*avScale})})}}
+    if(t>1.6)once(A,'i',()=>floatIcon(P,'✨'));
+  }},
   moco:{dur:10.5,run(A,t,dt,el){   // a Paz se le cae un moco, le dice a Mati que lo mire y se ríen los dos
     const M=A.mati,P=A.paz,w=Wt(t,0,10.5,.5,.5);
     once(A,'s',()=>{const g=new THREE.Group(),m=new THREE.MeshStandardMaterial({color:'#b9d65a',roughness:.15,metalness:0,emissive:'#3c5a10',emissiveIntensity:.25,transparent:true,opacity:.92});
@@ -3233,7 +3253,7 @@ let umbrella=null;
 function weatherFx(){
   const cold=weather&&weather.temp<8,wet=!!(weather&&(weather.rain||weather.snow));
   avatars.forEach(av=>{av.scarf.visible=!!cold&&mood!=='sleep'});
-  const show=wet&&mood==='idle'&&!action&&!mateAnim;
+  const show=!movie&&wet&&mood==='idle'&&!action&&!mateAnim;
   if(!show){if(umbrella)umbrella.visible=false;return}
   const M=avatars.find(a=>a.name==='Mati');
   if(!umbrella){   // se crea una sola vez y vive siempre en la mano izquierda de Mati
@@ -3382,7 +3402,7 @@ function buildBeats(P,F){
         if(B.overlay){   // la escena empieza al terminar de cruzar el puente, cuando empieza la subida
           let k1=-1,kb=a;for(let k=a;k<=b;k++){const rv=river(w[k].x,w[k].z);if(rv.d<rv.w/2){k1=k;break}}
           if(k1>=0){kb=k1;while(kb<b){const rv=river(w[kb].x,w[kb].z);if(rv.d>=rv.w/2+2)break;kb++}}
-          const tot=(cum[b]-cum[a])||1,f0=Math.max(.72,Math.min(.85,(cum[kb]-cum[a])/tot)),fw=Math.min(.08,1-f0),t0w=f0*base,W=5;   // 5 s, casi llegando arriba
+          const tot=(cum[b]-cum[a])||1,f0=Math.max(.72,Math.min(.85,(cum[kb]-cum[a])/tot)),fw=Math.min(B.overlay==='tired'?.025:.08,1-f0),t0w=f0*base,W=B.overlay==='tired'?4.5:5;   // 5 s, casi llegando arriba
           B.warp={t0:t0w,W,f0,fw,post:(1-f0-fw)*base};B.dur=t0w+W+B.warp.post}
         beats.push(B)};
       mvSplit(w,cum,s).forEach(r=>{
@@ -3422,6 +3442,8 @@ function buildBeats(P,F){
   });
   // momentos que no cayeron en ningún tramo: van a la parada más cercana en el tiempo
   sc.filter(e=>!e.used&&!e.walk&&!e.boat).forEach(e=>{let best=null,bd=1e9;beats.forEach(b=>{if(b.k!=='stop')return;const d=Math.min(Math.abs(b.t0-e.ta),Math.abs(b.t1-e.ta));if(d<bd){bd=d;best=b}});if(best)best.scenes.push(e)});
+  {const bi=beats.findIndex(b=>b.k==='stop'&&/Basti/i.test(b.place||'')),zz=bi>=0?beats.slice(bi+1).find(b=>b.k==='stop'&&b.place==='A57'):null;
+   beats.rainA=bi>=0?beats[bi].t1:1e9;beats.rainB=zz?zz.t0:1e9}
   {const f=beats.find(b=>b.a!=null),l=[...beats].reverse().find(b=>b.a!=null);
    if(f&&f.k==='ride')beats.unshift({k:'plane',mode:'in',ri:f,dur:11,t0:f.t0-12,t1:f.t0,cap:'✈️ Llegada a Budapest'});
    if(l&&l.k==='ride')beats.push({k:'plane',mode:'out',ri:l,dur:10.5,t0:l.t1+25,t1:l.t1+40,cap:'✈️ Vuelta a Barcelona'})}
@@ -3442,6 +3464,15 @@ function makeFood(kind){
     a(new THREE.SphereGeometry(.04,14,10),S('#9bbf5a',.55),0,.175,0).scale.set(1,.62,1);
     [[.015,.01],[-.012,.014],[.002,-.016]].forEach(([x,z])=>a(new THREE.SphereGeometry(.007,6,5),S('#5f8a2f'),x,.2,z));
   }else{a(new THREE.CylinderGeometry(.1,.09,.012,18),S('#f4f1ea',.4),0,.006,0);a(new THREE.SphereGeometry(.05,10,8),S('#c9713a'),0,.03,0).scale.set(1,.5,1);a(new THREE.SphereGeometry(.025,8,6),S('#6cbf4a'),.045,.025,.03)}
+  return g}
+function makeDrink(kind){   // taza de chocolate con nata o vaso de café para llevar
+  const g=new THREE.Group(),S=(c,r=.5)=>new THREE.MeshStandardMaterial({color:c,roughness:r}),a=(geo,mat,x,y,z)=>{const m=new THREE.Mesh(geo,mat);m.position.set(x,y,z);g.add(m);return m};
+  if(kind==='choco'){a(new THREE.CylinderGeometry(.045,.04,.1,16),S('#c0392b',.4),0,0,0);a(new THREE.TorusGeometry(.025,.008,8,14),S('#c0392b',.4),.05,0,0).rotation.y=Math.PI/2;
+    a(new THREE.CylinderGeometry(.041,.041,.01,16),S('#5a3420'),0,.048,0);
+    [[0,.065,0,.034],[.015,.088,.008,.024],[-.01,.104,-.004,.017],[0,.118,0,.01]].forEach(([x,y,z,r])=>a(new THREE.SphereGeometry(r,12,10),S('#fbf7ef',.8),x,y,z));
+    [[.012,.1,.02],[-.014,.09,-.016]].forEach(([x,y,z])=>a(new THREE.BoxGeometry(.012,.004,.004),S('#5a3420'),x,y,z))}
+  else{a(new THREE.CylinderGeometry(.04,.032,.12,16),S('#f4efe6',.6),0,0,0);a(new THREE.CylinderGeometry(.041,.041,.035,16),S('#8a5a32',.8),0,-.005,0);
+    a(new THREE.CylinderGeometry(.042,.042,.014,16),S('#2b2b2b',.4),0,.066,0);a(new THREE.CylinderGeometry(.006,.006,.008,8),S('#2b2b2b',.4),.022,.077,0)}
   return g}
 function makeTable(){
   const g=new THREE.Group(),S=(c,r=.7)=>new THREE.MeshStandardMaterial({color:c,roughness:r}),a=(geo,mat,x,y,z)=>{const m=new THREE.Mesh(geo,mat);m.position.set(x,y,z);m.castShadow=true;g.add(m);return m};
@@ -3496,11 +3527,12 @@ function makePlane(){   // avión de pasajeros, blanco con franja azul (en metro
   [[0,4.2],[-1.1,-.4],[1.1,-.4]].forEach(([x,z])=>{a(new THREE.CylinderGeometry(.06,.06,.6,6),S('#777'),x,.45,z);const wh=a(new THREE.CylinderGeometry(.22,.22,.18,12),S('#151515',.8),x,.22,z);wh.rotation.z=Math.PI/2});
   [-1,1].forEach(sd=>{const l=a(new THREE.SphereGeometry(.12,8,6),S(sd<0?'#ff3b3b':'#3bff7a',.3,sd<0?'#ff2a2a':'#2aff6a'),sd*6.5,1.05,.3);l.castShadow=false});
   g.rotation.order='YXZ';return g}
+function setHats(d2){avatars.forEach(a=>{const o=AV_DEF.find(x=>x.name===a.name),hm=a.group.userData.hatM;if(!o||!hm)return;const c=d2?o.hatD2:[o.hat,o.hat2];hm[0].color.set(c[0]);hm[1].color.set(c[1])})}
 function mvPlane(M,B,dt){
   const ri=B.ri,t=M.bt;
   if(!B.P){const a=B.mode==='in'?M.w[ri.a]:M.w[ri.b],qi=B.mode==='in'?Math.min(ri.b,ri.a+8):Math.max(ri.a,ri.b-8),q=M.w[qi];
     const h=B.mode==='in'?Math.atan2(q.x-a.x,q.z-a.z):Math.atan2(a.x-q.x,a.z-q.z);B.h=h;B.fx=Math.sin(h);B.fz=Math.cos(h);B.sx=-Math.cos(h);B.sz=Math.sin(h);
-    B.P={x:a.x,z:a.z};B.park={x:a.x-B.sx*24,z:a.z-B.sz*24};B.door={x:B.park.x+B.sx*5+B.fx*6,z:B.park.z+B.sz*5+B.fz*6}}
+    B.P={x:a.x,z:a.z};B.park={x:a.x-B.sx*24-B.fx*14,z:a.z-B.sz*24-B.fz*14};B.door={x:B.park.x+B.sx*4+B.fx*16,z:B.park.z+B.sz*4+B.fz*16}}   // puerta delante del ala
   if(!M.plane){M.plane=makePlane();scene.add(M.plane)}
   const pl=M.plane,S=avScale,gy=height(B.park.x,B.park.z),cam=(tg,d,h,lk)=>{M.pcam={tg,ang:B.h-Math.PI/2+.5,d,h,lk}};pl.scale.setScalar(S);
   const lerp=(p,q,k)=>({x:p.x+(q.x-p.x)*k,z:p.z+(q.z-p.z)*k}),E=k=>k<0?0:k>1?1:k*k*(3-2*k);
@@ -3510,11 +3542,11 @@ function mvPlane(M,B,dt){
     else{const k=Math.min(1,(t-td)/(stop-td));s=-14+14*(1-(1-k)*(1-k))}
     pl.position.set(B.park.x+B.fx*s,y,B.park.z+B.fz*s);pl.rotation.set(pitch,B.h,0);
     B.hide=t<stop+.4;B.vehOn=t>3;B.vehPos={x:B.P.x+B.fx*3,z:B.P.z+B.fz*3};
-    M.cur=t<stop+.4?{...B.door}:lerp(B.door,{x:B.P.x-B.sx*5,z:B.P.z-B.sz*5},E((t-stop-.4)/(B.dur-stop-.9)));
+    M.cur=t<stop+.4?{...B.door}:lerp(B.door,{x:B.P.x-B.sx*5+B.fx*2,z:B.P.z-B.sz*5+B.fz*2},E((t-stop-.4)/(B.dur-stop-.9)));
     if(t<stop+.6)cam(pl.position.clone().add(new THREE.Vector3(0,2*S,0)),t<td?78:62,t<td?20:22,1.6);else M.pcam=null;
   }else{   // caminan desde el taxi, suben al avión y despega
     const board=3.3,go=4;
-    M.cur=lerp({x:B.P.x-B.sx*5,z:B.P.z-B.sz*5},B.door,E(t/board));B.hide=t>board;B.vehOn=t<board+.6;B.vehPos={x:B.P.x+B.fx*2,z:B.P.z+B.fz*2};
+    M.cur=lerp({x:B.P.x-B.sx*5+B.fx*2,z:B.P.z-B.sz*5+B.fz*2},B.door,E(t/board));B.hide=t>board;B.vehOn=t<board+.6;B.vehPos={x:B.P.x+B.fx*2,z:B.P.z+B.fz*2};
     let s=0,y=gy,pitch=0;if(t>go){const u=t-go;s=2.6*u*u;if(u>3.2){const v=u-3.2;y=gy+2.2*v*v+3*v;pitch=Math.max(-.32,-.12*v-.08)}}
     pl.position.set(B.park.x+B.fx*s,y,B.park.z+B.fz*s);pl.rotation.set(pitch,B.h,0);
     if(t>board-.6)cam(pl.position.clone().add(new THREE.Vector3(0,2*S,0)),70,22,2);else M.pcam=null;
@@ -3560,7 +3592,7 @@ function startMovie(rec){
   const F=(MV_LEN[store.get('mvLen',1)]||MV_LEN[1]).f;
   const beats=buildBeats(P,F);
   const first=beats.find(b=>b.a!=null),p0=first?(first.c||P.w[first.a]):P.w[0];
-  movie={...P,beats,bi:-1,bt:0,F,speed:1,t:0,endT:0,cur:{x:p0.x,z:p0.z},skyT:0,shown:new Set(),cap:'',capT:0,ang:0,scene:null,si:0,scenes:[],mood:'idle'};
+  movie={...P,beats,rainA:beats.rainA,rainB:beats.rainB,bi:-1,bt:0,F,speed:1,t:0,endT:0,cur:{x:p0.x,z:p0.z},skyT:0,shown:new Set(),cap:'',capT:0,ang:0,scene:null,si:0,scenes:[],mood:'idle'};
   if(!hudScene)initHud();
   followMode=false;camAnim=null;setFull(true);document.body.classList.add('acting');avatars.forEach(a=>{a.group.userData.tag.visible=false});
   controls.enabled=false;mvControls(true);avScale=AV_MOVIE;mvQuality(!!store.get('mvHQ',true));
@@ -3652,6 +3684,8 @@ function updateMovie(dt,el){
     }
   }
   const day=Math.max(0,Math.min(2,Math.floor(ta/1440))),mm=Math.round(ta-day*1440);
+  {const d2=ta>=1440;if(M.hatD!==d2){M.hatD=d2;setHats(d2)}}   // segundo día: Paz con gorro negro y Mati marrón oscuro
+  M.rain=ta>=M.rainA&&ta<M.rainB;   // llovizna desde que bajan del segundo atardecer hasta irse a dormir
   M.skyT-=dt;if(M.skyT<=0){M.skyT=.15;dayNight({d:day,m:mm})}
   // cámara: en los momentos, plano cercano; en el barco y en las escenas al caminar, plano medio.
   // Sigue a los avatares sin retraso y solo suaviza el ángulo, así no se quedan fuera de plano aunque vayan rápido.
@@ -3791,7 +3825,7 @@ function movieOverlay(dt,el){
   }
 }
 function stopMovie(){
-  if(!movie)return;const rec=movie.rec;if(action&&action.o&&action.o.scene)endAction(action);mvOverlayEnd();mvControls(false);if(mate)mate.visible=true;if(movie.veh)scene.remove(movie.veh);if(movie.plane)scene.remove(movie.plane);if(movie.line){scene.remove(movie.line);movie.line.geometry.dispose()}if(movie.sun)scene.remove(movie.sun);mvQuality(null);avatars.forEach(a=>{a.group.visible=true});movie=null;avScale=AV_MAP;resetMood();controls.enabled=true;
+  if(!movie)return;const rec=movie.rec;if(action&&action.o&&action.o.scene)endAction(action);mvOverlayEnd();mvControls(false);if(mate)mate.visible=true;setHats(false);if(movie.veh)scene.remove(movie.veh);if(movie.plane)scene.remove(movie.plane);if(movie.line){scene.remove(movie.line);movie.line.geometry.dispose()}if(movie.sun)scene.remove(movie.sun);mvQuality(null);avatars.forEach(a=>{a.group.visible=true});movie=null;avScale=AV_MAP;resetMood();controls.enabled=true;
   document.body.classList.remove('acting');avatars.forEach(a=>{a.group.userData.tag.visible=true});
   if(rec&&rec.state!=='inactive')rec.stop();
   setFull(false);refresh();flyHome();
@@ -3872,8 +3906,8 @@ function openMovieSheet(){
 }
 
 const AV_DEF=[
-  {name:'Mati',style:'mati',side:-1,h:1,hat:'#8b8f96',hat2:'#767a81',skin:'#e5b593',hair:'#33241b',top:'#d7d9dc',jacket:'#18181b',bottoms:'#3e5f8a',bottoms2:'#34506f',shoes:'#161616',tag:'#2f6fd6',scarf:'#8f2f2f',hipW:.1,shW:.25,mate:true,armOffset:[-.08,0]},
-  {name:'Paz',style:'paz',side:1,h:.93,hat:'#f3f1ec',hat2:'#e2ded5',skin:'#e7b993',hair:'#3a271c',eyeX:1.12,eyeY:.66,irisY:.86,top:'#4a4d55',bottoms:'#ebe5d8',shoes:'#f4f4f4',tag:'#e05a6b',scarf:'#e9dcc0',hipW:.095,shW:.2}];
+  {name:'Mati',style:'mati',side:-1,h:1,hat:'#8b8f96',hat2:'#767a81',hatD2:['#4a3426','#3a281d'],skin:'#e5b593',hair:'#33241b',top:'#d7d9dc',jacket:'#18181b',bottoms:'#3e5f8a',bottoms2:'#34506f',shoes:'#161616',tag:'#2f6fd6',scarf:'#8f2f2f',hipW:.1,shW:.25,mate:true,armOffset:[-.08,0]},
+  {name:'Paz',style:'paz',side:1,h:.93,hat:'#f3f1ec',hat2:'#e2ded5',hatD2:['#1d1d20','#2b2b30'],skin:'#e7b993',hair:'#3a271c',eyeX:1.12,eyeY:.66,irisY:.86,top:'#4a4d55',bottoms:'#ebe5d8',shoes:'#f4f4f4',tag:'#e05a6b',scarf:'#e9dcc0',hipW:.095,shW:.2}];
 function buildAvatars(){
   avatars=AV_DEF.map(o=>makeAvatar(o));
   mate=makeMate();mateHolder=avatars.find(a=>a.name===store.get('mate','Mati'))||avatars[0];
@@ -3901,7 +3935,7 @@ function moveAvatars(dt){
   const dx=tg.x-mid.x,dz=tg.z-mid.z,dist=Math.hypot(dx,dz);
   const jump=dist>250;                                    // primer punto GPS o salto grande: aparecer allí
   const hold=!!action;
-  const moving=movie?(!jump&&!hold&&dist/Math.max(dt,1e-3)>.5):(dist>0.6&&!jump&&!hold);
+  const moving=movie?(!jump&&!hold&&dist/Math.max(dt,1e-3)>.25):(dist>0.6&&!jump&&!hold);
   if(moving)heading=Math.atan2(dx,dz);   // siempre mirando hacia donde caminan
   const step=movie?dist:Math.min(dist,Math.max(12,dist*1.8)*dt);
   if(moving)lastMoveT=clock.elapsedTime;
@@ -3913,7 +3947,7 @@ function moveAvatars(dt){
     a.group.position.set(x,onBr?Math.max(height(x,z)+.5,1.97):height(x,z)+.5,z);a.group.scale.setScalar(avScale*a.h);
     let dr=heading-a.group.rotation.y;dr=Math.atan2(Math.sin(dr),Math.cos(dr));a.group.rotation.y+=dr*Math.min(1,dt*8);
     a.speed+=((moving?1:0)-a.speed)*Math.min(1,dt*6);
-    a.phase+=dt*(moving?(movie?13:tired?6:9):2.2);
+    a.phase+=dt*(moving?(movie?Math.max(3.5,Math.min(13,dist/Math.max(dt,1e-3)*2.2)):tired?6:9):2.2);
     const sw=Math.sin(a.phase)*.65*a.speed;
     a.legs[0].rotation.x=sw;a.legs[1].rotation.x=-sw;
     const holds=mateHolder===a&&!movie,busy=mateAnim&&(mateAnim.g===a||mateAnim.r===a);
