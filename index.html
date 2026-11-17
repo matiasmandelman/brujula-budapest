@@ -3818,11 +3818,14 @@ function movieOverlay(dt,el){
     Pz.legs[0].rotation.x=sw*.3;Pz.legs[1].rotation.x=-sw*.3;Pz.knees.forEach((k,n)=>{k.rotation.x=.15+Math.max(0,n?-sw:sw)*.45});
     poseArm(Pz,0,-.25,-.12,-.2,1);poseArm(Pz,1,-.25,.12,-.2,1);Lr(Pz.head.rotation,'x',-.1+Math.sin(el*4)*.05,1);Lr(Pz.head.rotation,'z',.1,1);
     // Mati detrás, inclinado hacia delante, con las manos en su espalda
-    Mt.group.position.set(c.x-fx*.82*S,gy,c.z-fz*.82*S);   // a distancia para empujar con los brazos estiradosMt.group.rotation.y=h;Mt.group.rotation.x=.3;
+    // las manos de Mati van a la espalda de Paz (omóplatos) y él se coloca a la distancia justa para empujar con los brazos casi estirados
+    Pz.group.updateMatrixWorld(true);
+    const tg=[0,1].map(n=>{const p=new THREE.Vector3();Pz.arms[n].getWorldPosition(p);p.x-=fx*.13*S;p.z-=fz*.13*S;p.y-=.12*S;return p});
+    const T=tg[0].clone().add(tg[1]).multiplyScalar(.5),lean=.3,dv=gy+1.49*S*Math.cos(lean)-T.y,dh=Math.sqrt(Math.max(.01,(.58*S)**2-dv*dv));
+    Mt.group.position.set(T.x-fx*(dh+1.49*S*Math.sin(lean)),gy,T.z-fz*(dh+1.49*S*Math.sin(lean)));Mt.group.rotation.y=h;Mt.group.rotation.x=lean;
     Mt.legs[0].rotation.x=-.3+sw*.45;Mt.legs[1].rotation.x=-.3-sw*.45;Mt.knees.forEach((k,n)=>{k.rotation.x=.2+Math.max(0,n?-sw:sw)*.6});
     Mt.group.updateMatrixWorld(true);
-    {const y=Pz.group.position.y+1.2*S*Pz.h,bx=Pz.group.position.x-fx*.3*S,bz=Pz.group.position.z-fz*.3*S;
-     aimArm(Mt,0,new THREE.Vector3(bx-rx*.12*S,y,bz-rz*.12*S),1);aimArm(Mt,1,new THREE.Vector3(bx+rx*.12*S,y,bz+rz*.12*S),1)}
+    aimArm(Mt,0,tg[0],1);aimArm(Mt,1,tg[1],1);
     Lr(Mt.head.rotation,'x',-.25,.4);
     every('pz',1.5,()=>floatIcon(Pz,t%3<1.5?'😩':'😮‍💨'));every('mt',2.1,()=>floatIcon(Mt,t%4.2<2.1?'😤':'💪'));
     if(!o.b){o.b=1;bubble(Pz,'No puedo más… 😮‍💨',3.4)}
