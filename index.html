@@ -741,12 +741,12 @@ const GUION=[
  {d:0,h:'14:05',place:'Krumplis Lángos',scene:'meal',food:'langos',cap:'🫓 Un lángos antes de subir'},
  {d:0,h:'15:25',walk:'climb',cap:'📸 Paz feliz sacando fotos · Mati nervioso'},
  {d:0,h:'16:00',place:'Citadella',scene:'hug',dur:8.5,cap:'🌅 Primer atardecer · Citadella'},
- {d:0,h:'17:55',place:'Mercado navideño',scene:'hotdog',cap:'🎄 Mercado navideño · el hot dog gigante'},
+ {d:0,h:'17:55',place:'Mercado navideño',scene:'hotdog',cap:'🌭 Mercado navideño, pancho de 1kg'},
  {d:1,h:'14:44',place:'Gran Sinagoga',scene:'moco',cap:'🤧 Saliendo de la Gran Sinagoga · el moco de Paz'},
  {d:1,h:'15:30',walk:'tired',cap:'😮‍💨 Subiendo al Bastión · Paz no puede más'},
  {d:1,h:'13:50',place:'Mamá Goulash',scene:'meal',food:'goulash',cap:'🍲 Goulash en pan · Mamá Goulash'},
  {d:1,h:'17:05',place:'Zapatos del Danubio',scene:'nap',cap:'🕯️ Zapatos en la orilla del Danubio'},
- {d:1,h:'17:40',place:'Mercado navideño',scene:'meal',food:'chimney',cap:'🎄 Chimenea con crema de pistacho'},
+ {d:1,h:'17:40',place:'Mercado navideño',scene:'meal',food:'chimney',cap:'🎄 Chimeneas'},
  {d:1,h:'19:10',boat:'boatnap',cap:'🛥️ Crucero por el Danubio'},
  {d:1,h:'06:00',place:'A57',scene:'elbow',dur:12,cap:'🌙 En medio de la noche · codazo en la nariz'}];
 
@@ -2853,7 +2853,7 @@ const ACTIONS={
   }},
   // ---- escenas de la película
   watch:{dur:8,run(A,t,dt,el){   // mirando el atardecer, uno al lado del otro
-    const M=A.mati,P=A.paz,c=A.mid,w=Wt(t,0,8,.6,.6),west=-Math.PI/2,g=.3*avScale;
+    const M=A.mati,P=A.paz,c=A.mid,w=Wt(t,0,8,.6,.6),west=Math.PI/2,g=.3*avScale;   // de cara a la ciudad
     [[M,-1],[P,1]].forEach(([av,sd])=>{av.group.position.x+=(c.x-av.group.position.x)*w;av.group.position.z+=(c.z+sd*g-av.group.position.z)*w;La(av.group,west,w)});
     Lr(P.head.rotation,'z',-.2*w,1);Lr(M.head.rotation,'z',.08*w,1);[M,P].forEach((av,j)=>Lr(av.head.rotation,'x',-.08*w+Math.sin(el*.8+j)*.02,1));
     poseArm(M,1,-.35,.55,-.5,w);
@@ -2910,11 +2910,16 @@ const ACTIONS={
   }},
   bridgedance:{dur:14,run(A,t,dt,el){   // reto cumplido: Paz baila girando por el puente, Mati se ríe; luego Mati perrea y Paz se ríe
     const M=A.mati,P=A.paz,c=A.mid,w=Wt(t,0,14,.5,.6);
-    once(A,'s',()=>{A.hd=movie&&movie.hd!=null?movie.hd:camAng(M)+Math.PI/2;A.fx=Math.sin(A.hd);A.fz=Math.cos(A.hd)});
+    once(A,'s',()=>{A.hd=movie&&movie.hd!=null?movie.hd:camAng(M)+Math.PI/2;A.fx=Math.sin(A.hd);A.fz=Math.cos(A.hd);A.base={x:A.mid.x,z:A.mid.z};
+      let best=null;BRIDGE_SEGS.forEach(sg=>{const q=segDist(A.mid,{...sg.a,w:0},{...sg.b,w:0});if(!best||q.d<best.q.d)best={q,sg}});
+      if(best&&best.q.d<10){let ax=best.sg.b.x-best.sg.a.x,az=best.sg.b.z-best.sg.a.z;const L=Math.hypot(ax,az)||1;ax/=L;az/=L;if(ax*A.fx+az*A.fz<0){ax=-ax;az=-az}
+        A.fx=ax;A.fz=az;A.hd=Math.atan2(ax,az);A.base={x:best.q.x,z:best.q.z};A.deck=true}});
+    {const lx=-A.fz,lz=A.fx;[[M,-1],[P,1]].forEach(([av,sd])=>{av.group.position.x=A.base.x+lx*sd*.55;av.group.position.z=A.base.z+lz*sd*.55})}
     // 1) Paz se adelanta bailando y dando vueltas
     const go=Math.min(1,Math.max(0,(t-.4)/5.6)),wd=Wt(t,.3,6.4,.4,.5),mg=Math.min(1,Math.max(0,(t-6.2)/1))*.55;
     P.group.position.x+=A.fx*go*1.2*avScale*w;P.group.position.z+=A.fz*go*1.2*avScale*w;M.group.position.x+=A.fx*mg*avScale*w;M.group.position.z+=A.fz*mg*avScale*w;
-    {const tg=M.group.position.clone().add(P.group.position).multiplyScalar(.5);tg.y+=avScale*.9;A.camHint={tg,ang:A.hd+Math.PI/2,d:avScale*6.5,h:avScale*1.7,lk:2.5}}
+    [M,P].forEach(av=>{const p=av.group.position;if(A.deck)p.y=Math.max(height(p.x,p.z)+.5,1.97)});
+    {const tg=M.group.position.clone().add(P.group.position).multiplyScalar(.5);tg.y+=avScale*.9;A.camHint={tg,ang:A.hd+Math.PI/2,d:avScale*6,h:avScale*3.4,lk:2.5}}
     if(wd>0){P.group.rotation.y+=dt*7.5*wd;poseArm(P,0,-2.3+Math.sin(el*6)*.4,-.6,-.5,wd);poseArm(P,1,-2.3-Math.sin(el*6)*.4,.6,-.5,wd);
       P.group.position.y+=Math.abs(Math.sin(el*6.5))*.05*avScale*wd;P.knees.forEach((k,i)=>Lr(k.rotation,'x',.35+.3*Math.sin(el*6.5+i*3),wd));Lr(P.head.rotation,'z',Math.sin(el*6.5)*.2,wd)}
     else La(P.group,faceAng(P,M),w);
@@ -2928,6 +2933,7 @@ const ACTIONS={
       M.legs.forEach((l,i)=>{Lr(l.rotation,'x',-.95,wp);Lr(l.rotation,'z',(i?1:-1)*.2,wp)});M.knees.forEach(k=>Lr(k.rotation,'x',1.45,wp));
       poseArm(M,0,-.6,.15,-.15,wp);poseArm(M,1,-.6,-.15,-.15,wp);Lr(M.head.rotation,'y',Math.sin(el*4)*.4,wp)}
     else M.group.rotation.x=0;
+    if(A.deck)[M,P].forEach(av=>{const p=av.group.position,b=Math.max(height(p.x,p.z)+.5,1.97);if(p.y<b-.25*avScale)p.y=b-.25*avScale});
     if(t>7.4)once(A,'m3',()=>floatIcon(M,'🍑'));if(t>9.6)once(A,'m4',()=>floatIcon(M,'🔥'));
     // Paz se ríe
     const wq=Wt(t,7.4,13.6,.3,.5);if(wq>0){La(P.group,faceAng(P,M),wq);P.group.position.y+=Math.abs(Math.sin(el*15))*.02*avScale*wq;poseArm(P,0,-.55,-.25,-1.7,wq);
@@ -3151,7 +3157,7 @@ function setupMood(m){
     const mat=new THREE.Mesh(new THREE.BoxGeometry(1.6,.14,2.15),S('#f5f2ea'));mat.position.y=.39;b.add(mat);
     [-.38,.38].forEach(x=>{const pw=new THREE.Mesh(new THREE.BoxGeometry(.6,.12,.36),S('#ffffff'));pw.position.set(x,.5,-.82);b.add(pw)});
     const head=new THREE.Mesh(new THREE.BoxGeometry(1.7,.75,.1),S('#7a5232',.7));head.position.set(0,.45,-1.12);b.add(head);
-    const blk=new THREE.Mesh(new THREE.BoxGeometry(1.62,.16,1.4),S('#5a6fb0'));blk.position.set(0,.6,.35);b.add(blk);
+    const blk=new THREE.Mesh(new THREE.BoxGeometry(1.62,.5,1.4),S('#5a6fb0'));blk.position.set(0,.71,.35);b.add(blk);
     scene.add(b);moodObj.bed=b;if(mate)mate.visible=false;
   }
   if(m==='party'){
@@ -3185,7 +3191,7 @@ function applyMood(m,dt,el,mid,w){
     const b=moodObj.boat;b.position.set(mid.x,.3+Math.sin(el*1.3)*.04*avScale,mid.z);b.rotation.y=ang;b.rotation.z=Math.sin(el*1.6)*.05;b.scale.setScalar(avScale*w);
     const fw=new THREE.Vector3(Math.sin(ang),0,Math.cos(ang));
     avatars.forEach(av=>{   // sentados en el banco, de cara a la proa
-      if(movie){av.group.position.x=mid.x+Math.cos(ang)*av.side*.3*avScale;av.group.position.z=mid.z-Math.sin(ang)*av.side*.3*avScale;av.group.rotation.y=ang}
+      if(movie){av.group.position.x=mid.x-Math.cos(ang)*av.side*.3*avScale;av.group.position.z=mid.z+Math.sin(ang)*av.side*.3*avScale;av.group.rotation.y=ang}
       av.group.position.addScaledVector(fw,((b.userData.benchZ||0)-.08)*avScale*w);
       av.group.position.y=b.position.y+(.745-.85*av.h)*avScale*w;av.group.rotation.z=Math.sin(el*1.6)*.05*w;
       La(av.group,ang,w);
@@ -3197,7 +3203,7 @@ function applyMood(m,dt,el,mid,w){
     const h0=M.group.rotation.y,f=new THREE.Vector3(Math.sin(h0),0,Math.cos(h0));
     const sc=avScale;const bed=moodObj.bed;bed.position.copy(mid).addScaledVector(f,-.95*sc);bed.position.y=Math.max(height(mid.x,mid.z),.3);bed.rotation.y=h0;bed.scale.setScalar(sc*w);
     avatars.forEach((av,j)=>{const side=av.side;av.group.rotation.x=-Math.PI/2*w;av.group.position.y=bed.position.y+.5*sc*w+.02;
-      const r=new THREE.Vector3(-Math.cos(h0),0,Math.sin(h0));av.group.position.copy(bed.position).addScaledVector(f,.88*sc*w).addScaledVector(r,-side*.38*sc);av.group.position.y=bed.position.y+.48*sc*w;
+      const r=new THREE.Vector3(-Math.cos(h0),0,Math.sin(h0));av.group.position.copy(bed.position).addScaledVector(f,.88*sc*w).addScaledVector(r,side*.38*sc);av.group.position.y=bed.position.y+.68*sc*w;
       av.arms.forEach((a,i)=>{a.rotation.x=0;a.rotation.z=SIDE[i]*.15});av.elbows.forEach(e=>e.rotation.x=-.2);av.legs.forEach(l=>l.rotation.x=0);av.knees.forEach(k=>k.rotation.x=0);av.head.rotation.y=-side*.25});
     if(T%1.6<dt)floatIcon(T%3.2<1.6?M:P,'💤');
   }
@@ -3416,6 +3422,9 @@ function buildBeats(P,F){
   });
   // momentos que no cayeron en ningún tramo: van a la parada más cercana en el tiempo
   sc.filter(e=>!e.used&&!e.walk&&!e.boat).forEach(e=>{let best=null,bd=1e9;beats.forEach(b=>{if(b.k!=='stop')return;const d=Math.min(Math.abs(b.t0-e.ta),Math.abs(b.t1-e.ta));if(d<bd){bd=d;best=b}});if(best)best.scenes.push(e)});
+  {const f=beats.find(b=>b.a!=null),l=[...beats].reverse().find(b=>b.a!=null);
+   if(f&&f.k==='ride')beats.unshift({k:'plane',mode:'in',ri:f,dur:11,t0:f.t0-12,t1:f.t0,cap:'✈️ Llegada a Budapest'});
+   if(l&&l.k==='ride')beats.push({k:'plane',mode:'out',ri:l,dur:10.5,t0:l.t1+25,t1:l.t1+40,cap:'✈️ Vuelta a Barcelona'})}
   beats.forEach(b=>{if(b.scenes)b.scenes.sort((x,y)=>x.ta-y.ta)});
   return beats;
 }
@@ -3469,6 +3478,47 @@ function movieLife(M,B,dt,el){   // pequeños gestos mientras pasean o esperan
   if(B.k==='walk'&&B.dur>3.2){const ph=M.bt%6.5,wp=Wt(ph,1.2,2.8,.3,.4);if(wp>0){poseArm(Mt,1,-1.45,.45,-.15,wp);Lr(Pz.head.rotation,'y',.5*wp,1)}
     const wq=Wt(ph,4,5.4,.3,.4);if(wq>0){poseArm(Pz,1,-1.5,.1,-.55,wq);if(ph>4.7&&ph<4.7+dt*1.5)flash(Pz)}}
   if(B.k==='stop'&&!B.scenes.length&&mateHolder&&mate&&mate.visible)poseArm(mateHolder,0,-1,.15,-2.2,Wt(M.bt,.3,B.dur-.1,.3,.3));
+}
+function makePlane(){   // avión de pasajeros, blanco con franja azul (en metros/escala, el morro hacia +z)
+  const g=new THREE.Group(),S=(c,r=.45,e)=>{const m=new THREE.MeshStandardMaterial({color:c,roughness:r});if(e){m.emissive=new THREE.Color(e);m.emissiveIntensity=1}return m};
+  const a=(geo,mat,x,y,z)=>{const m=new THREE.Mesh(geo,mat);m.position.set(x,y,z);m.castShadow=true;g.add(m);return m};
+  const W=S('#f4f5f7'),B=S('#2f5fb3'),D=S('#1b2433',.3);
+  a(new THREE.CylinderGeometry(.9,.9,10,20),W,0,1.5,0).rotation.x=Math.PI/2;
+  a(new THREE.SphereGeometry(.9,20,14),W,0,1.5,5).scale.set(1,1,1.5);
+  a(new THREE.ConeGeometry(.9,3,20),W,0,1.75,-6.4).rotation.x=-Math.PI/2;
+  a(new THREE.BoxGeometry(1.84,.22,10.4),B,0,1.15,-.2);
+  const win=a(new THREE.BoxGeometry(1.83,.2,8.4),D,0,1.85,.2);
+  a(new THREE.BoxGeometry(1.2,.35,.6),D,0,2.05,6.05).rotation.x=.4;
+  const wg=a(new THREE.BoxGeometry(13,.18,2.4),W,0,1.05,.3);wg.rotation.y=0;
+  [-1,1].forEach(sd=>{a(new THREE.BoxGeometry(5,.14,.9),W,sd*2.6,1.4,-.5).rotation.y=sd*-.35;   // flecha de las alas
+    const en=a(new THREE.CylinderGeometry(.42,.38,1.6,14),S('#cfd4da'),sd*3,.55,.9);en.rotation.x=Math.PI/2;a(new THREE.CircleGeometry(.36,14),D,sd*3,.55,1.71)});
+  a(new THREE.BoxGeometry(.18,2.4,1.8),B,0,3,-6.6).rotation.x=-.35;a(new THREE.BoxGeometry(4.4,.12,1.1),W,0,1.9,-6.9);
+  [[0,4.2],[-1.1,-.4],[1.1,-.4]].forEach(([x,z])=>{a(new THREE.CylinderGeometry(.06,.06,.6,6),S('#777'),x,.45,z);const wh=a(new THREE.CylinderGeometry(.22,.22,.18,12),S('#151515',.8),x,.22,z);wh.rotation.z=Math.PI/2});
+  [-1,1].forEach(sd=>{const l=a(new THREE.SphereGeometry(.12,8,6),S(sd<0?'#ff3b3b':'#3bff7a',.3,sd<0?'#ff2a2a':'#2aff6a'),sd*6.5,1.05,.3);l.castShadow=false});
+  g.rotation.order='YXZ';return g}
+function mvPlane(M,B,dt){
+  const ri=B.ri,t=M.bt;
+  if(!B.P){const a=B.mode==='in'?M.w[ri.a]:M.w[ri.b],qi=B.mode==='in'?Math.min(ri.b,ri.a+8):Math.max(ri.a,ri.b-8),q=M.w[qi];
+    const h=B.mode==='in'?Math.atan2(q.x-a.x,q.z-a.z):Math.atan2(a.x-q.x,a.z-q.z);B.h=h;B.fx=Math.sin(h);B.fz=Math.cos(h);B.sx=-Math.cos(h);B.sz=Math.sin(h);
+    B.P={x:a.x,z:a.z};B.park={x:a.x-B.sx*24,z:a.z-B.sz*24};B.door={x:B.park.x+B.sx*5+B.fx*6,z:B.park.z+B.sz*5+B.fz*6}}
+  if(!M.plane){M.plane=makePlane();scene.add(M.plane)}
+  const pl=M.plane,S=avScale,gy=height(B.park.x,B.park.z),cam=(tg,d,h,lk)=>{M.pcam={tg,ang:B.h-Math.PI/2+.5,d,h,lk}};pl.scale.setScalar(S);
+  const lerp=(p,q,k)=>({x:p.x+(q.x-p.x)*k,z:p.z+(q.z-p.z)*k}),E=k=>k<0?0:k>1?1:k*k*(3-2*k);
+  if(B.mode==='in'){   // aterriza, frena y se baja; caminan hasta el bus
+    const td=5,stop=7.2;let s,y=gy,pitch=0;
+    if(t<td){s=-(td-t)*15-14;y=gy+(td-t)*4.2;pitch=-.12}
+    else{const k=Math.min(1,(t-td)/(stop-td));s=-14+14*(1-(1-k)*(1-k))}
+    pl.position.set(B.park.x+B.fx*s,y,B.park.z+B.fz*s);pl.rotation.set(pitch,B.h,0);
+    B.hide=t<stop+.4;B.vehOn=t>3;B.vehPos={x:B.P.x+B.fx*3,z:B.P.z+B.fz*3};
+    M.cur=t<stop+.4?{...B.door}:lerp(B.door,{x:B.P.x-B.sx*5,z:B.P.z-B.sz*5},E((t-stop-.4)/(B.dur-stop-.9)));
+    if(t<stop+.6)cam(pl.position.clone().add(new THREE.Vector3(0,2*S,0)),t<td?78:62,t<td?20:22,1.6);else M.pcam=null;
+  }else{   // caminan desde el taxi, suben al avión y despega
+    const board=3.3,go=4;
+    M.cur=lerp({x:B.P.x-B.sx*5,z:B.P.z-B.sz*5},B.door,E(t/board));B.hide=t>board;B.vehOn=t<board+.6;B.vehPos={x:B.P.x+B.fx*2,z:B.P.z+B.fz*2};
+    let s=0,y=gy,pitch=0;if(t>go){const u=t-go;s=2.6*u*u;if(u>3.2){const v=u-3.2;y=gy+2.2*v*v+3*v;pitch=Math.max(-.32,-.12*v-.08)}}
+    pl.position.set(B.park.x+B.fx*s,y,B.park.z+B.fz*s);pl.rotation.set(pitch,B.h,0);
+    if(t>board-.6)cam(pl.position.clone().add(new THREE.Vector3(0,2*S,0)),70,22,2);else M.pcam=null;
+  }
 }
 function makeVehicle(kind){   // taxi amarillo o bus azul, en metros (se escala como los avatares)
   const g=new THREE.Group(),S=(c,r=.5,e)=>{const m=new THREE.MeshStandardMaterial({color:c,roughness:r});if(e){m.emissive=new THREE.Color(e);m.emissiveIntensity=1}return m};
@@ -3541,7 +3591,7 @@ const DAYS_SHORT=['Sáb','Dom','Lun'];
 function startScene(M,e){
   const bs=e.bubbles||[],isMood=MOOD_SCENES.includes(e.scene),act=!isMood&&ACTIONS[e.scene];
   const dur=e.dur||Math.max(isMood?7:5,1+bs.length*2.9+1.2,act&&e.scene!=='talk'?act.dur+.6:0);
-  M.scene={e,t:0,dur,bi:0};M.cap='';M.capT=0;M.camHint=null;if(e.scene==='watch')M.ang=Math.PI/2-.45;if(e.scene==='nap'){const r=river(M.cur.x,M.cur.z);M.ang=Math.atan2(r.x-M.cur.x,r.z-M.cur.z)+.6}   // cámara detrás, mirando al atardecer
+  M.scene={e,t:0,dur,bi:0};M.cap='';M.capT=0;M.camHint=null;if(e.scene==='watch')M.ang=-Math.PI/2+.4;if(e.scene==='nap'){const r=river(M.cur.x,M.cur.z);M.ang=Math.atan2(r.x-M.cur.x,r.z-M.cur.z)+.6}   // cámara detrás, mirando al atardecer
   if(isMood){moodNext=e.scene;moodW=Math.min(moodW,.3)}
   else if(act)startAction(e.scene,{quiet:true,scene:true,mute:!!e.mute,dur:e.scene==='talk'?dur-.3:0,text:e.text});
 }
@@ -3587,6 +3637,7 @@ function updateMovie(dt,el){
         if(B.k==='boat'&&M.hd!=null)p={x:p.x+Math.cos(M.hd)*3,z:p.z-Math.sin(M.hd)*3};   // navega por su derecha
         const k=Math.min(1,dt*(B.k==='boat'?3:7));M.cur={x:M.cur.x+(p.x-M.cur.x)*k,z:M.cur.z+(p.z-M.cur.z)*k};
         ta=B.t0+(B.t1-B.t0)*(wp?fp:f);cap=M.napOn&&B.k==='boat'?'😴 Paz se quedó dormida…':(B.k!=='walk'||M.ovOn)&&B.cap?B.cap:''}
+      else if(B.k==='plane'){mvPlane(M,B,dt);ta=B.t0+(B.t1-B.t0)*f;cap=B.cap}
       else if(B.k==='title'){hud={title:B.title,sub:B.sub}}
       else if(B.k==='stop'){
         place=B.place;M.li=B.b;
@@ -3608,11 +3659,12 @@ function updateMovie(dt,el){
   const mid=new THREE.Vector3(M.cur.x,height(M.cur.x,M.cur.z),M.cur.z);
   // traslados: van dentro de un taxi o un bus
   const rd=B.k==='ride'&&!M.over&&M.t>=TT;
-  if(rd){if(!M.veh||M.veh.userData.kind!==B.veh){if(M.veh)scene.remove(M.veh);M.veh=makeVehicle(B.veh);scene.add(M.veh)}
-    M.veh.visible=true;M.veh.position.set(M.cur.x,height(M.cur.x,M.cur.z)+.05,M.cur.z);if(M.hd!=null)M.veh.rotation.y=M.hd;M.veh.scale.setScalar(avScale*(B.veh==='bus'?.5:.75));
-    M.veh.userData.wheels.forEach(wh=>{wh.rotation.x+=dt*14})}
+  const pv=B.k==='plane'&&!M.over&&M.t>=TT&&B.vehOn,vk=pv?B.ri.veh:B.veh;
+  if(rd||pv){if(!M.veh||M.veh.userData.kind!==vk){if(M.veh)scene.remove(M.veh);M.veh=makeVehicle(vk);scene.add(M.veh)}
+    const vp=pv?B.vehPos:M.cur;M.veh.visible=true;M.veh.position.set(vp.x,height(vp.x,vp.z)+.05,vp.z);if(pv)M.veh.rotation.y=B.h;else if(M.hd!=null)M.veh.rotation.y=M.hd;M.veh.scale.setScalar(avScale*(vk==='bus'?.5:.75));
+    if(rd)M.veh.userData.wheels.forEach(wh=>{wh.rotation.x+=dt*14})}
   else if(M.veh)M.veh.visible=false;
-  avatars.forEach(a=>{a.group.visible=!rd});
+  const hideAv=rd||(B.k==='plane'&&!M.over&&M.t>=TT&&B.hide);avatars.forEach(a=>{a.group.visible=!hideAv});if(M.plane)M.plane.visible=B.k==='plane'&&!M.over&&M.t>=TT;
   const av0=avatars[0]&&avatars[0].group.position;if(av0&&M.scene){mid.x=(avatars[0].group.position.x+avatars[1].group.position.x)/2;mid.z=(avatars[0].group.position.z+avatars[1].group.position.z)/2}
   if(av0&&(M.scene||B.k==='boat'))mid.y=Math.max(mid.y,(avatars[0].group.position.y+avatars[1].group.position.y)/2-.5);
   // estela del barco y de los vehículos
@@ -3629,6 +3681,7 @@ function updateMovie(dt,el){
   const V3=THREE.Vector3,orbit=(r,h)=>new V3(Math.sin(M.ang)*r,h,Math.cos(M.ang)*r);
   let off,tg=mid.clone(),lk=1.4;
   if(ovw){tg=M.ctr.clone();M.ang+=dt*.05;off=new V3(Math.sin(M.ang)*110,310,Math.cos(M.ang)*110+70);lk=3}
+  else if(B.k==='plane'&&M.pcam){const ch=M.pcam;tg=ch.tg.clone();off=new V3(Math.sin(ch.ang)*ch.d,ch.h,Math.cos(ch.ang)*ch.d);lk=ch.lk||2;M.ang=ch.ang}
   else if(M.scene&&((action&&action.camHint)||M.camHint)){const ch=(action&&action.camHint)||M.camHint;tg=ch.tg.clone();off=new V3(Math.sin(ch.ang)*ch.d,ch.h,Math.cos(ch.ang)*ch.d);lk=ch.lk||3;M.ang=ch.ang;if(!M.scene.cut)M.scene.cut=1}
   else if(M.scene){const S=M.scene,low=S.e.scene==='hug'||S.e.scene==='watch';M.ang+=dt*(low?.035:.07);tg.y+=avScale*.9;const dz=avScale*(6.8-Math.min(1.6,S.t*.14))*(['meal','nap','hotdog'].includes(S.e.scene)?.78:1);
     off=new V3(Math.sin(M.ang)*dz,avScale*(low?1.35:2.4),Math.cos(M.ang)*dz);if(!S.cut){S.cut=1;M.camOff=off.clone().multiplyScalar(1.35)}}
@@ -3739,7 +3792,7 @@ function movieOverlay(dt,el){
   }
 }
 function stopMovie(){
-  if(!movie)return;const rec=movie.rec;if(action&&action.o&&action.o.scene)endAction(action);mvOverlayEnd();mvControls(false);if(mate)mate.visible=true;if(movie.veh)scene.remove(movie.veh);if(movie.line){scene.remove(movie.line);movie.line.geometry.dispose()}if(movie.sun)scene.remove(movie.sun);mvQuality(null);avatars.forEach(a=>{a.group.visible=true});movie=null;avScale=AV_MAP;resetMood();controls.enabled=true;
+  if(!movie)return;const rec=movie.rec;if(action&&action.o&&action.o.scene)endAction(action);mvOverlayEnd();mvControls(false);if(mate)mate.visible=true;if(movie.veh)scene.remove(movie.veh);if(movie.plane)scene.remove(movie.plane);if(movie.line){scene.remove(movie.line);movie.line.geometry.dispose()}if(movie.sun)scene.remove(movie.sun);mvQuality(null);avatars.forEach(a=>{a.group.visible=true});movie=null;avScale=AV_MAP;resetMood();controls.enabled=true;
   document.body.classList.remove('acting');avatars.forEach(a=>{a.group.userData.tag.visible=true});
   if(rec&&rec.state!=='inactive')rec.stop();
   setFull(false);refresh();flyHome();
@@ -3849,8 +3902,8 @@ function moveAvatars(dt){
   const dx=tg.x-mid.x,dz=tg.z-mid.z,dist=Math.hypot(dx,dz);
   const jump=dist>250;                                    // primer punto GPS o salto grande: aparecer allí
   const hold=!!action;
-  const moving=dist>0.6&&!jump&&!hold;
-  if(moving)heading=movie&&movie.hd!=null?movie.hd:Math.atan2(dx,dz);
+  const moving=movie?(!jump&&!hold&&dist/Math.max(dt,1e-3)>1.2):(dist>0.6&&!jump&&!hold);
+  if(moving)heading=Math.atan2(dx,dz);   // siempre mirando hacia donde caminan
   const step=movie?dist:Math.min(dist,Math.max(12,dist*1.8)*dt);
   if(moving)lastMoveT=clock.elapsedTime;
   const nx=hold?action.mid.x:(moving?mid.x+dx/dist*step:tg.x),nz=hold?action.mid.z:(moving?mid.z+dz/dist*step:tg.z);
