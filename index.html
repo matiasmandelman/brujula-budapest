@@ -3532,12 +3532,22 @@ function makePlane(){   // avión de pasajeros, blanco con franja azul (en metro
   [-1,1].forEach(sd=>{const l=a(new THREE.SphereGeometry(.12,8,6),S(sd<0?'#ff3b3b':'#3bff7a',.3,sd<0?'#ff2a2a':'#2aff6a'),sd*6.5,1.05,.3);l.castShadow=false});
   g.rotation.order='YXZ';return g}
 function setHats(d2){avatars.forEach(a=>{const o=AV_DEF.find(x=>x.name===a.name),hm=a.group.userData.hatM;if(!o||!hm)return;const c=d2?o.hatD2:[o.hat,o.hat2];hm[0].color.set(c[0]);hm[1].color.set(c[1])})}
+function makeClouds(B,gy){   // nubes suaves alrededor de la trayectoria del avión
+  const g=new THREE.Group(),mn=((B.t0%1440)+1440)%1440,night=mn<7*60||mn>17*60,col=night?'#4d5873':'#ffffff';
+  for(let i=0;i<16;i++){const c=new THREE.Group(),s=(B.mode==='in'?-160+i*8:15+i*12)+Math.random()*6,lat=(i%2?1:-1)*(10+Math.random()*45),y=gy+14+Math.random()*24;
+    c.position.set(B.park.x+B.fx*s*(B.mode==='in'?1:1.4)-B.sx*lat,y,B.park.z+B.fz*s*(B.mode==='in'?1:1.4)-B.sz*lat);
+    const n=6+Math.floor(Math.random()*4);for(let k=0;k<n;k++){const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:getGlow(),color:col,transparent:true,depthWrite:false,opacity:night?.45:.85,fog:false}));
+      const z=9+Math.random()*9;sp.scale.set(z*1.5,z,1);sp.position.set((Math.random()-.5)*14,(Math.random()-.3)*3,(Math.random()-.5)*9);c.add(sp)}
+    c.userData.v=.6+Math.random()*1.2;g.add(c)}
+  g.userData.f={x:B.fx,z:B.fz};return g}
 function mvPlane(M,B,dt){
   const ri=B.ri,t=M.bt;
   if(!B.P){const a=B.mode==='in'?M.w[ri.a]:M.w[ri.b],qi=B.mode==='in'?Math.min(ri.b,ri.a+8):Math.max(ri.a,ri.b-8),q=M.w[qi];
     const h=B.mode==='in'?Math.atan2(q.x-a.x,q.z-a.z):Math.atan2(a.x-q.x,a.z-q.z);B.h=h;B.fx=Math.sin(h);B.fz=Math.cos(h);B.sx=-Math.cos(h);B.sz=Math.sin(h);
     B.P={x:a.x,z:a.z};B.park={x:a.x-B.sx*24-B.fx*14,z:a.z-B.sz*24-B.fz*14};B.door={x:B.park.x+B.sx*4+B.fx*16,z:B.park.z+B.sz*4+B.fz*16}}   // puerta delante del ala
   if(!M.plane){M.plane=makePlane();scene.add(M.plane)}
+  if(!M.cl){M.cl=makeClouds(B,height(B.park.x,B.park.z));scene.add(M.cl)}
+  M.cl.children.forEach(c=>{c.position.x-=M.cl.userData.f.x*c.userData.v*dt;c.position.z-=M.cl.userData.f.z*c.userData.v*dt});
   const pl=M.plane,S=avScale,gy=height(B.park.x,B.park.z),cam=(tg,d,h,lk)=>{M.pcam={tg,ang:B.h-Math.PI/2+.5,d,h,lk}};pl.scale.setScalar(S);
   const lerp=(p,q,k)=>({x:p.x+(q.x-p.x)*k,z:p.z+(q.z-p.z)*k}),E=k=>k<0?0:k>1?1:k*k*(3-2*k);
   if(B.mode==='in'){   // aterriza, frena y se baja; caminan hasta el bus
@@ -3642,7 +3652,7 @@ function runScene(M,dt){
   }
 }
 function mvEnter(M,j){
-  mvOverlayEnd();M.bi=j;M.bt=0;M.sq=0;if(M.coldHide){M.coldHide=false;M.taxiWait=null}const B=M.beats[j],old=M.cur;
+  mvOverlayEnd();M.bi=j;M.bt=0;M.sq=0;if(M.cl){scene.remove(M.cl);M.cl=null}if(M.coldHide){M.coldHide=false;M.taxiWait=null}const B=M.beats[j],old=M.cur;
   if(!B){M.over=true;M.mood='idle';moodNext='idle';return}
   const pm=M.mood;M.mood=B.k==='boat'?'boat':'idle';moodNext=M.mood;if((pm==='boat')!==(M.mood==='boat'))moodW=0;
   if(B.k==='stop')M.cur={x:B.c.x,z:B.c.z};
@@ -3830,7 +3840,7 @@ function movieOverlay(dt,el){
   }
 }
 function stopMovie(){
-  if(!movie)return;const rec=movie.rec;if(action&&action.o&&action.o.scene)endAction(action);mvOverlayEnd();mvControls(false);if(mate)mate.visible=true;setHats(false);if(movie.veh)scene.remove(movie.veh);if(movie.plane)scene.remove(movie.plane);if(movie.line){scene.remove(movie.line);movie.line.geometry.dispose()}if(movie.sun)scene.remove(movie.sun);mvQuality(null);avatars.forEach(a=>{a.group.visible=true});movie=null;avScale=AV_MAP;resetMood();controls.enabled=true;
+  if(!movie)return;const rec=movie.rec;if(action&&action.o&&action.o.scene)endAction(action);mvOverlayEnd();mvControls(false);if(mate)mate.visible=true;setHats(false);if(movie.veh)scene.remove(movie.veh);if(movie.plane)scene.remove(movie.plane);if(movie.cl)scene.remove(movie.cl);if(movie.line){scene.remove(movie.line);movie.line.geometry.dispose()}if(movie.sun)scene.remove(movie.sun);mvQuality(null);avatars.forEach(a=>{a.group.visible=true});movie=null;avScale=AV_MAP;resetMood();controls.enabled=true;
   document.body.classList.remove('acting');avatars.forEach(a=>{a.group.userData.tag.visible=true});
   if(rec&&rec.state!=='inactive')rec.stop();
   setFull(false);refresh();flyHome();
