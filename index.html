@@ -3737,7 +3737,7 @@ function updateMovie(dt,el){
   else if(B.k==='boat'){if(M.napOn){M.ang+=dt*.05;tg.x=(avatars[0].group.position.x+avatars[1].group.position.x)/2;tg.z=(avatars[0].group.position.z+avatars[1].group.position.z)/2;tg.y+=avScale*.9;
       if(M.hd!=null)M.ang=M.hd+.55+Math.sin(M.t*.25)*.35;off=orbit(avScale*4.6,avScale*2.1);lk=2.5}
     else{M.ang+=dt*.1;off=orbit(27,15)}}
-  else if(M.ovOn&&(B.overlay==='tired'||B.overlay==='climb')&&M.hd!=null){tg.y+=avScale*.95;const a=M.hd+.3;off=new V3(Math.sin(a)*avScale*5.2,avScale*1.5,Math.cos(a)*avScale*5.2);M.ang=a;lk=3}
+  else if(M.ovOn&&(B.overlay==='tired'||B.overlay==='climb')&&M.hd!=null){tg.y+=avScale*.95;const a=B.overlay==='tired'?M.hd+Math.PI/2-.35:M.hd+.3;off=new V3(Math.sin(a)*avScale*5.2,avScale*1.5,Math.cos(a)*avScale*5.2);M.ang=a;lk=3}
   else if(M.ovOn){M.ang+=dt*.1;tg.y+=avScale*.8;off=orbit(avScale*8,avScale*3.6)}
   else if((B.k==='walk'||B.k==='ride')&&M.hd!=null&&M.bi%3!==1){const rv=B.k==='ride',side=M.bi%3===2,a=M.hd+(side?Math.PI/2:Math.PI+.25),d=rv?30:side?24:19;
     off=new V3(Math.sin(a)*d,rv?17:side?12:15,Math.cos(a)*d);tg.y+=avScale*.5;lk=2.2;M.ang=a}
@@ -3811,11 +3811,20 @@ function movieOverlay(dt,el){
     poseArm(Mt,0,-2.55,-.5,-2.15,1);poseArm(Mt,1,-2.55,.5,-2.15,1);Lr(Mt.head.rotation,'y',Math.sin(el*2.4)*.45,.5);Lr(Mt.head.rotation,'x',.1,.5);Mt.body.position.y+=Math.sin(el*30)*.004;
     every('mt',3.6,()=>floatIcon(Mt,Math.random()<.6?'😅':'😬'));
   }
-  if(B.overlay==='tired'){   // subiendo al Bastión: Paz agotada, Mati la espera y le tiende la mano
-    Pz.group.rotation.x=.5;Pz.group.position.y-=.08*avScale;Pz.knees.forEach(k=>{k.rotation.x=Math.max(k.rotation.x,.35)});poseArm(Pz,0,-.55,.2,-.1,1);poseArm(Pz,1,-.55,-.2,-.1,1);
-    Pz.body.position.y+=Math.abs(Math.sin(el*5))*.012;Lr(Pz.head.rotation,'x',-.45+Math.sin(el*5)*.07,1);
-    Lr(Mt.head.rotation,'y',(Mt.side<Pz.side?-1:1)*-.7,.3);poseArm(Mt,Mt.side<Pz.side?1:0,-.9,Mt.side<Pz.side?-.45:.45,-.35,1);
-    every('pz',1.4,()=>floatIcon(Pz,t%2.8<1.4?'😮‍💨':'🥵'));
+  if(B.overlay==='tired'){   // subiendo al Bastión: Paz, agotada y de pie, avanza a duras penas; Mati, detrás, la va empujando
+    const h=M.hd||0,fx=Math.sin(h),fz=Math.cos(h),rx=-Math.cos(h),rz=Math.sin(h),c=M.cur,S=avScale,gy=height(c.x,c.z)+.5,sw=Math.sin(el*5);
+    // Paz de pie, encorvada, brazos colgando y pasos cortos
+    Pz.group.position.set(c.x+fx*.3*S,gy,c.z+fz*.3*S);Pz.group.rotation.y=h;Pz.group.rotation.x=-.15;   // leve inclinación hacia atrás
+    Pz.legs[0].rotation.x=sw*.3;Pz.legs[1].rotation.x=-sw*.3;Pz.knees.forEach((k,n)=>{k.rotation.x=.15+Math.max(0,n?-sw:sw)*.45});
+    poseArm(Pz,0,-.25,-.12,-.2,1);poseArm(Pz,1,-.25,.12,-.2,1);Lr(Pz.head.rotation,'x',-.1+Math.sin(el*4)*.05,1);Lr(Pz.head.rotation,'z',.1,1);
+    // Mati detrás, inclinado hacia delante, con las manos en su espalda
+    Mt.group.position.set(c.x-fx*.82*S,gy,c.z-fz*.82*S);   // a distancia para empujar con los brazos estiradosMt.group.rotation.y=h;Mt.group.rotation.x=.3;
+    Mt.legs[0].rotation.x=-.3+sw*.45;Mt.legs[1].rotation.x=-.3-sw*.45;Mt.knees.forEach((k,n)=>{k.rotation.x=.2+Math.max(0,n?-sw:sw)*.6});
+    Mt.group.updateMatrixWorld(true);
+    {const y=Pz.group.position.y+1.2*S*Pz.h,bx=Pz.group.position.x-fx*.3*S,bz=Pz.group.position.z-fz*.3*S;
+     aimArm(Mt,0,new THREE.Vector3(bx-rx*.12*S,y,bz-rz*.12*S),1);aimArm(Mt,1,new THREE.Vector3(bx+rx*.12*S,y,bz+rz*.12*S),1)}
+    Lr(Mt.head.rotation,'x',-.25,.4);
+    every('pz',1.5,()=>floatIcon(Pz,t%3<1.5?'😩':'😮‍💨'));every('mt',2.1,()=>floatIcon(Mt,t%4.2<2.1?'😤':'💪'));
     if(!o.b){o.b=1;bubble(Pz,'No puedo más… 😮‍💨',3.4)}
   }
   if(B.overlay==='cruise'){   // sentados: miran a los lados y sacan fotos; Paz se duerme un rato
