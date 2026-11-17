@@ -739,7 +739,7 @@ const getTasks=()=>tasks||(tasks=new Set(store.get('tasks',[])));
    Escenas: hug, eat, boat, sleep, party, food, chipa, sloth, reel, photo, mapcheck, yawn, reclaim, cheer, talk. */
 const GUION=[
  {d:0,h:'14:05',place:'Krumplis Lángos',scene:'meal',food:'langos',cap:'🫓 Un lángos antes de subir'},
- {d:0,h:'15:25',walk:'climb',cap:'📸 Paz feliz sacando fotos · Mati nervioso'},
+ {d:0,h:'15:25',walk:'climb',cap:'📸 Paz feliz sacando fotos · Matias nervioso'},
  {d:0,h:'16:00',place:'Citadella',scene:'hug',dur:8.5,cap:'🌅 Primer atardecer · Citadella'},
  {d:0,h:'17:55',place:'Mercado navideño',scene:'hotdog',cap:'🌭 Mercado navideño, pancho de 1kg'},
  {d:1,h:'14:44',place:'Gran Sinagoga',scene:'moco',cap:'🤧 Saliendo de la Gran Sinagoga · el moco de Paz'},
@@ -3424,7 +3424,7 @@ function buildBeats(P,F){
           return}
         const B={k:kind,a:r.a,b:r.b,t0:rt0,t1:rt1,km:rkm};
         const ov=sc.find(e=>!e.used&&kind==='boat'&&e.boat&&e.ta>=rt0-5&&e.ta<=rt1+5);if(ov){ov.used=true;B.overlay=ov.boat;B.cap=ov.cap}
-        if(kind==='ride'){const to=placeAt(w[r.b].x,w[r.b].z,30);B.veh=rt0<14*60?'bus':'taxi';B.dur=Math.max(3.5,Math.min(9,rkm*.7))*F;B.cap=(B.veh==='bus'?'🚌 Bus 100E':'🚕 Taxi')+(to?' a '+to:'')+` · ${Math.round(rm)} min`}
+        if(kind==='ride'){const to=placeAt(w[r.b].x,w[r.b].z,30);B.veh=rt0<14*60?'bus':'taxi';B.dur=Math.max(3.5,Math.min(9,rkm*.7))*F;const from=placeAt(w[r.a].x,w[r.a].z,30);B.cap=B.veh==='bus'?'🚌 Bus 100E':/Hungexpo/i.test(to)?'🚕 Taxi a Hungexpo':/Hungexpo/i.test(from)?'🚕 Taxi a toda velocidad':'🚕 Taxi'+(to?' a '+to:'')}
         else{B.nap=B.overlay==='boatnap';B.overlay='cruise';B.path=mvBoatPath(w,r.a,r.b);B.dur=Math.max(26,Math.min(34,rkm*3))*Math.max(.8,Math.min(1.25,F));if(!B.cap)B.cap='🛥️ Crucero por el Danubio'}
         beats.push(B)});
     }else{
@@ -3450,6 +3450,7 @@ function buildBeats(P,F){
    beats.rainA=bi>=0?beats[bi].t1:1e9;beats.rainB=zz?zz.t0:1e9}
   {const f=beats.find(b=>b.a!=null),l=[...beats].reverse().find(b=>b.a!=null);
    if(f&&f.k==='ride')beats.unshift({k:'plane',mode:'in',ri:f,dur:11,t0:f.t0-12,t1:f.t0,cap:'✈️ Llegada a Budapest'});
+   if(l&&l.k==='ride'&&l.veh!=='bus')l.cap='🚕 Taxi al aeropuerto';
    if(l&&l.k==='ride')beats.push({k:'plane',mode:'out',ri:l,dur:10.5,t0:l.t1+25,t1:l.t1+40,cap:'✈️ Vuelta a Barcelona'})}
   beats.forEach(b=>{if(b.scenes)b.scenes.sort((x,y)=>x.ta-y.ta)});
   return beats;
